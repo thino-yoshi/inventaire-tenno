@@ -41,7 +41,7 @@ $assets = @($zip)
 if ($Exe) {
     py -m PyInstaller --onefile --noconsole --name InventaireWarframe --icon "$Root\assets\lotus.ico" `
         --add-data "$Root\index.html;." --add-data "$Root\assets;assets" `
-        --hidden-import webview --hidden-import pystray._win32 --collect-all webview `
+        --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import tkinter --collect-all webview `
         --distpath "$tmp\dist" --workpath "$tmp\work" --specpath $tmp --noconfirm --log-level WARN app.py
     $assets += "$tmp\dist\InventaireWarframe.exe"
 }
