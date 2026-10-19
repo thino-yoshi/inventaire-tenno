@@ -981,7 +981,8 @@ def install_update():
         import io
         import zipfile
         with zipfile.ZipFile(io.BytesIO(data)) as z:
-            for name in z.namelist():
+            for raw in z.namelist():
+                name = raw.replace("\\", "/")  # zips faits sous Windows : "assets\x.png"
                 if name.endswith("/"):
                     continue
                 ok = name in UPDATABLE or (name.startswith("assets/") and name.count("/") == 1
@@ -991,7 +992,7 @@ def install_update():
                 dest = BASE / name
                 dest.parent.mkdir(exist_ok=True)
                 tmp = dest.with_name(dest.name + ".maj")
-                tmp.write_bytes(z.read(name))
+                tmp.write_bytes(z.read(raw))
                 os.replace(tmp, dest)
         cmd = [sys.executable, str(BASE / "app.py")]
     # la nouvelle version attend que celle-ci soit fermee avant de demarrer

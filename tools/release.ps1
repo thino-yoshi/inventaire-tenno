@@ -19,14 +19,22 @@ $app = [IO.File]::ReadAllText("$Root\app.py")
 $app = [regex]::Replace($app, 'VERSION = "[^"]*"', "VERSION = `"$Version`"", 1)
 [IO.File]::WriteAllText("$Root\app.py", $app, (New-Object Text.UTF8Encoding $false))
 
-# 2) zip du code (jamais les donnees personnelles)
+# 2) zip du code (jamais les donnees personnelles). Fait avec Python : Compress-Archive de
+#    PowerShell 5 ecrit des chemins "assets\x.png" que la mise a jour ne reconnaitrait pas.
 $tmp = Join-Path $env:TEMP "inventaire-tenno-release"
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
-New-Item -ItemType Directory "$tmp\src\assets" | Out-Null
-Copy-Item app.py, index.html, prime_inventory.py, Lancer.bat, LISEZMOI.txt "$tmp\src"
-Copy-Item assets\* "$tmp\src\assets"
+New-Item -ItemType Directory $tmp | Out-Null
 $zip = "$tmp\inventaire-tenno-src.zip"
-Compress-Archive -Path "$tmp\src\*" -DestinationPath $zip
+py -I -c @"
+import zipfile, pathlib, sys
+root = pathlib.Path(sys.argv[1])
+files = ['app.py', 'index.html', 'prime_inventory.py', 'Lancer.bat', 'LISEZMOI.txt']
+files += ['assets/' + p.name for p in sorted((root / 'assets').iterdir()) if p.is_file()]
+with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as z:
+    for f in files:
+        z.write(root / f, f)
+"@ $Root $zip
+if ($LASTEXITCODE -ne 0) { throw "zip impossible" }
 $assets = @($zip)
 
 # 3) .exe (optionnel)
