@@ -126,13 +126,32 @@ def ocr(image_path, lang="fr-FR"):
     return json.loads(out) if out.startswith("[") else []
 
 
-def columns(lines, width, n=4):
-    """Regroupe les lignes lues en n colonnes (une par carte de recompense)."""
-    cols = [[] for _ in range(n)]
-    for ln in lines:
+def columns(lines, width):
+    """Regroupe les lignes lues par carte de recompense, selon leur position reelle a l'ecran :
+    les lignes d'un meme nom sont centrees au meme endroit, les cartes sont espacees.
+    Marche avec 1 a 4 joueurs (les cartes sont centrees, pas reparties sur tout l'ecran)."""
+    gap = width * 0.06
+    cols = []
+    for ln in sorted(lines, key=lambda l: l["x"] + l["w"] / 2):
         cx = ln["x"] + ln["w"] / 2
-        cols[min(n - 1, max(0, int(cx / width * n)))].append(ln)
-    return cols
+        if cols and cx - cols[-1]["cx"] < gap:
+            cols[-1]["lines"].append(ln)
+            n = len(cols[-1]["lines"])
+            cols[-1]["cx"] += (cx - cols[-1]["cx"]) / n  # centre moyen
+        else:
+            cols.append({"cx": cx, "lines": [ln]})
+    return [c["lines"] for c in cols]
+
+
+def text_groups(col):
+    """Morceaux de texte a essayer pour une carte : chaque ligne seule, et deux lignes qui se
+    suivent (nom sur deux lignes, ex. "Paris Prime - Partie" / "Inferieure")."""
+    col = sorted(col, key=lambda ln: ln["y"])
+    groups = [[ln] for ln in col]
+    for a, b in zip(col, col[1:]):
+        if b["y"] - (a["y"] + a["h"]) < max(a["h"], b["h"]) * 1.2:
+            groups.append([a, b])
+    return groups
 
 
 class RewardOverlay:
@@ -240,19 +259,15 @@ class RewardOverlay:
         cands, squad = self.candidates(lang)
         rewards = []
         for col in columns(lines, W):
-            if not col:
-                continue
-            col.sort(key=lambda ln: ln["y"])
-            text = " ".join(ln["t"] for ln in col)
-            path, score = self.match(text, cands)
-            # une carte peut contenir du texte parasite : on retente ligne par ligne
-            for ln in col:
-                p2, s2 = self.match(ln["t"], cands)
+            # le meilleur morceau de texte de la carte (le nom), sans le pseudo du joueur en dessous
+            path, score, used = None, 0, None
+            for grp in text_groups(col):
+                p2, s2 = self.match(" ".join(ln["t"] for ln in grp), cands)
                 if s2 > score:
-                    path, score = p2, s2
+                    path, score, used = p2, s2, grp
             if path and score >= 0.6:
-                x = min(ln["x"] for ln in col) + max(ln["x"] + ln["w"] for ln in col)
-                rewards.append({"chemin": path, "x": x / 2, "y": min(ln["y"] for ln in col),
+                x = min(ln["x"] for ln in used) + max(ln["x"] + ln["w"] for ln in used)
+                rewards.append({"chemin": path, "x": x / 2, "y": min(ln["y"] for ln in used),
                                 "score": round(score, 2), **self.value(path, lang)})
         best = max((r["prix"] or 0 for r in rewards), default=0)
         for r in rewards:
