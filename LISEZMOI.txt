@@ -1,5 +1,5 @@
-INVENTAIRE TENNO - Warframe
-===========================
+LOTUS DESK - inventaire Warframe
+================================
 
 Affiche ce que vaut ton inventaire sur Warframe Market : pieces Prime, sets, arcanes,
 mods et reliques, avec les 10 meilleures offres de chaque item.

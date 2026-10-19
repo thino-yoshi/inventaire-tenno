@@ -1,4 +1,4 @@
-# Inventaire Tenno
+# Lotus Desk
 
 Outil Windows pour Warframe : lit ton inventaire (en lecture seule) et l'estime avec les prix de
 [Warframe Market](https://warframe.market). Une alternative légère à AlecaFrame.
@@ -17,6 +17,8 @@ Outil Windows pour Warframe : lit ton inventaire (en lecture seule) et l'estime 
 2. Télécharger `inventaire-tenno-src.zip` depuis la dernière
    [release](https://github.com/thino-yoshi/inventaire-tenno/releases/latest) et le dézipper.
 3. Double-cliquer sur `Lancer.bat`. La première fois, il installe les dépendances.
+
+Ou plus simple : télécharger `LotusDesk.exe` dans la dernière release (pas besoin de Python).
 
 L'app s'ouvre dans sa propre fenêtre. Fermer la fenêtre la range près de l'horloge (icône Lotus) ;
 clic droit sur l'icône puis « Quitter » pour l'arrêter.

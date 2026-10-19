@@ -47,10 +47,11 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.3.0"
+APP_NAME = "Lotus Desk"
+VERSION = "1.3.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
-EXE_ASSET = "InventaireWarframe.exe"
+EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
 
 FROZEN = getattr(sys, "frozen", False)
 BASE = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
@@ -623,7 +624,7 @@ class Presence:
     def _open(self, token):
         import websocket  # websocket-client
         ws = websocket.WebSocketApp(
-            WS_URL, subprotocols=["wfm"], header={"User-Agent": "inventaire-warframe"},
+            WS_URL, subprotocols=["wfm"], header={"User-Agent": "lotus-desk"},
             # le statut n'est accepte qu'une fois l'authentification confirmee (signIn:ok)
             on_open=lambda w: self._send("@wfm|cmd/auth/signIn", {"token": token}),
             on_message=self._on_message,
@@ -1427,12 +1428,12 @@ ICON_ICO = RES / "assets" / "lotus.ico"
 def set_app_identity():
     """Windows regroupe la barre des taches par identite d'app : sans ca, on aurait l'icone de Python."""
     try:
-        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Thigrou.InventaireTenno")
+        ctypes.windll.shell32.SetCurrentProcessExplicitAppUserModelID("Thigrou.LotusDesk")
     except Exception:
         pass
 
 
-def set_window_icon(title="Inventaire Warframe"):
+def set_window_icon(title=APP_NAME):
     """Pose le Lotus sur la fenetre (barre de titre + barre des taches)."""
     try:
         u32 = ctypes.windll.user32
@@ -1484,7 +1485,7 @@ def make_tray(open_fn, quit_fn):
     def toggle_presence(icon, item):
         PRESENCE.auto = not PRESENCE.auto
 
-    icon = pystray.Icon("inventaire-warframe", tray_image(), "Inventaire Warframe", menu=pystray.Menu(
+    icon = pystray.Icon("lotus-desk", tray_image(), APP_NAME, menu=pystray.Menu(
         pystray.MenuItem("Ouvrir l'inventaire", lambda i, it: open_fn(), default=True),
         pystray.MenuItem("Lecture auto du jeu", toggle_auto, checked=lambda it: STATE.auto),
         pystray.MenuItem("Statut « en jeu » sur Warframe Market", toggle_presence,
@@ -1528,7 +1529,7 @@ def run_window(url, with_tray):
         return False
     webview.settings["OPEN_EXTERNAL_LINKS_IN_BROWSER"] = True  # liens WFM : navigateur habituel
     quitting = {"oui": False}
-    WINDOW = webview.create_window("Inventaire Warframe", url, width=1300, height=850,
+    WINDOW = webview.create_window(APP_NAME, url, width=1300, height=850,
                                    min_size=(420, 500), background_color="#0f1115")
 
     def quit_app():

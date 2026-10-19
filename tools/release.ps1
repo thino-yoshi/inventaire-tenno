@@ -1,4 +1,4 @@
-# Publie une nouvelle version d'Inventaire Tenno sur GitHub.
+# Publie une nouvelle version de Lotus Desk sur GitHub.
 #   .\tools\release.ps1 1.0.1 "Ce qui change"
 #   .\tools\release.ps1 1.0.1 "Ce qui change" -Exe     (ajoute aussi le .exe a la release)
 # Les apps installees voient la release au demarrage et se mettent a jour toutes seules.
@@ -39,17 +39,20 @@ $assets = @($zip)
 
 # 3) .exe (optionnel)
 if ($Exe) {
-    py -m PyInstaller --onefile --noconsole --name InventaireWarframe --icon "$Root\assets\lotus.ico" `
+    py -m PyInstaller --onefile --noconsole --name LotusDesk --icon "$Root\assets\lotus.ico" `
         --add-data "$Root\index.html;." --add-data "$Root\assets;assets" `
         --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import tkinter --collect-all webview `
         --distpath "$tmp\dist" --workpath "$tmp\work" --specpath $tmp --noconfirm --log-level WARN app.py
-    $assets += "$tmp\dist\InventaireWarframe.exe"
+    # LotusDesk.exe pour les nouveaux telechargements ; la meme sous l'ancien nom, que les
+    # versions installees cherchent pour se mettre a jour (ne pas le supprimer)
+    Copy-Item "$tmp\dist\LotusDesk.exe" "$tmp\dist\InventaireWarframe.exe"
+    $assets += "$tmp\dist\LotusDesk.exe", "$tmp\dist\InventaireWarframe.exe"
 }
 
 # 4) depot GitHub (cree au premier lancement, public pour que les mises a jour soient visibles)
 gh repo view $Repo *> $null
 if ($LASTEXITCODE -ne 0) {
-    gh repo create $Repo --public --description "Inventaire Warframe + prix Warframe Market" --source . --remote origin
+    gh repo create $Repo --public --description "Lotus Desk : inventaire Warframe + prix Warframe Market" --source . --remote origin
 }
 
 # 5) commit, tag, push, release
