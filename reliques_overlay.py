@@ -290,7 +290,29 @@ class RewardOverlay:
             except Exception:
                 pass
         ducats = cat.by_slug.get(slug, {}).get("ducats") if slug else None
-        return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats}
+        return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
+                "image": self.image_bytes(slug, path)}
+
+    _images = {}
+
+    def image_bytes(self, slug, path):
+        """Image de l'item (Warframe Market, sinon icone du jeu), gardee en memoire."""
+        key = slug or path
+        if key in self._images:
+            return self._images[key]
+        app = self.app
+        thumb, big = app.catalog().images(slug) if slug else (None, None)
+        url = ("https://warframe.market/static/assets/" + (big or thumb)) if (big or thumb) \
+            else app.game().icon_url(path)
+        data = None
+        if url:
+            try:
+                r = app.requests.get(url, timeout=4)
+                data = r.content if r.ok else None
+            except Exception:
+                pass
+        self._images[key] = data
+        return data
 
     def start(self, assets=None):
         set_dpi_aware()
@@ -325,14 +347,6 @@ class OverlayWindow:
         canvas = tk.Canvas(root, width=W, height=H, bg=self.KEY, highlightthickness=0)
         canvas.pack()
         state = {"hide_at": 0}
-        icons = {}
-        try:
-            from PIL import Image, ImageTk
-            for k in ("platine", "ducat"):
-                im = Image.open(self.assets / f"{k}.png").convert("RGBA").resize((22, 22), Image.LANCZOS)
-                icons[k] = ImageTk.PhotoImage(im, master=root)
-        except Exception:
-            pass  # sans icones : texte "pl" / "ducats"
 
         def click_through():
             hwnd = ctypes.windll.user32.GetParent(root.winfo_id()) or root.winfo_id()
@@ -342,38 +356,86 @@ class OverlayWindow:
             ctypes.windll.user32.SetWindowLongW(hwnd, GWL_EXSTYLE,
                                                 style | 0x80000 | 0x20 | 0x80 | 0x8000000)
 
-        def draw(rewards):
+        GOLD, PLAT, TEXT, MUTED, PANEL, BORDER = "#c9a96e", "#7fd4e6", "#ece6d6", "#8d8878", "#0e131e", "#3a3a40"
+        keep = []  # references des images (sinon tkinter les efface)
+
+        def icon(name, size):
+            from PIL import Image, ImageTk
+            im = Image.open(self.assets / f"{name}.png").convert("RGBA").resize((size, size), Image.LANCZOS)
+            ph = ImageTk.PhotoImage(im, master=root)
+            keep.append(ph)
+            return ph
+
+        def item_image(data, size):
+            import io
+            from PIL import Image, ImageTk
+            im = Image.open(io.BytesIO(data)).convert("RGBA")
+            im.thumbnail((size, size), Image.LANCZOS)
+            ph = ImageTk.PhotoImage(im, master=root)
+            keep.append(ph)
+            return ph
+
+        def card_shape(x1, y1, x2, y2, cut=14):
+            """Rectangle aux angles biseautes (comme les menus du jeu)."""
+            return [x1 + cut, y1, x2, y1, x2, y2 - cut, x2 - cut, y2, x1, y2, x1, y1 + cut]
+
+        def draw(rewards, GW, GH):
+            """Grandes cases centrees en bas de la fenetre du jeu, taille adaptee au nombre (1 a 4)."""
             canvas.delete("all")
-            font = ("Segoe UI Semibold", 15)
-            for r in rewards:
+            keep.clear()
+            n = max(1, len(rewards))
+            gap = int(GW * 0.012)
+            cw = int(min(GW * 0.19, (GW * 0.82 - gap * (n - 1)) / n))   # largeur d'une case
+            ch = int(GH * 0.30)                                           # hauteur d'une case
+            total = n * cw + (n - 1) * gap
+            x0, y0 = (GW - total) / 2, GH - ch - GH * 0.05
+            s = ch / 320  # echelle des textes (320 px de haut = taille de reference)
+            for i, r in enumerate(sorted(rewards, key=lambda r: r["x"])):  # meme ordre qu'a l'ecran
+                x1, y1 = x0 + i * (cw + gap), y0
+                x2, y2 = x1 + cw, y1 + ch
+                cx = (x1 + x2) / 2
                 gold = r.get("meilleur")
-                # morceaux : [icone platine] 34   [icone ducats] 100
+                canvas.create_polygon(card_shape(x1, y1, x2, y2), fill=PANEL,
+                                      outline=GOLD if gold else BORDER, width=3 if gold else 2)
+                top = y1 + 10 * s
+                if gold:  # bandeau du meilleur choix
+                    canvas.create_polygon(card_shape(x1 + 3, y1 + 3, x2 - 3, y1 + 30 * s, 11), fill=GOLD, outline="")
+                    canvas.create_text(cx, y1 + 17 * s, text="MEILLEUR CHOIX", fill=PANEL,
+                                       font=("Segoe UI Semibold", int(12 * s)))
+                    top = y1 + 38 * s
+                img_size = int(ch * 0.42)
+                if r.get("image"):
+                    try:
+                        canvas.create_image(cx, top + img_size / 2, image=item_image(r["image"], img_size))
+                    except Exception:
+                        pass
+                name_y = top + img_size + 8 * s
+                canvas.create_text(cx, name_y, text=r["nom"], fill=TEXT, anchor="n", justify="center",
+                                   width=cw - 24, font=("Segoe UI Semibold", int(22 * s)))
+                # ligne du bas : platine en grand, ducats a droite
+                by = y2 - 30 * s
                 parts = []
                 if r["prix"] is not None:
-                    parts.append(("platine", str(r["prix"]), "#0a0d14" if gold else "#7fd4e6"))
+                    parts.append(("platine", str(r["prix"]), PLAT, int(30 * s)))
                 if r["ducats"]:
-                    parts.append(("ducat", str(r["ducats"]), "#0a0d14" if gold else "#c9a96e"))
+                    parts.append(("ducat", str(r["ducats"]), GOLD, int(21 * s)))
                 if not parts:
-                    parts.append((None, "non vendable", "#8d8878"))
-                y = r["y"] - 34
+                    parts.append((None, "non vendable", MUTED, int(15 * s)))
                 ids, x = [], 0
-                for icon, txt, color in parts:  # pose de gauche a droite, centre ensuite
-                    if icon in icons:
-                        ids.append(canvas.create_image(x, y, image=icons[icon], anchor="w"))
-                        x += 26
-                    elif icon:
-                        txt += " pl" if icon == "platine" else " ducats"
-                    t = canvas.create_text(x, y, text=txt, font=font, fill=color, anchor="w")
+                for ic, txt, color, size in parts:
+                    if ic and self.assets:
+                        try:
+                            ids.append(canvas.create_image(x, by, image=icon(ic, int(size * 1.15)), anchor="w"))
+                            x += size * 1.15 + 6
+                        except Exception:
+                            pass
+                    t = canvas.create_text(x, by, text=txt, fill=color, anchor="w",
+                                           font=("Segoe UI Semibold", size))
                     ids.append(t)
-                    x = canvas.bbox(t)[2] + 16
-                x1, y1, x2, y2 = canvas.bbox(*ids)
-                dx = r["x"] - (x1 + x2) / 2
-                for i in ids:
-                    canvas.move(i, dx, 0)
-                rect = canvas.create_rectangle(x1 + dx - 12, y1 - 6, x2 + dx + 12, y2 + 6,
-                                               fill="#c9a96e" if gold else "#0b0f18",
-                                               outline="#c9a96e", width=2)
-                canvas.tag_lower(rect)
+                    x = canvas.bbox(t)[2] + 20 * s
+                bx1, _, bx2, _ = canvas.bbox(*ids)
+                for it in ids:
+                    canvas.move(it, cx - (bx1 + bx2) / 2, 0)
 
         def tick():
             try:
@@ -384,7 +446,7 @@ class OverlayWindow:
                         # se place sur l'ecran du jeu (ecran de gauche = coordonnees negatives)
                         root.geometry(f"{R - L}x{B - T}{L:+d}{T:+d}")
                         canvas.config(width=R - L, height=B - T)
-                        draw(cmd[1])
+                        draw(cmd[1], R - L, B - T)
                         root.deiconify()
                         root.attributes("-topmost", True)
                         click_through()
