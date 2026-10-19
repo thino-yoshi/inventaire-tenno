@@ -1,0 +1,1684 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Inventaire Warframe</title>
+<link rel="icon" href="/assets/lotus_app.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f1115; --panel: #171a21; --line: #262b36; --text: #e6e8ee; --muted: #8b93a7;
+    --gold: #d9b45a; --gold-soft: #d9b45a22; --green: #5cc98a; --red: #e06c6c; --blue: #6ab0e0;
+    --hover: #1e222b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text);
+         font: 14px/1.45 system-ui, "Segoe UI", sans-serif; }
+  header { display: flex; flex-wrap: wrap; gap: 12px 24px; align-items: center;
+           padding: 14px 20px; border-bottom: 1px solid var(--line); background: var(--panel); }
+  h1 { font-size: 17px; margin: 0; font-weight: 600; letter-spacing: .3px; white-space: nowrap; }
+  h1 span { color: var(--gold); }
+  .stats { display: flex; gap: 22px; flex-wrap: wrap; }
+  .stat b { display: block; font-size: 19px; color: var(--gold); font-variant-numeric: tabular-nums; }
+  .stat small { color: var(--muted); font-size: 12px; }
+  .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  button, select { background: var(--gold-soft); color: var(--gold); border: 1px solid #d9b45a55;
+           padding: 7px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
+  select { background: var(--bg); }
+  button:hover { background: #d9b45a33; }
+  button:disabled { opacity: .5; cursor: wait; }
+  input[type=search] { background: var(--bg); color: var(--text); border: 1px solid var(--line);
+           border-radius: 6px; padding: 7px 10px; font: inherit; width: 180px; }
+  label.auto { color: var(--muted); font-size: 12px; display: flex; gap: 5px; align-items: center;
+               cursor: pointer; white-space: nowrap; }
+  .barre { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 10px 20px; }
+  .onglets { display: flex; gap: 4px; flex-wrap: wrap; }
+  .onglets button { background: transparent; border-color: var(--line); color: var(--muted); padding: 5px 11px; }
+  .onglets button.on { color: var(--gold); border-color: #d9b45a88; background: var(--gold-soft); }
+  .onglets button small { opacity: .7; margin-left: 3px; }
+  #etat { color: var(--muted); font-size: 12px; margin-left: auto; }
+  #etat.err { color: var(--red); }
+  .jeu { display: inline-flex; align-items: center; gap: 5px; }
+  main { display: grid; grid-template-columns: 1fr 350px; gap: 16px; padding: 0 20px 20px;
+         align-items: start; }
+  .table { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; }
+  th, td { padding: 7px 10px; text-align: left; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; font-size: 12px; cursor: pointer; user-select: none;
+       white-space: nowrap; position: sticky; top: 0; background: var(--panel); }
+  th.num, td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  th.tri::after { content: " ▾"; } th.tri.asc::after { content: " ▴"; }
+  tbody tr { cursor: pointer; }
+  tbody tr:hover { background: var(--hover); }
+  tbody tr.sel { background: var(--gold-soft); }
+  td.muted, .muted { color: var(--muted); }
+  td small { display: block; color: var(--muted); font-size: 11px; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 5px; border-radius: 4px; margin-left: 6px;
+         vertical-align: 1px; border: 1px solid var(--line); color: var(--muted); }
+  .tag.baro { color: var(--blue); border-color: #6ab0e055; }
+  .tag.ok { color: var(--green); border-color: #5cc98a55; }
+  #plus { display: block; margin: 10px auto; }
+  .side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; }
+  .carte { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
+  .carte h2 { font-size: 14px; margin: 0 0 2px; }
+  .sub { color: var(--muted); font-size: 12px; margin-bottom: 10px; }
+  .carte ol { list-style: none; margin: 0; padding: 0; counter-reset: n; }
+  .carte ol li { display: grid; grid-template-columns: 20px 1fr auto auto; gap: 8px; align-items: center;
+             padding: 6px 0; border-bottom: 1px solid var(--line); counter-increment: n; }
+  .carte ol li::before { content: counter(n); color: var(--muted); font-size: 12px; }
+  .v { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .v small { color: var(--muted); display: block; font-size: 11px; }
+  .p { color: var(--gold); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .copie { padding: 3px 7px; font-size: 12px; }
+  .pieces { list-style: none; padding: 0; margin: 0 0 12px; }
+  .pieces li { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
+  .pieces .ok { color: var(--green); } .pieces .ko { color: var(--red); }
+  .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px;
+         background: var(--muted); }
+  .dot.ingame { background: var(--green); } .dot.online { background: var(--blue); }
+  .annonce { margin-top: 10px; width: 100%; }
+  svg.graph { width: 100%; height: 90px; display: block; }
+  .tag.vente { color: var(--gold); border-color: #d9b45a66; }
+  dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
+           padding: 20px; width: min(380px, calc(100vw - 32px)); }
+  dialog::backdrop { background: #000a; }
+  dialog h2 { margin: 0 0 12px; font-size: 16px; }
+  .champ { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
+  .champ input, .vente input[type=number] { background: var(--bg); color: var(--text); border: 1px solid var(--line);
+           border-radius: 6px; padding: 7px 9px; font: inherit; font-size: 14px; }
+  .note { font-size: 12px; color: var(--muted); margin: 0 0 12px; }
+  .note.alerte { color: #e0a86c; }
+  .boutons { display: flex; gap: 8px; justify-content: flex-end; }
+  .vente { border-top: 1px solid var(--line); margin-top: 12px; padding-top: 12px; }
+  .vente .ligne { display: flex; gap: 8px; align-items: end; flex-wrap: wrap; margin-bottom: 8px; }
+  .vente .ligne label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
+  .vente input[type=number] { width: 90px; }
+  .vente .petit { padding: 4px 8px; font-size: 12px; }
+  .vente .principal { width: 100%; background: #d9b45a; color: #17130a; font-weight: 600; }
+  .vente .principal:hover { background: #e5c470; }
+  .offre { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line); }
+  .offre input { width: 70px !important; }
+  .msg { font-size: 12px; margin-top: 6px; min-height: 16px; }
+  .msg.ok { color: var(--green); } .msg.err { color: var(--red); }
+  .tag.alerte { color: var(--red); border-color: #e06c6c66; }
+  .tag.trop { color: var(--green); border-color: #5cc98a55; }
+  #alertes:empty { display: none; }
+  .alerte { padding: 7px 0; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .alerte:last-child { border-bottom: none; }
+  .alerte button { margin-top: 5px; }
+  .outils { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; padding: 10px 12px;
+            border-bottom: 1px solid var(--line); font-size: 13px; }
+  .outils[hidden] { display: none; }
+  .outils input[type=text], .outils input[type=number] { background: var(--bg); color: var(--text);
+            border: 1px solid var(--line); border-radius: 6px; padding: 6px 9px; font: inherit; }
+  .outils input[type=text] { flex: 1; min-width: 180px; }
+  .outils input[type=number] { width: 80px; }
+  td.coche, th.coche { width: 28px; padding-right: 0; }
+  #lignesVentes td { vertical-align: middle; }
+  #lignesVentes input[type=number] { width: 64px; background: var(--bg); color: var(--text);
+            border: 1px solid var(--line); border-radius: 6px; padding: 4px 6px; font: inherit; }
+  .acts { display: flex; gap: 5px; flex-wrap: wrap; }
+  .acts button { padding: 4px 8px; font-size: 12px; }
+  .acts .ok { color: var(--green); border-color: #5cc98a66; background: #5cc98a18; }
+  .acts .ko { color: var(--red); border-color: #e06c6c66; background: #e06c6c14; }
+  .acts .off { color: var(--muted); border-color: var(--line); background: transparent; }
+  tr.masquee td:first-child { opacity: .6; }
+  .nomcell { display: flex; gap: 10px; align-items: center; }
+  .vign { width: 30px; height: 30px; object-fit: contain; flex: none; border-radius: 5px; background: #ffffff08; }
+  .entete { display: flex; gap: 12px; align-items: center; margin-bottom: 8px; }
+  .grande { width: 76px; height: 76px; object-fit: contain; flex: none; border-radius: 8px; background: #ffffff08; }
+  .mode { display: inline-flex; border: 1px solid var(--line); border-radius: 6px; overflow: hidden; }
+  .mode button { border: none; border-radius: 0; background: transparent; color: var(--muted); padding: 5px 11px; }
+  .mode button.on { background: var(--gold-soft); color: var(--gold); }
+  .grille { display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 10px; padding: 12px; }
+  #colsBox { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
+  #colsBox[hidden] { display: none; }
+  #colsBox input { width: 110px; accent-color: #d9b45a; }
+  .grille[hidden] { display: none; }
+  .gcase { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 10px; cursor: pointer;
+           display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; background: var(--bg); }
+  .gcase:hover { border-color: #d9b45a55; }
+  .gcase.sel { border-color: var(--gold); background: var(--gold-soft); }
+  .gcase img, .gcase .gvide { width: 75%; max-width: 260px; aspect-ratio: 1; height: auto; object-fit: contain; }
+  .gcase .gnom { font-size: 13px; line-height: 1.3; min-height: 34px; }
+  .gcase .gprix { font-size: 18px; color: var(--gold); font-weight: 600; font-variant-numeric: tabular-nums; }
+  .gcase .gsub { font-size: 11px; color: var(--muted); }
+  .gcase .tag { margin: 0; }
+  .gcase input[type=checkbox] { position: absolute; top: 8px; left: 8px; }
+  .gcase .gqte { position: absolute; top: 6px; right: 8px; font-size: 12px; color: var(--muted); }
+  main.ventes { grid-template-columns: minmax(0, 1fr); }
+  main.ventes .side { display: none; }
+  #lignesVentes td:nth-child(3) { white-space: nowrap; }
+  .relique { width: 100%; border-collapse: collapse; font-size: 12px; margin-bottom: 8px; }
+  .relique td { padding: 4px 2px; border-bottom: 1px solid var(--line); }
+  .r-RARE { color: var(--gold); } .r-UNCOMMON { color: #c0c6d4; } .r-COMMON { color: #b08560; }
+  .valeurs { display: grid; grid-template-columns: 1fr 1fr; gap: 4px 12px; font-size: 12px; margin-bottom: 4px; }
+  .valeurs b { color: var(--gold); }
+  button.lien { background: none; border: none; padding: 0; color: var(--gold); text-decoration: underline; font-size: 12px; }
+  a { color: var(--gold); }
+
+  /* ================= thème Orokin (menus de Warframe) ================= */
+  :root {
+    --bg: #0a0d14; --panel: #111724; --line: #c9a96e24; --text: #ece6d6; --muted: #8d8878;
+    --gold: #c9a96e; --gold-soft: #c9a96e1c; --plat: #7fd4e6; --hover: #161e2e;
+    --cut: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
+  }
+  body { font-family: "Rajdhani", "Segoe UI", system-ui, sans-serif; font-size: 15px; font-weight: 500;
+         background: radial-gradient(1200px 500px at 20% -10%, #1a2336 0%, var(--bg) 60%) fixed var(--bg); }
+  header { background: #0e1420cc; border-bottom: 1px solid #c9a96e40; backdrop-filter: blur(4px); }
+  h1 { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; font-size: 18px; }
+  h1 img { width: 40px; height: 40px; object-fit: contain; flex: none; filter: drop-shadow(0 0 6px #c9a96e55); }
+  .ico { width: 1.15em; height: 1.15em; object-fit: contain; vertical-align: -0.2em; margin-right: 3px; }
+  .stat b { font-size: 22px; font-weight: 600; color: var(--text); }
+  .stat small, th, .carte h2, .sub b, dialog h2 { text-transform: uppercase; letter-spacing: 1.5px; }
+  .stat small { font-size: 11px; }
+  #tMed, #tMin { color: var(--plat); } #tDuc { color: var(--gold); }
+  .plat { color: var(--plat); font-variant-numeric: tabular-nums; }
+  .duc { color: var(--gold); }
+  button, select { border-radius: 0; clip-path: var(--cut); letter-spacing: 1px; font-weight: 600;
+                   background: #c9a96e14; border-color: #c9a96e66; transition: background .15s, color .15s; }
+  button:hover { background: #c9a96e30; color: #f3e7c6; }
+  input[type=search], .outils input, .champ input, .vente input[type=number], #lignesVentes input[type=number] {
+    border-radius: 0; border-color: #c9a96e33; background: #070a10; }
+  .carte, .table, dialog { border-radius: 0; clip-path: var(--cut); border-color: #c9a96e30;
+                           background: linear-gradient(180deg, #131a28, #0f1520); }
+  .carte { border-top: 1px solid #c9a96e80; }
+  .carte h2 { font-size: 13px; color: var(--gold); font-weight: 600; }
+  .vente .principal { clip-path: var(--cut); background: var(--gold); color: #0a0d14; letter-spacing: 2px; text-transform: uppercase; }
+  .vente .principal:hover { background: #dcc08a; }
+  .p { color: var(--plat); }
+  th { color: var(--gold); font-size: 11px; background: #111724; }
+  tbody tr { transition: background .12s; }
+  tbody tr:hover { background: linear-gradient(90deg, #c9a96e1a, transparent 60%); box-shadow: inset 2px 0 0 var(--gold); }
+  tbody tr.sel { background: linear-gradient(90deg, #c9a96e2e, transparent 70%); box-shadow: inset 3px 0 0 var(--gold); }
+  .tag { border-radius: 0; letter-spacing: .5px; text-transform: uppercase; font-size: 9.5px; font-weight: 700; }
+  .tag.vente { background: var(--gold); color: #0a0d14; border-color: var(--gold); }
+  .tag.alerte { background: #e06c6c; color: #0a0d14; border-color: #e06c6c; }
+  .tag.baro { color: var(--plat); border-color: #7fd4e666; }
+
+  /* menu latéral façon navigation du vaisseau */
+  main { grid-template-columns: 190px minmax(0, 1fr) 350px; }
+  main.ventes { grid-template-columns: 190px minmax(0, 1fr); }
+  .onglets { flex-direction: column; flex-wrap: nowrap; gap: 2px; position: sticky; top: 16px; }
+  .onglets button { clip-path: none; text-align: left; border: none; border-left: 2px solid transparent; background: transparent;
+                    color: var(--muted); padding: 9px 12px; text-transform: uppercase; letter-spacing: 2px; font-size: 13px;
+                    display: flex; justify-content: space-between; }
+  .onglets button:hover { color: var(--text); background: linear-gradient(90deg, #c9a96e14, transparent); }
+  .onglets button.on { color: var(--text); border-left-color: var(--gold); background: linear-gradient(90deg, #c9a96e2e, transparent); }
+  .mode { border-color: #c9a96e40; border-radius: 0; }
+  .mode button { clip-path: none; }
+
+  /* cartes : cadre selon la rareté, comme les mods du jeu */
+  .gcase { border-radius: 0; clip-path: var(--cut); border: none; --r: #a8714a;
+           box-shadow: inset 0 0 0 1.5px var(--r); background: linear-gradient(180deg, color-mix(in srgb, var(--r) 22%, #121826), #0f1520 55%);
+           transition: transform .12s, box-shadow .15s; }
+  .gcase:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1.5px var(--r), inset 0 0 22px color-mix(in srgb, var(--r) 35%, transparent); }
+  .gcase.sel { box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 26px #c9a96e40; background: linear-gradient(180deg, #2a2416, #0f1520 60%); }
+  .gcase .gprix { color: var(--plat); font-size: 20px; }
+  .gcase .gnom { font-weight: 600; letter-spacing: .3px; }
+  .vign, .grande { border-radius: 0; box-shadow: inset 0 0 0 1px var(--r, #c9a96e40); background: color-mix(in srgb, var(--r, #888) 12%, transparent); }
+  .r-common { --r: #a8714a; } .r-uncommon { --r: #b9c1cf; } .r-rare { --r: #d8b76a; }
+  .r-legendary { --r: #f0f0f0; } .r-prime { --r: #e6d6a8; }
+  .r-ere-lith { --r: #a07a58; } .r-ere-meso { --r: #8fa8c0; } .r-ere-neo { --r: #c9a96e; }
+  .r-ere-axi { --r: #e8dfc8; } .r-ere-requiem { --r: #c0504a; } .r-ere-vanguard { --r: #7fd4e6; }
+
+  /* bandeau Baro Ki'Teer */
+  .baro { margin: 0 20px 14px; padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
+          clip-path: var(--cut); background: linear-gradient(90deg, #2a2416, #111724 70%); border-left: 3px solid var(--gold); }
+  .baro[hidden] { display: none; }
+  .baro b { color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
+  .baro button { margin-left: auto; }
+
+  /* écran de démarrage */
+  #splash { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
+            gap: 18px; background: radial-gradient(circle at 50% 45%, #1a2336, #07090e 70%); transition: opacity .5s; }
+  #splash.fin { opacity: 0; pointer-events: none; }
+  #splash small { color: var(--muted); letter-spacing: 2px; font-size: 12px; min-height: 16px; }
+  #splash #splashVersion { position: absolute; bottom: 18px; opacity: .6; }
+  #splash img { width: 150px; height: 150px; object-fit: contain; animation: lotus 2.4s ease-in-out infinite; }
+  #splash div { letter-spacing: 6px; color: var(--gold); text-transform: uppercase; font-size: 14px; }
+  @keyframes lotus { 0%, 100% { opacity: .55; filter: drop-shadow(0 0 4px #c9a96e55); transform: scale(.96); }
+                     50% { opacity: 1; filter: drop-shadow(0 0 18px #c9a96eaa); transform: scale(1.03); } }
+  @media (prefers-reduced-motion: reduce) { #splash img, .gcase { animation: none; transition: none; } }
+
+  @media (max-width: 860px) {
+    main, main.ventes { grid-template-columns: minmax(0, 1fr); padding: 0 16px 16px; }
+    .onglets { flex-direction: row; overflow-x: auto; position: static; }
+    .onglets button { border-left: none; border-bottom: 2px solid transparent; white-space: nowrap; }
+    .onglets button.on { border-bottom-color: var(--gold); }
+    .baro { margin: 0 16px 12px; }
+    .side { position: static; }
+    header, .barre { padding-left: 16px; padding-right: 16px; }
+    .actions { margin-left: 0; }
+    input[type=search] { width: 140px; }
+    .hide-sm { display: none; }
+    #etat { margin-left: 0; }
+  }
+</style>
+</head>
+<body>
+<div id="splash"><img src="/assets/lotus.png" alt=""><div data-t="chargementArsenal"></div>
+  <small id="splashMsg"></small><small id="splashVersion"></small></div>
+<header>
+  <h1><img src="/assets/lotus.png" alt="">Inventaire <span>Tenno</span></h1>
+  <div class="stats">
+    <div class="stat"><b id="tMin">–</b><small data-t="totMin"></small></div>
+    <div class="stat"><b id="tDuc">–</b><small data-t="totDuc"></small></div>
+    <div class="stat"><b id="tNb">–</b><small data-t="nbItems"></small></div>
+  </div>
+  <div class="actions">
+    <input type="search" id="filtre">
+    <select id="seuil"></select>
+    <select id="langue"></select>
+    <label class="auto"><input type="checkbox" id="auto"> <span data-t="auto"></span></label>
+    <button id="btnJeu" data-t="lire"></button>
+    <button id="btnPrix" data-t="rafraichir"></button>
+    <button id="btnCompte"></button>
+  </div>
+</header>
+<dialog id="dlgCo">
+  <form id="formCo" method="dialog">
+    <h2 data-t="coTitre"></h2>
+    <label class="champ"><span data-t="coEmail"></span><input type="email" id="coEmail" autocomplete="username" required></label>
+    <label class="champ"><span data-t="coMdp"></span><input type="password" id="coMdp" autocomplete="current-password" required></label>
+    <p class="note" data-t="coNote"></p>
+    <p class="note alerte" data-t="coRisque"></p>
+    <div class="msg err" id="coMsg"></div>
+    <div class="boutons">
+      <button type="button" id="coAnnuler" data-t="annuler"></button>
+      <button type="submit" id="coBtn" data-t="coBtn"></button>
+    </div>
+  </form>
+</dialog>
+<div class="barre">
+  <div class="mode" id="modeVue">
+    <button data-mode="liste" data-t="modeListe"></button>
+    <button data-mode="grille" data-t="modeImages"></button>
+  </div>
+  <label id="colsBox" hidden><span data-t="parLigne"></span>
+    <input type="range" id="cols" min="2" max="10" step="1"><b id="colsN"></b></label>
+  <span class="jeu muted" id="jeu"></span>
+  <span class="jeu muted" id="presence" hidden></span>
+  <label class="auto" id="presenceAuto" hidden><input type="checkbox" id="presAuto"> <span data-t="presAuto"></span></label>
+  <span id="etat"></span>
+</div>
+<div class="baro" id="baro" hidden></div>
+<main>
+  <nav class="onglets" id="onglets"></nav>
+  <div class="table" id="vueVentes" hidden>
+    <div class="outils">
+      <input type="text" id="pseudoAcheteur" autocomplete="off">
+      <span class="muted" id="ventesMsg"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th data-t="colItem"></th><th class="num" data-t="colQte"></th><th class="num" data-t="monPrix"></th>
+        <th class="num" data-t="marche"></th><th data-t="actions"></th>
+      </tr></thead>
+      <tbody id="lignesVentes"></tbody>
+    </table>
+  </div>
+  <div class="table" id="vueInventaire">
+    <form class="outils" id="ajoutSouhait" hidden>
+      <input type="text" id="sItem" list="catalogue" autocomplete="off">
+      <datalist id="catalogue"></datalist>
+      <input type="number" id="sRang" min="0" hidden>
+      <input type="number" id="sPrix" min="1">
+      <button type="submit" data-t="ajouter"></button>
+      <span class="muted" id="sMsg" style="width:100%"></span>
+    </form>
+    <div class="outils" id="lot" hidden>
+      <b id="lotN"></b>
+      <button type="button" id="lotMin" data-t="lotMin"></button>
+      <button type="button" id="lotVider" data-t="lotVider"></button>
+      <span class="muted" id="lotMsg"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th class="coche" id="thCoche" hidden><input type="checkbox" id="toutCocher"></th>
+        <th data-k="nom" data-t="colItem"></th>
+        <th data-k="rang" class="num" data-t="colRang"></th>
+        <th data-k="qte" class="num" data-t="colQte"></th>
+        <th data-k="min" class="num" data-t="colMin"></th>
+        <th data-k="total" class="num" data-t="colTotal"></th>
+        <th data-k="ducats" class="num hide-sm" data-t="colDuc"></th>
+        <th data-k="nb_en_ligne" class="num hide-sm" data-t="colVend"></th>
+      </tr></thead>
+      <tbody id="lignes"></tbody>
+    </table>
+    <div class="grille" id="grille" hidden></div>
+    <button id="plus" hidden></button>
+  </div>
+  <div class="side">
+    <section class="carte" id="alertes"></section>
+    <section class="carte" id="panneau"></section>
+    <section class="carte" id="histo"></section>
+  </div>
+</main>
+<script>
+// ---------------------------------------------------------------- textes de l'interface
+const LANG_NAMES = { fr: "Français", en: "English", de: "Deutsch", es: "Español", it: "Italiano",
+  pt: "Português", pl: "Polski", ru: "Русский", uk: "Українська", tr: "Türkçe", ja: "日本語",
+  ko: "한국어", zh: "简体中文", tc: "繁體中文", th: "ไทย" };
+const T = {
+  fr: { seuil0: "Tous les prix", seuilTip: "Ignore les mods, arcanes et reliques moins chers (difficiles à vendre)", totMed: "total (médian)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
+    filtre: "Filtrer…", auto: "Lecture auto", lire: "Lire le jeu", rafraichir: "Rafraîchir les prix",
+    tous: "Tout", prime: "Prime", set: "Sets", arcane: "Arcanes", mod: "Mods", relique: "Reliques",
+    colItem: "Item", colRang: "Rang", colQte: "Qté", colMin: "Min", colMed: "Médian", colTotal: "Total",
+    colDuc: "Ducats", colVend: "Vendeurs", top: "10 meilleurs prix", clic: "Clique sur un item pour voir ses offres.",
+    pasWfm: "pas sur WFM", pasWfmLong: "Cet item n'est pas vendu sur Warframe Market.",
+    chargement: "Chargement des offres…", aucune: "Aucune offre de vente.",
+    connectes: n => `${n} vendeurs connectés`, horsLigne: "Personne de connecté : offres hors ligne",
+    surOffres: n => `sur ${n} offres`, voirWfm: "voir sur WFM", ingame: "en jeu", online: "en ligne",
+    offline: "hors ligne", dispo: n => `${n} dispo`, rep: n => `réputation ${n}`, rang: n => `rang ${n}`,
+    copier: "Copier le message pour acheter", copie: "Copié !", annonce: "Copier mon annonce de vente",
+    baro: "Baro", baroTip: "Mieux vaut le donner à Baro Ki'Teer (10 ducats ou plus par platine)",
+    pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
+    histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
+    lecture: "Lecture de la mémoire du jeu (environ 15 s)…", prixN: (a, b) => `Prix Warframe Market : ${a}/${b}…`,
+    aJour: h => `prix à jour à ${h}`, srcJeu: d => `Lu dans le jeu le ${d}`, srcCopie: d => `Copie du ${d}`,
+    jeuOn: "Jeu détecté", jeuOff: "Jeu fermé", scan: "scan en cours…",
+    jeu_absent: "Warframe n'est pas lancé.",
+    inventaire_absent: "Inventaire pas encore en mémoire : passe par un écran de chargement (relais, mission).",
+    aucune_copie: "Aucune copie enregistrée : lance le jeu puis clique sur « Lire le jeu ».",
+    rang0: "Pas d'offre à ton rang : prix des offres au rang 0.", tous_rangs: "Pas d'offre à ton rang : tous rangs confondus.",
+    plus: n => `Afficher ${n} de plus` },
+  en: { seuil0: "All prices", seuilTip: "Ignore cheaper mods, arcanes and relics (hard to sell)", totMed: "total (median)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
+    filtre: "Filter…", auto: "Auto read", lire: "Read game", rafraichir: "Refresh prices",
+    tous: "All", prime: "Prime", set: "Sets", arcane: "Arcanes", mod: "Mods", relique: "Relics",
+    colItem: "Item", colRang: "Rank", colQte: "Qty", colMin: "Min", colMed: "Median", colTotal: "Total",
+    colDuc: "Ducats", colVend: "Sellers", top: "Top 10 prices", clic: "Click an item to see its offers.",
+    pasWfm: "not on WFM", pasWfmLong: "This item is not sold on Warframe Market.",
+    chargement: "Loading offers…", aucune: "No sell offers.",
+    connectes: n => `${n} sellers online`, horsLigne: "Nobody online: offline offers",
+    surOffres: n => `out of ${n} offers`, voirWfm: "view on WFM", ingame: "in game", online: "online",
+    offline: "offline", dispo: n => `${n} available`, rep: n => `reputation ${n}`, rang: n => `rank ${n}`,
+    copier: "Copy buy message", copie: "Copied!", annonce: "Copy my sell listing",
+    baro: "Baro", baroTip: "Better to give it to Baro Ki'Teer (10+ ducats per platinum)",
+    pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
+    histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
+    lecture: "Reading game memory (about 15 s)…", prixN: (a, b) => `Warframe Market prices: ${a}/${b}…`,
+    aJour: h => `prices updated at ${h}`, srcJeu: d => `Read from game on ${d}`, srcCopie: d => `Copy from ${d}`,
+    jeuOn: "Game detected", jeuOff: "Game closed", scan: "scanning…",
+    jeu_absent: "Warframe is not running.",
+    inventaire_absent: "Inventory not in memory yet: go through a loading screen (relay, mission).",
+    aucune_copie: "No saved copy: start the game then click “Read game”.",
+    rang0: "No offers at your rank: rank 0 prices shown.", tous_rangs: "No offers at your rank: all ranks shown.",
+    plus: n => `Show ${n} more` },
+  de: { seuil0: "Alle Preise", seuilTip: "Billigere Mods, Arkanas und Relikte ignorieren (schwer verkäuflich)", totMed: "Gesamt (Median)", totMin: "Gesamt (Minimum)", totDuc: "Dukaten", nbItems: "Items",
+    filtre: "Filtern…", auto: "Auto-Lesen", lire: "Spiel lesen", rafraichir: "Preise aktualisieren",
+    tous: "Alle", prime: "Prime", set: "Sets", arcane: "Arkanas", mod: "Mods", relique: "Relikte",
+    colItem: "Item", colRang: "Rang", colQte: "Anz.", colMin: "Min", colMed: "Median", colTotal: "Gesamt",
+    colDuc: "Dukaten", colVend: "Verkäufer", top: "Top 10 Preise", clic: "Klicke auf ein Item, um seine Angebote zu sehen.",
+    pasWfm: "nicht auf WFM", pasWfmLong: "Dieses Item wird nicht auf Warframe Market verkauft.",
+    chargement: "Angebote werden geladen…", aucune: "Keine Verkaufsangebote.",
+    connectes: n => `${n} Verkäufer online`, horsLigne: "Niemand online: Offline-Angebote",
+    surOffres: n => `von ${n} Angeboten`, voirWfm: "auf WFM ansehen", ingame: "im Spiel", online: "online",
+    offline: "offline", dispo: n => `${n} verfügbar`, rep: n => `Ruf ${n}`, rang: n => `Rang ${n}`,
+    copier: "Kaufnachricht kopieren", copie: "Kopiert!", annonce: "Meine Verkaufsanzeige kopieren",
+    baro: "Baro", baroTip: "Besser Baro Ki'Teer geben (10+ Dukaten pro Platin)",
+    pieces: "Set-Teile", piecesNb: (a, b) => `${a}/${b} Teile`, complet: "komplett",
+    histo: "Verlauf", histoVide: "Das Diagramm füllt sich mit jedem Lesen (max. ein Punkt pro Stunde).",
+    lecture: "Spielspeicher wird gelesen (ca. 15 s)…", prixN: (a, b) => `Warframe-Market-Preise: ${a}/${b}…`,
+    aJour: h => `Preise aktualisiert um ${h}`, srcJeu: d => `Aus dem Spiel gelesen am ${d}`, srcCopie: d => `Kopie vom ${d}`,
+    jeuOn: "Spiel erkannt", jeuOff: "Spiel geschlossen", scan: "Scan läuft…",
+    jeu_absent: "Warframe läuft nicht.",
+    inventaire_absent: "Inventar noch nicht im Speicher: durchlaufe einen Ladebildschirm (Relais, Mission).",
+    aucune_copie: "Keine Kopie gespeichert: starte das Spiel und klicke auf „Spiel lesen“.",
+    rang0: "Keine Angebote auf deinem Rang: Preise für Rang 0.", tous_rangs: "Keine Angebote auf deinem Rang: alle Ränge.",
+    plus: n => `${n} weitere anzeigen` },
+  es: { seuil0: "Todos los precios", seuilTip: "Ignora mods, arcanos y reliquias más baratos (difíciles de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "objetos",
+    filtre: "Filtrar…", auto: "Lectura auto", lire: "Leer el juego", rafraichir: "Actualizar precios",
+    tous: "Todo", prime: "Prime", set: "Sets", arcane: "Arcanos", mod: "Mods", relique: "Reliquias",
+    colItem: "Objeto", colRang: "Rango", colQte: "Cant.", colMin: "Mín", colMed: "Mediana", colTotal: "Total",
+    colDuc: "Ducados", colVend: "Vendedores", top: "10 mejores precios", clic: "Haz clic en un objeto para ver sus ofertas.",
+    pasWfm: "no está en WFM", pasWfmLong: "Este objeto no se vende en Warframe Market.",
+    chargement: "Cargando ofertas…", aucune: "Ninguna oferta de venta.",
+    connectes: n => `${n} vendedores conectados`, horsLigne: "Nadie conectado: ofertas sin conexión",
+    surOffres: n => `de ${n} ofertas`, voirWfm: "ver en WFM", ingame: "en juego", online: "en línea",
+    offline: "desconectado", dispo: n => `${n} disponibles`, rep: n => `reputación ${n}`, rang: n => `rango ${n}`,
+    copier: "Copiar mensaje de compra", copie: "¡Copiado!", annonce: "Copiar mi anuncio de venta",
+    baro: "Baro", baroTip: "Mejor dárselo a Baro Ki'Teer (10+ ducados por platino)",
+    pieces: "Piezas del set", piecesNb: (a, b) => `${a}/${b} piezas`, complet: "completo",
+    histo: "Historial", histoVide: "El gráfico se llena con cada lectura (máx. un punto por hora).",
+    lecture: "Leyendo la memoria del juego (unos 15 s)…", prixN: (a, b) => `Precios de Warframe Market: ${a}/${b}…`,
+    aJour: h => `precios actualizados a las ${h}`, srcJeu: d => `Leído del juego el ${d}`, srcCopie: d => `Copia del ${d}`,
+    jeuOn: "Juego detectado", jeuOff: "Juego cerrado", scan: "escaneando…",
+    jeu_absent: "Warframe no está abierto.",
+    inventaire_absent: "Inventario aún no en memoria: pasa por una pantalla de carga (relé, misión).",
+    aucune_copie: "No hay copia guardada: abre el juego y pulsa «Leer el juego».",
+    rang0: "Sin ofertas en tu rango: precios de rango 0.", tous_rangs: "Sin ofertas en tu rango: todos los rangos.",
+    plus: n => `Mostrar ${n} más` },
+  it: { seuil0: "Tutti i prezzi", seuilTip: "Ignora mod, arcani e reliquie più economici (difficili da vendere)", totMed: "totale (mediana)", totMin: "totale (minimo)", totDuc: "ducati", nbItems: "oggetti",
+    filtre: "Filtra…", auto: "Lettura auto", lire: "Leggi il gioco", rafraichir: "Aggiorna prezzi",
+    tous: "Tutto", prime: "Prime", set: "Set", arcane: "Arcani", mod: "Mod", relique: "Reliquie",
+    colItem: "Oggetto", colRang: "Grado", colQte: "Qtà", colMin: "Min", colMed: "Mediana", colTotal: "Totale",
+    colDuc: "Ducati", colVend: "Venditori", top: "10 prezzi migliori", clic: "Clicca su un oggetto per vedere le offerte.",
+    pasWfm: "non su WFM", pasWfmLong: "Questo oggetto non è venduto su Warframe Market.",
+    chargement: "Caricamento offerte…", aucune: "Nessuna offerta di vendita.",
+    connectes: n => `${n} venditori connessi`, horsLigne: "Nessuno connesso: offerte offline",
+    surOffres: n => `su ${n} offerte`, voirWfm: "vedi su WFM", ingame: "in gioco", online: "online",
+    offline: "offline", dispo: n => `${n} disponibili`, rep: n => `reputazione ${n}`, rang: n => `grado ${n}`,
+    copier: "Copia messaggio d'acquisto", copie: "Copiato!", annonce: "Copia il mio annuncio di vendita",
+    baro: "Baro", baroTip: "Meglio darlo a Baro Ki'Teer (10+ ducati per platino)",
+    pieces: "Parti del set", piecesNb: (a, b) => `${a}/${b} parti`, complet: "completo",
+    histo: "Cronologia", histoVide: "Il grafico si riempie a ogni lettura (max un punto all'ora).",
+    lecture: "Lettura della memoria del gioco (circa 15 s)…", prixN: (a, b) => `Prezzi Warframe Market: ${a}/${b}…`,
+    aJour: h => `prezzi aggiornati alle ${h}`, srcJeu: d => `Letto dal gioco il ${d}`, srcCopie: d => `Copia del ${d}`,
+    jeuOn: "Gioco rilevato", jeuOff: "Gioco chiuso", scan: "scansione…",
+    jeu_absent: "Warframe non è avviato.",
+    inventaire_absent: "Inventario non ancora in memoria: passa da una schermata di caricamento.",
+    aucune_copie: "Nessuna copia salvata: avvia il gioco e clicca «Leggi il gioco».",
+    rang0: "Nessuna offerta al tuo grado: prezzi di grado 0.", tous_rangs: "Nessuna offerta al tuo grado: tutti i gradi.",
+    plus: n => `Mostra altri ${n}` },
+  pt: { seuil0: "Todos os preços", seuilTip: "Ignora mods, arcanos e relíquias mais baratos (difíceis de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "itens",
+    filtre: "Filtrar…", auto: "Leitura auto", lire: "Ler o jogo", rafraichir: "Atualizar preços",
+    tous: "Tudo", prime: "Prime", set: "Sets", arcane: "Arcanos", mod: "Mods", relique: "Relíquias",
+    colItem: "Item", colRang: "Nível", colQte: "Qtd", colMin: "Mín", colMed: "Mediana", colTotal: "Total",
+    colDuc: "Ducados", colVend: "Vendedores", top: "10 melhores preços", clic: "Clique num item para ver as ofertas.",
+    pasWfm: "fora do WFM", pasWfmLong: "Este item não é vendido no Warframe Market.",
+    chargement: "Carregando ofertas…", aucune: "Nenhuma oferta de venda.",
+    connectes: n => `${n} vendedores online`, horsLigne: "Ninguém online: ofertas offline",
+    surOffres: n => `de ${n} ofertas`, voirWfm: "ver no WFM", ingame: "no jogo", online: "online",
+    offline: "offline", dispo: n => `${n} disponíveis`, rep: n => `reputação ${n}`, rang: n => `nível ${n}`,
+    copier: "Copiar mensagem de compra", copie: "Copiado!", annonce: "Copiar meu anúncio de venda",
+    baro: "Baro", baroTip: "Melhor dar ao Baro Ki'Teer (10+ ducados por platina)",
+    pieces: "Peças do set", piecesNb: (a, b) => `${a}/${b} peças`, complet: "completo",
+    histo: "Histórico", histoVide: "O gráfico se enche a cada leitura (máx. um ponto por hora).",
+    lecture: "Lendo a memória do jogo (cerca de 15 s)…", prixN: (a, b) => `Preços Warframe Market: ${a}/${b}…`,
+    aJour: h => `preços atualizados às ${h}`, srcJeu: d => `Lido do jogo em ${d}`, srcCopie: d => `Cópia de ${d}`,
+    jeuOn: "Jogo detectado", jeuOff: "Jogo fechado", scan: "lendo…",
+    jeu_absent: "O Warframe não está aberto.",
+    inventaire_absent: "Inventário ainda não está na memória: passe por uma tela de carregamento.",
+    aucune_copie: "Nenhuma cópia salva: abra o jogo e clique em “Ler o jogo”.",
+    rang0: "Sem ofertas no seu nível: preços de nível 0.", tous_rangs: "Sem ofertas no seu nível: todos os níveis.",
+    plus: n => `Mostrar mais ${n}` },
+  pl: { seuil0: "Wszystkie ceny", seuilTip: "Pomija tańsze mody, arkana i relikwie (trudne do sprzedania)", totMed: "suma (mediana)", totMin: "suma (minimum)", totDuc: "dukaty", nbItems: "przedmioty",
+    filtre: "Filtruj…", auto: "Auto odczyt", lire: "Odczytaj grę", rafraichir: "Odśwież ceny",
+    tous: "Wszystko", prime: "Prime", set: "Zestawy", arcane: "Arkana", mod: "Mody", relique: "Relikwie",
+    colItem: "Przedmiot", colRang: "Ranga", colQte: "Ilość", colMin: "Min", colMed: "Mediana", colTotal: "Suma",
+    colDuc: "Dukaty", colVend: "Sprzedawcy", top: "10 najlepszych cen", clic: "Kliknij przedmiot, aby zobaczyć oferty.",
+    pasWfm: "brak na WFM", pasWfmLong: "Ten przedmiot nie jest sprzedawany na Warframe Market.",
+    chargement: "Ładowanie ofert…", aucune: "Brak ofert sprzedaży.",
+    connectes: n => `${n} sprzedawców online`, horsLigne: "Nikt online: oferty offline",
+    surOffres: n => `z ${n} ofert`, voirWfm: "zobacz na WFM", ingame: "w grze", online: "online",
+    offline: "offline", dispo: n => `${n} dostępne`, rep: n => `reputacja ${n}`, rang: n => `ranga ${n}`,
+    copier: "Kopiuj wiadomość kupna", copie: "Skopiowano!", annonce: "Kopiuj moje ogłoszenie",
+    baro: "Baro", baroTip: "Lepiej oddać Baro Ki'Teerowi (10+ dukatów za platynę)",
+    pieces: "Części zestawu", piecesNb: (a, b) => `${a}/${b} części`, complet: "kompletny",
+    histo: "Historia", histoVide: "Wykres wypełnia się przy każdym odczycie (maks. punkt na godzinę).",
+    lecture: "Odczyt pamięci gry (ok. 15 s)…", prixN: (a, b) => `Ceny Warframe Market: ${a}/${b}…`,
+    aJour: h => `ceny z ${h}`, srcJeu: d => `Odczytano z gry ${d}`, srcCopie: d => `Kopia z ${d}`,
+    jeuOn: "Gra wykryta", jeuOff: "Gra zamknięta", scan: "skanowanie…",
+    jeu_absent: "Warframe nie jest uruchomiony.",
+    inventaire_absent: "Ekwipunku nie ma jeszcze w pamięci: przejdź przez ekran ładowania.",
+    aucune_copie: "Brak zapisanej kopii: uruchom grę i kliknij „Odczytaj grę”.",
+    rang0: "Brak ofert na twojej randze: ceny rangi 0.", tous_rangs: "Brak ofert na twojej randze: wszystkie rangi.",
+    plus: n => `Pokaż ${n} więcej` },
+  ru: { seuil0: "Все цены", seuilTip: "Скрыть более дешёвые моды, мистификаторы и реликвии (трудно продать)", totMed: "итого (медиана)", totMin: "итого (минимум)", totDuc: "дукаты", nbItems: "предметы",
+    filtre: "Фильтр…", auto: "Авточтение", lire: "Прочитать игру", rafraichir: "Обновить цены",
+    tous: "Все", prime: "Прайм", set: "Наборы", arcane: "Мистификаторы", mod: "Моды", relique: "Реликвии",
+    colItem: "Предмет", colRang: "Ранг", colQte: "Кол.", colMin: "Мин", colMed: "Медиана", colTotal: "Итого",
+    colDuc: "Дукаты", colVend: "Продавцы", top: "10 лучших цен", clic: "Нажми на предмет, чтобы увидеть предложения.",
+    pasWfm: "нет на WFM", pasWfmLong: "Этот предмет не продаётся на Warframe Market.",
+    chargement: "Загрузка предложений…", aucune: "Нет предложений о продаже.",
+    connectes: n => `${n} продавцов онлайн`, horsLigne: "Никого онлайн: офлайн-предложения",
+    surOffres: n => `из ${n} предложений`, voirWfm: "открыть на WFM", ingame: "в игре", online: "онлайн",
+    offline: "офлайн", dispo: n => `${n} в наличии`, rep: n => `репутация ${n}`, rang: n => `ранг ${n}`,
+    copier: "Копировать сообщение о покупке", copie: "Скопировано!", annonce: "Копировать моё объявление",
+    baro: "Баро", baroTip: "Лучше отдать Баро Ки'Тиру (10+ дукатов за платину)",
+    pieces: "Части набора", piecesNb: (a, b) => `${a}/${b} частей`, complet: "полный",
+    histo: "История", histoVide: "График заполняется при каждом чтении (не чаще раза в час).",
+    lecture: "Чтение памяти игры (около 15 с)…", prixN: (a, b) => `Цены Warframe Market: ${a}/${b}…`,
+    aJour: h => `цены обновлены в ${h}`, srcJeu: d => `Прочитано из игры ${d}`, srcCopie: d => `Копия от ${d}`,
+    jeuOn: "Игра найдена", jeuOff: "Игра закрыта", scan: "сканирование…",
+    jeu_absent: "Warframe не запущен.",
+    inventaire_absent: "Инвентаря ещё нет в памяти: пройди экран загрузки (реле, миссия).",
+    aucune_copie: "Нет сохранённой копии: запусти игру и нажми «Прочитать игру».",
+    rang0: "Нет предложений твоего ранга: цены ранга 0.", tous_rangs: "Нет предложений твоего ранга: все ранги.",
+    plus: n => `Показать ещё ${n}` },
+};
+
+// Textes du compte Warframe Market et de la vente
+const T2 = {
+  fr: { connexion: "Connexion WFM", deconnexion: "Déconnexion", coTitre: "Connexion à Warframe Market",
+    coEmail: "E-mail", coMdp: "Mot de passe", coBtn: "Se connecter", annuler: "Annuler",
+    coNote: "Ton mot de passe sert seulement à te connecter : il n'est jamais enregistré. La session est gardée chiffrée sur ce PC (seul ton compte Windows peut la lire).",
+    coRisque: "Connexion non officielle (comme les autres outils de la communauté) : à tes risques.",
+    offre: "En vente", vendreTitre: "Mettre en vente", prixLbl: "Prix", qteLbl: "Quantité", rangLbl: "Rang",
+    visibleLbl: "Visible", vendreBtn: p => `Mettre en vente à ${p}p`, enVente: p => `en vente ${p}p`,
+    mesOffres: "Mes offres sur cet item", modifier: "Modifier", retirer: "Retirer", masquee: "masquée",
+    publiee: "Offre publiée !", modifiee: "Offre modifiée.", retiree: "Offre retirée.",
+    coPour: "Connecte-toi à Warframe Market pour vendre d'ici en un clic.", tonPrix: p => `ton prix : ${p}p`,
+    confirmer: "Retirer cette offre de Warframe Market ?",
+    non_connecte: "Tu n'es pas connecté à Warframe Market.", session_expiree: "Session expirée : reconnecte-toi.",
+    identifiants_refuses: "E-mail ou mot de passe refusé par Warframe Market.",
+    connexion_impossible: "Warframe Market n'a pas renvoyé de session.", item_inconnu: "Item inconnu sur Warframe Market." },
+  en: { connexion: "WFM login", deconnexion: "Log out", coTitre: "Log in to Warframe Market",
+    coEmail: "Email", coMdp: "Password", coBtn: "Log in", annuler: "Cancel",
+    coNote: "Your password is only used to log in and is never saved. The session is kept encrypted on this PC (only your Windows account can read it).",
+    coRisque: "Unofficial login (like other community tools): use at your own risk.",
+    offre: "For sale", vendreTitre: "Sell", prixLbl: "Price", qteLbl: "Quantity", rangLbl: "Rank",
+    visibleLbl: "Visible", vendreBtn: p => `Sell for ${p}p`, enVente: p => `selling ${p}p`,
+    mesOffres: "My orders for this item", modifier: "Update", retirer: "Remove", masquee: "hidden",
+    publiee: "Order posted!", modifiee: "Order updated.", retiree: "Order removed.",
+    coPour: "Log in to Warframe Market to sell from here in one click.", tonPrix: p => `your price: ${p}p`,
+    confirmer: "Remove this order from Warframe Market?",
+    non_connecte: "You are not logged in to Warframe Market.", session_expiree: "Session expired: log in again.",
+    identifiants_refuses: "Email or password rejected by Warframe Market.",
+    connexion_impossible: "Warframe Market did not return a session.", item_inconnu: "Unknown item on Warframe Market." },
+  de: { connexion: "WFM-Login", deconnexion: "Abmelden", coTitre: "Bei Warframe Market anmelden",
+    coEmail: "E-Mail", coMdp: "Passwort", coBtn: "Anmelden", annuler: "Abbrechen",
+    coNote: "Dein Passwort wird nur zum Anmelden benutzt und nie gespeichert. Die Sitzung wird verschlüsselt auf diesem PC gespeichert (nur dein Windows-Konto kann sie lesen).",
+    coRisque: "Inoffizieller Login (wie andere Community-Tools): auf eigenes Risiko.",
+    offre: "Im Verkauf", vendreTitre: "Verkaufen", prixLbl: "Preis", qteLbl: "Menge", rangLbl: "Rang",
+    visibleLbl: "Sichtbar", vendreBtn: p => `Für ${p}p verkaufen`, enVente: p => `im Verkauf ${p}p`,
+    mesOffres: "Meine Angebote für dieses Item", modifier: "Ändern", retirer: "Entfernen", masquee: "versteckt",
+    publiee: "Angebot veröffentlicht!", modifiee: "Angebot geändert.", retiree: "Angebot entfernt.",
+    coPour: "Melde dich bei Warframe Market an, um von hier mit einem Klick zu verkaufen.", tonPrix: p => `dein Preis: ${p}p`,
+    confirmer: "Dieses Angebot von Warframe Market entfernen?",
+    non_connecte: "Du bist nicht bei Warframe Market angemeldet.", session_expiree: "Sitzung abgelaufen: melde dich erneut an.",
+    identifiants_refuses: "E-Mail oder Passwort von Warframe Market abgelehnt.",
+    connexion_impossible: "Warframe Market hat keine Sitzung zurückgegeben.", item_inconnu: "Unbekanntes Item auf Warframe Market." },
+  es: { connexion: "Acceso WFM", deconnexion: "Cerrar sesión", coTitre: "Iniciar sesión en Warframe Market",
+    coEmail: "Correo", coMdp: "Contraseña", coBtn: "Entrar", annuler: "Cancelar",
+    coNote: "Tu contraseña solo sirve para iniciar sesión y nunca se guarda. La sesión se guarda cifrada en este PC (solo tu cuenta de Windows puede leerla).",
+    coRisque: "Inicio de sesión no oficial (como otras herramientas de la comunidad): bajo tu responsabilidad.",
+    offre: "En venta", vendreTitre: "Vender", prixLbl: "Precio", qteLbl: "Cantidad", rangLbl: "Rango",
+    visibleLbl: "Visible", vendreBtn: p => `Vender a ${p}p`, enVente: p => `en venta ${p}p`,
+    mesOffres: "Mis ofertas de este objeto", modifier: "Modificar", retirer: "Retirar", masquee: "oculta",
+    publiee: "¡Oferta publicada!", modifiee: "Oferta modificada.", retiree: "Oferta retirada.",
+    coPour: "Inicia sesión en Warframe Market para vender desde aquí con un clic.", tonPrix: p => `tu precio: ${p}p`,
+    confirmer: "¿Retirar esta oferta de Warframe Market?",
+    non_connecte: "No has iniciado sesión en Warframe Market.", session_expiree: "Sesión caducada: vuelve a iniciar sesión.",
+    identifiants_refuses: "Correo o contraseña rechazados por Warframe Market.",
+    connexion_impossible: "Warframe Market no devolvió ninguna sesión.", item_inconnu: "Objeto desconocido en Warframe Market." },
+  it: { connexion: "Accesso WFM", deconnexion: "Esci", coTitre: "Accedi a Warframe Market",
+    coEmail: "Email", coMdp: "Password", coBtn: "Accedi", annuler: "Annulla",
+    coNote: "La password serve solo per accedere e non viene mai salvata. La sessione è conservata cifrata su questo PC (solo il tuo account Windows può leggerla).",
+    coRisque: "Accesso non ufficiale (come altri strumenti della community): a tuo rischio.",
+    offre: "In vendita", vendreTitre: "Vendi", prixLbl: "Prezzo", qteLbl: "Quantità", rangLbl: "Grado",
+    visibleLbl: "Visibile", vendreBtn: p => `Vendi a ${p}p`, enVente: p => `in vendita ${p}p`,
+    mesOffres: "Le mie offerte per questo oggetto", modifier: "Modifica", retirer: "Ritira", masquee: "nascosta",
+    publiee: "Offerta pubblicata!", modifiee: "Offerta modificata.", retiree: "Offerta ritirata.",
+    coPour: "Accedi a Warframe Market per vendere da qui con un clic.", tonPrix: p => `tuo prezzo: ${p}p`,
+    confirmer: "Ritirare questa offerta da Warframe Market?",
+    non_connecte: "Non sei connesso a Warframe Market.", session_expiree: "Sessione scaduta: accedi di nuovo.",
+    identifiants_refuses: "Email o password rifiutate da Warframe Market.",
+    connexion_impossible: "Warframe Market non ha restituito una sessione.", item_inconnu: "Oggetto sconosciuto su Warframe Market." },
+  pt: { connexion: "Login WFM", deconnexion: "Sair", coTitre: "Entrar no Warframe Market",
+    coEmail: "E-mail", coMdp: "Senha", coBtn: "Entrar", annuler: "Cancelar",
+    coNote: "Sua senha só serve para entrar e nunca é salva. A sessão fica guardada criptografada neste PC (só sua conta do Windows pode lê-la).",
+    coRisque: "Login não oficial (como outras ferramentas da comunidade): por sua conta e risco.",
+    offre: "À venda", vendreTitre: "Vender", prixLbl: "Preço", qteLbl: "Quantidade", rangLbl: "Nível",
+    visibleLbl: "Visível", vendreBtn: p => `Vender por ${p}p`, enVente: p => `à venda ${p}p`,
+    mesOffres: "Minhas ofertas deste item", modifier: "Alterar", retirer: "Remover", masquee: "oculta",
+    publiee: "Oferta publicada!", modifiee: "Oferta alterada.", retiree: "Oferta removida.",
+    coPour: "Entre no Warframe Market para vender daqui com um clique.", tonPrix: p => `seu preço: ${p}p`,
+    confirmer: "Remover esta oferta do Warframe Market?",
+    non_connecte: "Você não está conectado ao Warframe Market.", session_expiree: "Sessão expirada: entre de novo.",
+    identifiants_refuses: "E-mail ou senha recusados pelo Warframe Market.",
+    connexion_impossible: "O Warframe Market não retornou uma sessão.", item_inconnu: "Item desconhecido no Warframe Market." },
+  pl: { connexion: "Logowanie WFM", deconnexion: "Wyloguj", coTitre: "Zaloguj się do Warframe Market",
+    coEmail: "E-mail", coMdp: "Hasło", coBtn: "Zaloguj", annuler: "Anuluj",
+    coNote: "Hasło służy tylko do zalogowania i nigdy nie jest zapisywane. Sesja jest przechowywana w formie zaszyfrowanej na tym PC (tylko twoje konto Windows może ją odczytać).",
+    coRisque: "Nieoficjalne logowanie (jak inne narzędzia społeczności): na własne ryzyko.",
+    offre: "Na sprzedaż", vendreTitre: "Sprzedaj", prixLbl: "Cena", qteLbl: "Ilość", rangLbl: "Ranga",
+    visibleLbl: "Widoczna", vendreBtn: p => `Sprzedaj za ${p}p`, enVente: p => `w sprzedaży ${p}p`,
+    mesOffres: "Moje oferty tego przedmiotu", modifier: "Zmień", retirer: "Usuń", masquee: "ukryta",
+    publiee: "Oferta opublikowana!", modifiee: "Oferta zmieniona.", retiree: "Oferta usunięta.",
+    coPour: "Zaloguj się do Warframe Market, aby sprzedawać stąd jednym kliknięciem.", tonPrix: p => `twoja cena: ${p}p`,
+    confirmer: "Usunąć tę ofertę z Warframe Market?",
+    non_connecte: "Nie jesteś zalogowany do Warframe Market.", session_expiree: "Sesja wygasła: zaloguj się ponownie.",
+    identifiants_refuses: "Warframe Market odrzucił e-mail lub hasło.",
+    connexion_impossible: "Warframe Market nie zwrócił sesji.", item_inconnu: "Nieznany przedmiot na Warframe Market." },
+  ru: { connexion: "Вход WFM", deconnexion: "Выйти", coTitre: "Вход в Warframe Market",
+    coEmail: "Эл. почта", coMdp: "Пароль", coBtn: "Войти", annuler: "Отмена",
+    coNote: "Пароль используется только для входа и никогда не сохраняется. Сессия хранится в зашифрованном виде на этом ПК (прочитать её может только твоя учётная запись Windows).",
+    coRisque: "Неофициальный вход (как в других инструментах сообщества): на твой риск.",
+    offre: "В продаже", vendreTitre: "Продать", prixLbl: "Цена", qteLbl: "Количество", rangLbl: "Ранг",
+    visibleLbl: "Видимо", vendreBtn: p => `Продать за ${p}p`, enVente: p => `в продаже ${p}p`,
+    mesOffres: "Мои предложения по этому предмету", modifier: "Изменить", retirer: "Снять", masquee: "скрыто",
+    publiee: "Предложение опубликовано!", modifiee: "Предложение изменено.", retiree: "Предложение снято.",
+    coPour: "Войди в Warframe Market, чтобы продавать отсюда в один клик.", tonPrix: p => `твоя цена: ${p}p`,
+    confirmer: "Снять это предложение с Warframe Market?",
+    non_connecte: "Ты не вошёл в Warframe Market.", session_expiree: "Сессия истекла: войди снова.",
+    identifiants_refuses: "Warframe Market отклонил почту или пароль.",
+    connexion_impossible: "Warframe Market не вернул сессию.", item_inconnu: "Неизвестный предмет на Warframe Market." },
+};
+for (const l in T2) Object.assign(T[l], T2[l]);
+
+// Alertes, lots, souhaits, reliques, volumes (français + anglais ; les autres langues tombent sur l'anglais)
+const T3 = {
+  fr: { pres_ingame: "WFM : en jeu", pres_connexion: "WFM : connexion…", pres_hors_ligne: "WFM : hors ligne",
+    pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto",
+    presTip: "Tant que Warframe tourne, tu apparais « en jeu » sur Warframe Market : tes offres passent devant celles des vendeurs hors ligne.",
+    alertes: "Alertes", alDepasse: (n, v, p, m) => `${n} : ${v} vend à ${p}p (toi ${m}p)`, aligner: p => `Aligner à ${p}p`,
+    alSouhait: (n, p, v, max) => `${n} à ${p}p chez ${v} (ton max : ${max}p)`, copierAchat: "Copier le message",
+    depasse: p => `dépassé : ${p}p`, enTrop: n => `+${n} en trop`,
+    enTropTip: "Pièces en plus de ce qu'il faut pour un set : tu peux les vendre sans regret.",
+    lotN: n => `${n} sélectionné(s)`, lotMin: "Mettre en vente au prix min", lotMed: "au médian", lotVider: "Vider",
+    lotFait: n => `${n} offre(s) publiée(s).`, lotDeja: "Les items déjà en vente sont ignorés.", toutCocher: "Tout cocher",
+    souhait: "Souhaits", souhaitItem: "Item à surveiller", prixMax: "Prix max", ajouter: "Ajouter",
+    souhaitVide: "Ajoute un item et un prix max : l'app te prévient quand une offre passe en dessous (vérification toutes les 3 min).",
+    souhaitMax: p => `ton max : ${p}p`, souhaitOk: "sous ton prix !", retirerListe: "Retirer de la liste",
+    souhaitPas: "Choisis un item dans la liste proposée.", volume: (v, a) => `Ventes sur 48 h : ${v}${a ? ` (moyenne ${a}p)` : ""}`,
+    valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
+    rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
+    q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
+    relCalc: "Calcul de la valeur des reliques…", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
+    chargementArsenal: "Chargement de l'arsenal",
+    majRecherche: "Recherche de mises à jour…", majInstall: v => `Installation de la version ${v}…`,
+    majRedemarrage: "Redémarrage de l'app…", majErreur: "Mise à jour impossible, lancement de la version actuelle",
+    baroIci: (lieu, fin) => `Baro Ki'Teer est au ${lieu} jusqu'au ${fin}`,
+    baroBientot: (date, j, lieu) => `Prochaine visite de Baro Ki'Teer : ${date} (dans ${j} j) · ${lieu}`,
+    baroPieces: (n, d) => `${n} pièce(s) qui rapportent plus en ducats · ${DUC}${d}`, baroVoir: "Voir les pièces",
+    jeuIllisible: "inventaire illisible : passe un écran de chargement (relais, mission)",
+    tropBas: p => `trop bas : jusqu'à ${p}p`, monter: p => `Monter à ${p}p`,
+    tropBasTip: "Le vendeur suivant est bien plus cher : tu peux monter ton prix et rester le moins cher.",
+    peuFiable: "peu fiable", peuFiableTip: "Moins de 3 vendeurs connectés : ce prix peut être trompeur.",
+    monPrix: "Mon prix", marche: "Marché", actions: "Actions", vendu: "Vendu", supprimer: "Supprimer",
+    visibleOn: "Visible", visibleOff: "Masquée", visibleTip: "Visible : les acheteurs voient l'offre sur Warframe Market. Masquée : elle reste enregistrée mais n'apparaît plus.",
+    venduTip: "Enregistre la vente sur Warframe Market (compte dans ses statistiques) et retire la quantité vendue.",
+    attenteFr: "Attente FR", attenteEn: "Attente EN", attenteTip: "Copie un message pour faire patienter l'acheteur",
+    pseudoAcheteur: "Pseudo de l'acheteur (optionnel, ajoute /w au message)", venduOk: "Vente enregistrée.",
+    aucuneOffre: "Aucune offre en vente. Mets un item en vente depuis l'inventaire.", qteVendue: "Quantité vendue" },
+  en: { pres_ingame: "WFM: in game", pres_connexion: "WFM: connecting…", pres_hors_ligne: "WFM: offline",
+    pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status",
+    presTip: "While Warframe is running you show as “in game” on Warframe Market: your orders rank above offline sellers.",
+    alertes: "Alerts", alDepasse: (n, v, p, m) => `${n}: ${v} sells at ${p}p (you ${m}p)`, aligner: p => `Match at ${p}p`,
+    alSouhait: (n, p, v, max) => `${n} at ${p}p from ${v} (your max: ${max}p)`, copierAchat: "Copy message",
+    depasse: p => `undercut: ${p}p`, enTrop: n => `+${n} extra`,
+    enTropTip: "Parts beyond what a set needs: safe to sell.",
+    lotN: n => `${n} selected`, lotMin: "Sell at min price", lotMed: "at median", lotVider: "Clear",
+    lotFait: n => `${n} order(s) posted.`, lotDeja: "Items already for sale are skipped.", toutCocher: "Select all",
+    souhait: "Wishlist", souhaitItem: "Item to watch", prixMax: "Max price", ajouter: "Add",
+    souhaitVide: "Add an item and a max price: the app alerts you when an offer drops below it (checked every 3 min).",
+    souhaitMax: p => `your max: ${p}p`, souhaitOk: "below your price!", retirerListe: "Remove from list",
+    souhaitPas: "Pick an item from the suggestions.", volume: (v, a) => `Sales in 48 h: ${v}${a ? ` (average ${a}p)` : ""}`,
+    valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
+    rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
+    q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
+    relCalc: "Computing relic values…", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
+    chargementArsenal: "Loading arsenal",
+    majRecherche: "Checking for updates…", majInstall: v => `Installing version ${v}…`,
+    majRedemarrage: "Restarting the app…", majErreur: "Update failed, starting the current version",
+    baroIci: (lieu, fin) => `Baro Ki'Teer is at ${lieu} until ${fin}`,
+    baroBientot: (date, j, lieu) => `Next Baro Ki'Teer visit: ${date} (in ${j} d) · ${lieu}`,
+    baroPieces: (n, d) => `${n} part(s) worth more in ducats · ${DUC}${d}`, baroVoir: "Show parts",
+    jeuIllisible: "inventory unreadable: go through a loading screen (relay, mission)",
+    tropBas: p => `too low: up to ${p}p`, monter: p => `Raise to ${p}p`,
+    tropBasTip: "The next seller is much pricier: you can raise your price and still be the cheapest.",
+    peuFiable: "unreliable", peuFiableTip: "Fewer than 3 sellers online: this price may be misleading.",
+    monPrix: "My price", marche: "Market", actions: "Actions", vendu: "Sold", supprimer: "Delete",
+    visibleOn: "Visible", visibleOff: "Hidden", visibleTip: "Visible: buyers see the order on Warframe Market. Hidden: it stays saved but no longer shows.",
+    venduTip: "Records the sale on Warframe Market (counts in its statistics) and removes the sold quantity.",
+    attenteFr: "Wait FR", attenteEn: "Wait EN", attenteTip: "Copies a message asking the buyer to wait",
+    pseudoAcheteur: "Buyer name (optional, adds /w to the message)", venduOk: "Sale recorded.",
+    aucuneOffre: "No orders for sale. Sell an item from the inventory.", qteVendue: "Quantity sold" },
+};
+for (const l in T3) Object.assign(T[l], T3[l]);
+
+// ---------------------------------------------------------------- état
+const $ = s => document.querySelector(s);
+const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "offre", "souhait"];
+const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5 };
+let souhaits = [], alertes = [], presence = {}, coches = new Set(), relVals = {}, volumes = {}, catalogue = null;
+const PAGE = 150;
+let lang = "fr", items = [], sets = [], prix = {}, sel = null, onglet = "tous",
+    tri = { k: "min", asc: false }, gen = 0, version = -1, info = {}, histo = [], limite = PAGE,
+    compte = { connecte: false, compte: null, offres: [] }, venteMsg = null;
+
+let seuil = 10;  // sous 10p, les mods communs gonflent le total sans vraiment se vendre
+let modeVue = "liste";  // "liste" (tableau) ou "grille" (grosses cases avec images)
+let colonnes = 5;       // nombre de cases par ligne en mode grille
+try {
+  modeVue = localStorage.getItem("modeVue") || "liste";
+  colonnes = +localStorage.getItem("colonnes") || 5;
+} catch (e) {}
+try {
+  lang = localStorage.getItem("langue") || "";
+  const s = localStorage.getItem("seuil");
+  if (s !== null) seuil = +s;
+} catch (e) {}
+if (!LANG_NAMES[lang]) {
+  const nav = (navigator.language || "fr").slice(0, 2);
+  lang = LANG_NAMES[nav] ? nav : "en";
+}
+const t = (k, ...a) => { const v = (T[lang] || T.en)[k] ?? T.en[k]; return typeof v === "function" ? v(...a) : v; };
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const PLAT = `<img class="ico" src="/assets/platine.png" alt="platine">`, DUC = `<img class="ico" src="/assets/ducat.png" alt="ducats">`;
+const pl = v => v == null ? "–" : `<span class="plat">${PLAT}${v}</span>`;
+const cle = it => `${it.slug}|${it.rang}|${it.sous_type}`;
+const prixDe = it => it.slug ? prix[cle(it)] : null;
+const tous = () => items.concat(sets, lignesOffres(), lignesSouhaits());
+// Images officielles des items, servies par Warframe Market
+const IMG = "https://warframe.market/static/assets/";
+const image = (chemin, cls) => chemin
+  ? `<img class="${cls}" src="${IMG}${esc(chemin)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+  : `<span class="${cls}"></span>`;
+const lignesSouhaits = () => souhaits.map(w => ({
+  id: `souhait:${w.slug}|${w.rang}`, cat: "souhait", slug: w.slug, nom: w.nom, nom_en: w.nom_en, qte: 0,
+  rang: w.rang ?? null, rang_max: w.rang_max, sous_type: null, souhait: w,
+  vignette: w.vignette, image: w.image }));
+
+// Meilleure offre d'un autre vendeur que moi, au même rang (un mod R7 ne se compare pas à un R0).
+// Sans offre à ce rang, on renvoie null : pas d'alerte ni de conseil de prix.
+function autreMin(p, rang) {
+  const moi = compte.compte?.pseudo;
+  return p?.top.find(o => o.vendeur !== moi && (rang == null || o.rang == null || o.rang === rang)) || null;
+}
+// Prix de l'offre moins chère que la mienne, ou null si je suis le moins cher
+function depasse(it) {
+  const offres = it.cat === "offre" ? [it.offre] : it.cat === "souhait" ? [] : mesOffres(it);
+  const best = autreMin(prixDe(it), it.rang);
+  return best && offres.some(o => o.visible && o.prix > best.prix) ? best.prix : null;
+}
+// Prix conseillé si une de mes offres est nettement sous le vendeur suivant (1p sous lui), sinon null
+function tropBas(it) {
+  const offres = it.cat === "offre" ? [it.offre] : it.cat === "souhait" ? [] : mesOffres(it);
+  const best = autreMin(prixDe(it), it.rang);
+  return best && offres.some(o => o.visible && o.prix <= best.prix - 2) ? best.prix - 1 : null;
+}
+// Prix appuyé sur moins de 3 vendeurs connectés
+const peuFiable = it => { const p = prixDe(it); return p && p.top.length > 0 && p.nb_en_ligne < 3; };
+// Pièces Prime en plus de ce que demande leur set
+function enTrop(it) {
+  if (it.cat !== "prime" || !it.slug) return 0;
+  for (const s of sets) {
+    const pc = s.pieces.find(x => x.slug === it.slug);
+    if (pc) return Math.max(0, it.qte - pc.requis);
+  }
+  return 0;
+}
+const peutCocher = it => compte.connecte && it.slug && !["offre", "souhait"].includes(it.cat);
+const memeItem = (o, it) => o.slug === it.slug && (o.sous_type ?? null) === (it.sous_type ?? null) &&
+  (it.rang == null || (o.rang ?? null) === it.rang);
+const mesOffres = it => compte.offres.filter(o => o.type === "sell" && memeItem(o, it));
+
+// Mes offres de vente sous forme de lignes du tableau (onglet « En vente »)
+function lignesOffres() {
+  return compte.offres.filter(o => o.type === "sell").map(o => {
+    const ref = items.concat(sets).find(i => memeItem(o, i)) || items.concat(sets).find(i => i.slug === o.slug);
+    return { id: "offre:" + o.id, cat: "offre", slug: o.slug, nom: ref ? ref.nom : o.nom || o.nom_en || o.slug,
+             nom_en: ref ? ref.nom_en : o.nom_en, qte: o.qte, rang: o.rang ?? null, rang_max: ref?.rang_max,
+             sous_type: o.sous_type ?? null, ducats: ref?.ducats, offre: o,
+             vignette: o.vignette || ref?.vignette, image: o.image || ref?.image };
+  });
+}
+const dateFr = s => new Date(s * 1000).toLocaleString(lang === "tc" ? "zh-TW" : lang, { day: "2-digit", month: "2-digit", hour: "2-digit", minute: "2-digit" });
+
+function etat(msg, err) { const e = $("#etat"); e.textContent = msg; e.className = err ? "err" : ""; }
+async function api(url, body) {
+  const headers = { "X-Inventaire": "1" };  // exigé par le serveur pour toute action
+  const r = await fetch(url, body ? { method: "POST", headers: { ...headers, "Content-Type": "application/json" },
+                                      body: JSON.stringify(body) } : { headers });
+  const j = await r.json();
+  if (!r.ok) throw new Error(j.erreur || r.statusText);
+  return j;
+}
+function traduitErreur(m) { return T.fr[m] ? t(m) : m; }
+
+// ---------------------------------------------------------------- rendu
+function textes() {
+  document.documentElement.lang = lang;
+  document.querySelectorAll("[data-t]").forEach(e => e.textContent = t(e.dataset.t));
+  $("#filtre").placeholder = t("filtre");
+  $("#sItem").placeholder = t("souhaitItem");
+  $("#pseudoAcheteur").placeholder = t("pseudoAcheteur");
+  $("#sPrix").placeholder = t("prixMax");
+  if (!$("#sMsg").textContent || $("#sMsg").dataset.aide) { $("#sMsg").textContent = t("souhaitVide"); $("#sMsg").dataset.aide = 1; }
+  $("#toutCocher").title = t("toutCocher");
+  $("#seuil").title = t("seuilTip");
+  $("#seuil").innerHTML = [0, 5, 10, 20, 50].map(n =>
+    `<option value="${n}" ${n === seuil ? "selected" : ""}>${n ? "≥ " + n + "p" : t("seuil0")}</option>`).join("");
+  $("#btnCompte").textContent = compte.connecte ? `${compte.compte?.pseudo || "WFM"} · ${t("deconnexion")}` : t("connexion");
+  $("#langue").innerHTML = Object.entries(LANG_NAMES).filter(([k]) => (info.langues || Object.keys(LANG_NAMES)).includes(k))
+    .map(([k, n]) => `<option value="${k}" ${k === lang ? "selected" : ""}>${n}</option>`).join("");
+}
+
+function valeur(it, k) {
+  const p = prixDe(it);
+  if (k === "nom") return it.nom.toLowerCase();
+  if (k === "qte") return it.qte;
+  if (k === "rang") return it.rang ?? -1;
+  if (k === "ducats") return it.ducats ?? -1;
+  if (k === "progression") return it.nb_total ? it.nb_possedees / it.nb_total + (p?.min ?? 0) / 1e6 : 0;
+  if (!p) return -1;
+  if (k === "total") return (p.min ?? 0) * (it.cat === "set" ? Math.max(it.qte, 1) : it.qte);
+  return p[k] ?? -1;
+}
+
+function baro(it) {
+  const p = prixDe(it);
+  return it.cat === "prime" && it.ducats && p && p.min && it.ducats / p.min >= 10;
+}
+
+function onglets() {
+  const n = {};
+  for (const c of CATS) n[c] = visibles(c).length;
+  $("#onglets").innerHTML = CATS.filter(c => c !== "offre" || compte.connecte).map(c => `<button data-c="${c}" class="${c === onglet ? "on" : ""}">${t(c)}<small>${n[c] || 0}</small></button>`).join("");
+}
+
+// Les Prime restent toujours visibles (leur valeur en ducats compte même à 1p).
+function assezCher(it) {
+  if (!seuil || ["prime", "set", "offre", "souhait"].includes(it.cat)) return true;
+  const p = prixDe(it);
+  return !p || p.min == null || p.min >= seuil;
+}
+
+function visibles(tab, texte) {
+  const f = (texte || "").trim().toLowerCase();
+  const source = tab === "tous" ? items : tab === "set" ? sets : tab === "offre" ? lignesOffres()
+               : tab === "souhait" ? lignesSouhaits() : items.filter(i => i.cat === tab);
+  return source.filter(i => assezCher(i) &&
+    (!f || i.nom.toLowerCase().includes(f) || (i.nom_en || "").toLowerCase().includes(f)));
+}
+
+// ---------------------------------------------------------------- vue « En vente »
+function renduVentes() {
+  const lignes = lignesOffres().sort((a, b) => a.nom.localeCompare(b.nom));
+  $("#lignesVentes").innerHTML = !lignes.length
+    ? `<tr><td colspan="5" class="muted">${t("aucuneOffre")}</td></tr>`
+    : lignes.map(it => {
+      const o = it.offre, best = autreMin(prixDe(it), it.rang), dep = depasse(it), bas = tropBas(it);
+      return `<tr data-o="${esc(o.id)}" class="${o.visible ? "" : "masquee"}">
+        <td><div class="nomcell">${image(it.vignette, "vign r-" + (it.rarete || "common"))}<div>${esc(it.nom)}${o.rang != null && it.rang_max ? ` <span class="muted">R${o.rang}</span>` : ""}
+          ${dep != null ? `<span class="tag alerte">${t("depasse", dep)}</span>` : ""}
+          ${bas != null ? `<span class="tag baro" title="${esc(t("tropBasTip"))}">${t("tropBas", bas)}</span>` : ""}
+          ${peuFiable(it) ? `<span class="tag" title="${esc(t("peuFiableTip"))}">${t("peuFiable")}</span>` : ""}</div></div></td>
+        <td class="num">${o.qte}</td>
+        <td class="num"><input type="number" min="1" class="prixO" value="${o.prix}">
+          <button class="petit" data-v="prix">${t("modifier")}</button>
+          ${dep != null ? `<button class="petit" data-v="prix" data-p="${dep}">${t("aligner", dep)}</button>` : ""}
+          ${bas != null ? `<button class="petit" data-v="prix" data-p="${bas}">${t("monter", bas)}</button>` : ""}</td>
+        <td class="num">${best ? best.prix + "p" : "–"}</td>
+        <td><div class="acts">
+          <button class="ok" data-v="vendu" title="${esc(t("venduTip"))}">${t("vendu")}</button>
+          <button class="${o.visible ? "" : "off"}" data-v="visible" title="${esc(t("visibleTip"))}">${t(o.visible ? "visibleOn" : "visibleOff")}</button>
+          <button data-v="fr" title="${esc(t("attenteTip"))}">${t("attenteFr")}</button>
+          <button data-v="en" title="${esc(t("attenteTip"))}">${t("attenteEn")}</button>
+          <button class="ko" data-v="suppr">${t("supprimer")}</button>
+        </div></td></tr>`;
+    }).join("");
+}
+
+// Messages pour faire patienter l'acheteur (à coller dans le chat du jeu)
+function messageAttente(it, langue) {
+  const o = it.offre, pseudo = $("#pseudoAcheteur").value.trim();
+  const rang = o.rang != null && it.rang_max ? ` (rank ${o.rang})` : "";
+  const txt = langue === "fr"
+    ? `Salut ! Je finis une mission, je t'invite dans 5 min environ pour ${lang === "fr" ? it.nom : it.nom_en}${rang}. Merci de patienter !`
+    : `Hi! I'm finishing a mission, I'll invite you in about 5 min for ${it.nom_en}${rang}. Thanks for waiting!`;
+  return (pseudo ? `/w ${pseudo} ` : "") + txt;
+}
+
+$("#lignesVentes").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-v]"), tr = e.target.closest("tr[data-o]");
+  if (!b || !tr) return;
+  const it = lignesOffres().find(x => x.offre.id === tr.dataset.o), o = it?.offre;
+  if (!o) return;
+  const v = b.dataset.v;
+  if (v === "fr" || v === "en") {
+    const txt = messageAttente(it, v);
+    try { await navigator.clipboard.writeText(txt); const avant = b.textContent; b.textContent = t("copie"); setTimeout(() => b.textContent = avant, 1200); }
+    catch (err) { prompt("", txt); }
+    return;
+  }
+  let url, corps, msg = "";
+  if (v === "prix") {
+    url = "/api/offre/modifier";
+    corps = { id: o.id, prix: +(b.dataset.p || tr.querySelector(".prixO").value), qte: o.qte, visible: o.visible };
+    msg = t("modifiee");
+  } else if (v === "visible") {
+    url = "/api/offre/modifier"; corps = { id: o.id, prix: o.prix, qte: o.qte, visible: !o.visible };
+  } else if (v === "vendu") {
+    const qte = o.qte > 1 ? +prompt(t("qteVendue"), "1") : 1;
+    if (!(qte > 0)) return;
+    url = "/api/offre/vendu"; corps = { id: o.id, qte: Math.min(qte, o.qte) }; msg = t("venduOk");
+  } else if (v === "suppr") {
+    if (!confirm(t("confirmer"))) return;
+    url = "/api/offre/supprimer"; corps = { id: o.id }; msg = t("retiree");
+  } else return;
+  b.disabled = true;
+  try {
+    compte = await api(url, corps);
+    $("#ventesMsg").textContent = msg;
+  } catch (err) {
+    $("#ventesMsg").textContent = traduitErreur(err.message);
+    b.disabled = false;
+  }
+  rendu();
+});
+
+function rendu() {
+  $("#vueVentes").hidden = onglet !== "offre";
+  $("#vueInventaire").hidden = onglet === "offre";
+  document.querySelector("main").classList.toggle("ventes", onglet === "offre");  // pleine largeur
+  if (onglet === "offre" && !$("#lignesVentes").contains(document.activeElement)) renduVentes();
+  $("#thCoche").hidden = !compte.connecte || ["offre", "souhait"].includes(onglet);
+  $("#ajoutSouhait").hidden = onglet !== "souhait";
+  $("#lot").hidden = !coches.size;
+  $("#lotN").textContent = t("lotN", coches.size);
+  const liste = visibles(onglet, $("#filtre").value);
+  liste.sort((a, b) => {
+    const x = valeur(a, tri.k), y = valeur(b, tri.k);
+    const c = x < y ? -1 : x > y ? 1 : 0;
+    return tri.asc ? c : -c;
+  });
+  const rendus = liste.slice(0, limite).map(it => {
+    const p = prixDe(it);
+    const vide = !it.slug ? t("pasWfm") : !p ? "…" : null;
+    const rv = it.cat === "relique" && relVals[it.chemin];
+    const sous = it.cat === "set" ? `<small>${t("piecesNb", it.nb_possedees, it.nb_total)}</small>`
+               : it.cat === "offre" ? `<small>${t("tonPrix", it.offre.prix)}${it.offre.visible ? "" : " · " + t("masquee")}</small>`
+               : it.cat === "souhait" ? `<small>${t("souhaitMax", it.souhait.prix_max)}</small>`
+               : rv ? `<small>${t("valeurMoy", rv.valeurs[it.sous_type] ?? rv.valeurs.intact)}</small>` : "";
+    const enVente = !["offre", "souhait"].includes(it.cat) ? mesOffres(it) : [];
+    const dep = depasse(it), trop = enTrop(it), best = it.cat === "souhait" && autreMin(p, it.rang), bas = tropBas(it);
+    const tags = (it.cat === "set" && it.qte > 0 ? `<span class="tag ok">${t("complet")}</span>` : "") +
+                 (baro(it) ? `<span class="tag baro" title="${esc(t("baroTip"))}">${t("baro")}</span>` : "") +
+                 (enVente.length ? `<span class="tag vente">${t("enVente", enVente[0].prix)}</span>` : "") +
+                 (dep != null ? `<span class="tag alerte">${t("depasse", dep)}</span>` : "") +
+                 (bas != null ? `<span class="tag baro" title="${esc(t("tropBasTip"))}">${t("tropBas", bas)}</span>` : "") +
+                 (peuFiable(it) ? `<span class="tag" title="${esc(t("peuFiableTip"))}">${t("peuFiable")}</span>` : "") +
+                 (trop ? `<span class="tag trop" title="${esc(t("enTropTip"))}">${t("enTrop", trop)}</span>` : "") +
+                 (best && best.prix <= it.souhait.prix_max ? `<span class="tag alerte">${t("souhaitOk")}</span>` : "");
+    const tot = p && p.min != null ? p.min * (it.cat === "set" ? Math.max(it.qte, 1) : it.qte) : null;
+    const coche = $("#thCoche").hidden ? "" : `<td class="coche">${peutCocher(it)
+      ? `<input type="checkbox" data-coche="${esc(it.id)}" ${coches.has(it.id) ? "checked" : ""}>` : ""}</td>`;
+    const ligne = `<tr data-id="${esc(it.id)}" class="${sel === it.id ? "sel" : ""}">
+      ${coche}<td><div class="nomcell">${image(it.vignette, "vign r-" + (it.rarete || "common"))}<div>${esc(it.nom)}${tags}${sous}</div></div></td>
+      <td class="num muted">${it.rang_max ? `${it.rang}/${it.rang_max}` : ""}</td>
+      <td class="num">${it.qte}</td>
+      ${vide ? `<td class="num muted" colspan="2">${vide}</td>` :
+        `<td class="num">${pl(p.min)}</td><td class="num">${pl(tot)}</td>`}
+      <td class="num hide-sm duc">${it.ducats ? DUC + it.ducats : ""}</td>
+      <td class="num hide-sm muted">${p ? p.nb_en_ligne : ""}</td>
+    </tr>`;
+    // même item en grosse case (mode Images)
+    const cas = `<div class="gcase r-${it.rarete || "common"} ${sel === it.id ? "sel" : ""}" data-id="${esc(it.id)}">
+      ${!$("#thCoche").hidden && peutCocher(it) ? `<input type="checkbox" data-coche="${esc(it.id)}" ${coches.has(it.id) ? "checked" : ""}>` : ""}
+      ${it.qte > 1 ? `<span class="gqte">×${it.qte}</span>` : ""}
+      ${image(it.image || it.vignette, "gvide")}
+      <div class="gnom">${esc(it.nom)}</div>
+      <div class="gprix">${vide ? `<span class="gsub">${vide}</span>` : pl(p.min)}</div>
+      <div class="gsub">${[it.rang_max ? `R${it.rang}/${it.rang_max}` : "", tot != null && it.qte > 1 ? `${t("colTotal")} ${tot}p` : ""].filter(Boolean).join(" · ")}</div>
+      <div>${tags}</div>${sous ? `<div class="gsub">${sous.replace(/<\/?small>/g, "")}</div>` : ""}
+    </div>`;
+    return { ligne, cas };
+  });
+  const grille = modeVue === "grille";
+  $("#lignes").closest("table").hidden = grille;
+  $("#grille").hidden = !grille;
+  if (grille) $("#grille").innerHTML = rendus.map(r => r.cas).join("");
+  else $("#lignes").innerHTML = rendus.map(r => r.ligne).join("");
+  document.querySelectorAll("#modeVue button").forEach(b => b.classList.toggle("on", b.dataset.mode === modeVue));
+  $("#colsBox").hidden = !grille || onglet === "offre";
+  $("#grille").style.setProperty("--cols", colonnes);
+  $("#cols").value = colonnes;
+  $("#colsN").textContent = colonnes;
+  const reste = liste.length - limite;
+  $("#plus").hidden = reste <= 0;
+  if (reste > 0) $("#plus").textContent = t("plus", Math.min(reste, PAGE));
+  document.querySelectorAll("th").forEach(th => {
+    th.classList.toggle("tri", th.dataset.k === tri.k);
+    th.classList.toggle("asc", th.dataset.k === tri.k && tri.asc);
+  });
+  const tot = totaux(liste);
+  const aucunSet = onglet === "set" && !tot.min;  // aucun set complet : rien à additionner
+  $("#tMin").innerHTML = aucunSet ? "–" : PLAT + tot.min;
+  $("#tDuc").innerHTML = DUC + tot.ducats;
+  $("#tNb").textContent = liste.reduce((s, i) => s + i.qte, 0);
+  onglets();
+}
+
+// Totaux de la vue affichée ; les sets ne comptent que dans l'onglet Sets (sinon double compte).
+function totaux(liste) {
+  let min = 0, ducats = 0;
+  for (const it of liste) {
+    const p = prixDe(it);
+    if (it.cat === "set" && onglet !== "set") continue;
+    if (it.cat === "offre") {  // onglet « En vente » : total à mes prix
+      min += it.offre.prix * it.qte;
+      continue;
+    }
+    if (p && p.min != null) min += p.min * it.qte;
+    if (it.cat === "prime" && it.ducats) ducats += it.ducats * it.qte;
+  }
+  return { min, ducats };
+}
+
+function messageAchat(it, o) {
+  let nom = it.nom_en;
+  if (it.rang_max) nom += ` (rank ${o.rang ?? it.rang})`;
+  if (it.sous_type) nom += ` (${it.sous_type})`;
+  return `/w ${o.vendeur} Hi! I want to buy: "${nom}" for ${o.prix} platinum. (warframe.market)`;
+}
+
+function panneau() {
+  const box = $("#panneau");
+  const it = tous().find(i => i.id === sel);
+  if (!it) { box.innerHTML = `<h2>${t("top")}</h2><div class="sub">${t("clic")}</div>`; return; }
+  const p = prixDe(it);
+  const lien = it.slug ? ` · <a href="https://warframe.market/items/${esc(it.slug)}" target="_blank" rel="noopener">${t("voirWfm")}</a>` : "";
+  let html = `<div class="entete">${image(it.image || it.vignette, "grande r-" + (it.rarete || "common"))}<div><h2>${esc(it.nom)}</h2>`;
+  if (it.rang_max && it.rang != null) html += `<div class="sub" style="margin:0">${t("rang", it.rang)} / ${it.rang_max}</div>`;
+  html += `</div></div>`;
+  if (it.slug) {  // volume des ventes sur 48 h, chargé à la demande
+    const vk = cle(it), v = volumes[vk];
+    if (v) html += `<div class="sub">${t("volume", v.volume, v.prix_moyen)}</div>`;
+    if (v === undefined) {
+      volumes[vk] = null;
+      api(`/api/volume?slug=${encodeURIComponent(it.slug)}&rang=${it.rang ?? ""}`)
+        .then(r => { volumes[vk] = r; if (sel === it.id) panneau(); }).catch(() => {});
+    }
+  }
+  if (it.cat === "relique") html += blocRelique(it);
+  if (it.cat === "set") {
+    html += `<div class="sub">${t("pieces")}</div><ul class="pieces">${it.pieces.map(pc =>
+      `<li><span class="${pc.possede >= pc.requis ? "ok" : "ko"}">${pc.possede >= pc.requis ? "✓" : "✗"} ${esc(pc.nom)}</span><span class="muted">${pc.possede}/${pc.requis}</span></li>`).join("")}</ul>`;
+  }
+  html += blocVente(it, p);
+  html += `<h2 style="margin-top:14px">${t("top")}</h2>`;
+  if (!it.slug) html += `<div class="sub">${t("pasWfmLong")}</div>`;
+  else if (!p) html += `<div class="sub">${t("chargement")}</div>`;
+  else if (!p.top.length) html += `<div class="sub">${t("aucune")}${lien}</div>`;
+  else {
+    html += `<div class="sub">${p.nb_en_ligne ? t("connectes", p.nb_en_ligne) : t("horsLigne")} ${t("surOffres", p.nb_offres)}${lien}</div>`;
+    if (p.note) html += `<div class="sub">${t(p.note)}</div>`;
+    html += `<ol>${p.top.map((o, i) => `<li><span class="v"><span class="dot ${o.statut}"></span>${esc(o.vendeur)}
+      <small>${t(o.statut) || o.statut} · ${t("dispo", o.qte)}${o.rang != null && it.rang_max ? " · " + t("rang", o.rang) : ""} · ${t("rep", o.rep)}</small></span>
+      <span class="p">${PLAT}${o.prix}</span>
+      <button class="copie" data-i="${i}" title="${esc(t("copier"))}">⧉</button></li>`).join("")}</ol>`;
+    if (p.min != null) html += `<button class="annonce" id="annonce">${t("annonce")} (${p.min}p)</button>`;
+  }
+  box.innerHTML = html;
+}
+
+// Brouillon du formulaire de vente : le panneau se redessine pendant le chargement des prix,
+// on garde donc ce que l'utilisateur a tapé.
+let brouillon = {};
+
+function blocRelique(it) {
+  const rv = relVals[it.chemin];
+  if (!rv) { calculerReliques([it]); return `<div class="sub">${t("chargement")}</div>`; }
+  const q = it.sous_type || "intact", ch = rv.chances[q];
+  let html = `<div class="sub">${t("relValeurs")}</div><div class="valeurs">${Object.entries(rv.valeurs).map(([k, v]) =>
+    `<span>${t("q_" + k)}${k === q ? " ◂" : ""}</span><b>${v}p</b>`).join("")}</div>`;
+  html += `<div class="sub" style="margin-top:8px">${t("recompenses")}</div><table class="relique">${rv.recompenses.map(r =>
+    `<tr><td class="r-${r.rarete}">${esc(r.nom)}${r.qte > 1 ? " ×" + r.qte : ""}</td>
+     <td class="num muted">${Math.round(ch[r.rarete] * 1000) / 10}%</td><td class="num">${pl(r.prix)}</td></tr>`).join("")}</table>`;
+  return html;
+}
+
+function blocSouhait(it) {
+  return `<div class="vente"><div class="ligne">
+      <label>${t("prixMax")}<input type="number" min="1" id="wPrix" value="${it.souhait.prix_max}"></label>
+      <button class="petit" data-a="s-maj">${t("modifier")}</button>
+      <button class="petit" data-a="s-retirer">${t("retirerListe")}</button></div></div>`;
+}
+
+function blocVente(it, p) {
+  if (it.cat === "souhait") return blocSouhait(it);
+  if (!it.slug) return "";
+  if (!compte.connecte) {
+    return it.cat === "offre" ? "" : `<div class="vente"><button class="lien" data-a="co">${t("coPour")}</button></div>`;
+  }
+  const existantes = it.cat === "offre" ? [it.offre] : mesOffres(it);
+  const best = autreMin(p, it.rang);
+  let html = `<div class="vente">`;
+  if (existantes.length) {
+    html += `<div class="sub">${t("mesOffres")}</div>` + existantes.map(o => `<div class="offre" data-o="${esc(o.id)}">
+      <input type="number" min="1" class="oPrix" value="${o.prix}">p ×
+      <input type="number" min="1" class="oQte" value="${o.qte}">
+      ${o.visible ? "" : `<span class="muted">${t("masquee")}</span>`}
+      ${best && o.prix > best.prix ? `<button class="petit" data-a="aligner" data-p="${best.prix}">${t("aligner", best.prix)}</button>` : ""}
+      ${best && o.prix <= best.prix - 2 ? `<button class="petit" data-a="aligner" data-p="${best.prix - 1}" title="${esc(t("tropBasTip"))}">${t("monter", best.prix - 1)}</button>` : ""}
+      <button class="petit" data-a="modifier">${t("modifier")}</button>
+      <button class="petit" data-a="retirer">${t("retirer")}</button></div>`).join("");
+  }
+  if (it.cat !== "offre") {
+    if (brouillon.id !== it.id) {
+      brouillon = { id: it.id, prix: "", qte: it.cat === "set" ? Math.max(it.qte, 1) : it.qte, visible: true };
+    }
+    if (brouillon.prix === "" && p?.min != null) brouillon.prix = p.min;  // prix arrivé après coup
+    html += `<h2 style="margin-top:${existantes.length ? 12 : 0}px">${t("vendreTitre")}</h2>
+      <div class="ligne">
+        <label>${t("prixLbl")}<input type="number" min="1" id="vPrix" value="${esc(brouillon.prix)}"></label>
+        ${p?.min != null ? `<button class="petit" data-a="pmin">Min ${p.min}p</button>` : ""}
+        <label>${t("qteLbl")}<input type="number" min="1" id="vQte" value="${esc(brouillon.qte)}"></label>
+        <label class="auto"><input type="checkbox" id="vVisible" ${brouillon.visible ? "checked" : ""}> ${t("visibleLbl")}</label>
+      </div>
+      <button class="principal" data-a="vendre" id="vBtn">${t("vendreBtn", brouillon.prix || "?")}</button>`;
+  }
+  const m = venteMsg && venteMsg.id === it.id ? venteMsg : null;
+  html += `<div class="msg ${m ? (m.ok ? "ok" : "err") : ""}" id="vMsg">${m ? esc(m.texte) : ""}</div></div>`;
+  return html;
+}
+
+async function actionVente(a, bouton) {
+  const it = tous().find(i => i.id === sel);
+  if (!it) return;
+  const p = prixDe(it);
+  if (a === "co") return ouvrirConnexion();
+  if (a === "pmin") {
+    brouillon.prix = p.min;
+    return panneau();
+  }
+  if (a === "s-maj" || a === "s-retirer") {
+    const w = it.souhait;
+    try {
+      souhaits = await api("/api/souhaits", { slug: w.slug, rang: w.rang, prix_max: +$("#wPrix").value,
+                                              retirer: a === "s-retirer" });
+      if (a === "s-retirer") sel = null;
+    } catch (e) { etat(traduitErreur(e.message), true); }
+    rendu(); panneau();
+    return;
+  }
+  const ligne = bouton.closest(".offre");
+  const offre = ligne && compte.offres.find(o => o.id === ligne.dataset.o);
+  if (a === "aligner" && ligne) { ligne.querySelector(".oPrix").value = bouton.dataset.p; a = "modifier"; }
+  let corps, url, ok;
+  if (a === "vendre") {
+    url = "/api/vendre"; ok = "publiee";
+    corps = { slug: it.slug, prix: +brouillon.prix, qte: +brouillon.qte, rang: it.rang,
+              sous_type: it.sous_type, visible: brouillon.visible };
+    if (!(corps.prix > 0 && corps.qte > 0)) return;
+  } else if (a === "modifier" && offre) {
+    url = "/api/offre/modifier"; ok = "modifiee";
+    corps = { id: offre.id, prix: +ligne.querySelector(".oPrix").value,
+              qte: +ligne.querySelector(".oQte").value, visible: offre.visible };
+  } else if (a === "retirer" && offre) {
+    if (!confirm(t("confirmer"))) return;
+    url = "/api/offre/supprimer"; ok = "retiree"; corps = { id: offre.id };
+  } else return;
+  bouton.disabled = true;
+  try {
+    compte = await api(url, corps);
+    venteMsg = { id: it.id, ok: true, texte: t(ok) };
+    if (a === "vendre") brouillon = {};
+    if (it.cat === "offre" && a === "retirer") sel = null;
+  } catch (e) {
+    venteMsg = { id: it.id, ok: false, texte: traduitErreur(e.message) };
+    if (e.message === "session_expiree" || e.message === "non_connecte") compte = { connecte: false, compte: null, offres: [] };
+  }
+  textes(); rendu(); panneau();
+}
+
+function ouvrirConnexion() {
+  $("#coMsg").textContent = "";
+  $("#dlgCo").showModal();
+  $("#coEmail").focus();
+}
+
+function graphique() {
+  const box = $("#histo");
+  if (histo.length < 2) { box.innerHTML = `<h2>${t("histo")}</h2><div class="sub">${t("histoVide")}</div>`; return; }
+  const W = 320, H = 90, pts = histo.slice(-200);
+  const vals = pts.map(p => p.min), lo = Math.min(...vals), hi = Math.max(...vals), span = hi - lo || 1;
+  const t0 = pts[0].t, t1 = pts[pts.length - 1].t || t0 + 1;
+  const xy = pts.map(p => [((p.t - t0) / ((t1 - t0) || 1)) * (W - 8) + 4, H - 6 - ((p.min - lo) / span) * (H - 16)]);
+  const line = xy.map(([x, y], i) => (i ? "L" : "M") + x.toFixed(1) + "," + y.toFixed(1)).join("");
+  const last = vals[vals.length - 1], diff = last - vals[vals.length - 2];
+  box.innerHTML = `<h2>${t("histo")}</h2>
+    <div class="sub">${last}p <span style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : ""}${diff}p</span> · ${dateFr(t0)} → ${dateFr(t1)}</div>
+    <svg class="graph" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+      <path d="${line}L${xy[xy.length - 1][0]},${H}L${xy[0][0]},${H}Z" fill="#d9b45a18"/>
+      <path d="${line}" fill="none" stroke="#d9b45a" stroke-width="2" vector-effect="non-scaling-stroke"/>
+    </svg>
+    <div class="sub" style="display:flex;justify-content:space-between;margin:4px 0 0"><span>${lo}p</span><span>${hi}p</span></div>`;
+}
+
+// ---------------------------------------------------------------- chargements
+// Âge maximum d'un prix avant de le redemander : les items à moins de 5p bougent peu.
+const AGE_MAX = 30 * 60, AGE_MAX_PAS_CHER = 6 * 3600;
+function trop_vieux(it) {
+  const p = prix[cle(it)];
+  if (!p) return true;
+  const pasCher = !["prime", "set", "offre", "souhait"].includes(it.cat) && (p.min ?? 0) < 5;
+  return Date.now() / 1000 - p.t > (pasCher ? AGE_MAX_PAS_CHER : AGE_MAX);
+}
+
+// Ordre de chargement : ce qui est affiché d'abord, puis par catégorie, les plus chers en premier.
+function parPriorite(liste) {
+  const affiches = new Set(visibles(onglet, $("#filtre").value).map(i => cle(i)));
+  if (sel) { const s = tous().find(i => i.id === sel); if (s) affiches.add(cle(s)); }
+  return liste.sort((a, b) => (affiches.has(cle(b)) - affiches.has(cle(a))) ||
+    (PRIO[a.cat] - PRIO[b.cat]) || ((prix[cle(b)]?.min ?? 0) - (prix[cle(a)]?.min ?? 0)));
+}
+
+async function chargerPrix(force) {
+  const g = ++gen;
+  const vus = new Set(), uniques = [];
+  for (const it of tous()) {
+    if (!it.slug || vus.has(cle(it))) continue;
+    vus.add(cle(it));
+    uniques.push(it);
+  }
+  let dernier = 0;
+  const maj = () => {
+    if (Date.now() - dernier < 400) return;
+    dernier = Date.now(); rendu();
+    if (sel && !$("#panneau").contains(document.activeElement)) panneau();  // ne pas couper une saisie
+  };
+  const lot = async (file, params, libelle) => {
+    const total = file.length;
+    let fait = 0;
+    const travail = async () => {
+      while (file.length && g === gen) {
+        const it = file.shift();
+        try {
+          prix[cle(it)] = await api(`/api/prix?slug=${encodeURIComponent(it.slug)}&rang=${it.rang ?? ""}&sous_type=${it.sous_type ?? ""}${params}`);
+        } catch (e) { console.warn(it.slug, e); }
+        if (g !== gen) return;
+        if (libelle) etat(t("prixN", ++fait, total));
+        maj();
+      }
+    };
+    await Promise.all([travail(), travail(), travail()]);
+  };
+  if (force) {
+    await lot(parPriorite(uniques), "&frais=1", true);
+  } else {
+    // 1) affichage immédiat : derniers prix connus, même anciens (instantané depuis le cache)
+    await lot(parPriorite(uniques.filter(it => !prix[cle(it)])), "&cache=1", true);
+    if (g !== gen) return;
+    rendu(); panneau();
+    // 2) en arrière-plan, seulement ce qui compte : mes articles en vente et ma liste de souhaits.
+    //    Le reste se met à jour quand on clique dessus (ou avec « Rafraîchir les prix »).
+    const suivi = it => it.cat === "offre" || it.cat === "souhait" || mesOffres(it).length > 0;
+    await lot(parPriorite(uniques.filter(it => suivi(it) && trop_vieux(it))), "&frais=1", true);
+  }
+  if (g !== gen) return;
+  rendu(); panneau();
+  ligneEtat();
+  if (items.length) {
+    try { histo = await api("/api/historique", totaux(visibles("tous"))); graphique(); } catch (e) {}
+  }
+}
+
+function ligneEtat(extra) {
+  const src = info.source === "jeu" ? t("srcJeu", dateFr(info.quand)) : info.source ? t("srcCopie", dateFr(info.quand)) : "";
+  etat([src, t("aJour", new Date().toLocaleTimeString(lang))].filter(Boolean).join(" · "));
+}
+
+async function chargerInventaire(lire) {
+  const b = $("#btnJeu");
+  b.disabled = true;
+  if (lire) etat(t("lecture"));
+  try {
+    const r = await api(`/api/inventaire?lang=${lang}${lire ? "&lire=1" : ""}`);
+    items = r.items; sets = r.sets; version = r.version;
+    info.source = r.source; info.quand = r.quand;
+    if (sel && !tous().some(i => i.id === sel)) sel = null;
+    rendu(); panneau();
+  } catch (e) {
+    etat(traduitErreur(e.message), true);
+    return;
+  } finally {
+    b.disabled = false;
+    finSplash();
+  }
+  await chargerPrix(false);
+  rendreBaro();  // le nombre de pièces pour Baro dépend des prix
+  if (!sel) {
+    const top = [...items].sort((a, b) => valeur(b, "min") - valeur(a, "min"))[0];  // même ordre que le tableau
+    if (top) { sel = top.id; rendu(); panneau(); }
+  }
+}
+
+async function surveiller() {
+  try {
+    const e = await api("/api/etat");
+    info.langues = e.langues;
+    $("#auto").checked = e.auto;
+    const illisible = e.jeu && e.auto && e.erreur === "inventaire_absent";  // la lecture auto échoue
+    $("#jeu").innerHTML = `<span class="dot ${e.jeu ? "ingame" : ""}"></span>${e.jeu ? t("jeuOn") : t("jeuOff")}${e.scan ? " · " + t("scan") : ""}` +
+      (illisible ? ` · <span style="color:#e0a86c">${t("jeuIllisible")}</span>` : "");
+    if (e.version !== version && version !== -1 && e.version > 0) chargerInventaire(false);
+    presence = e.presence || {};
+    $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
+    $("#presAuto").checked = !!presence.auto;
+    $("#presence").title = t("presTip");
+    $("#presence").innerHTML = `<span class="dot ${presence.statut === "ingame" ? "ingame" : ""}"></span>${t("pres_" + presence.statut) || presence.statut}`;
+    const avant = JSON.stringify(alertes);
+    alertes = await api("/api/alertes");
+    if (JSON.stringify(alertes) !== avant) rendreAlertes();
+  } catch (e) {}
+}
+
+// ---------------------------------------------------------------- événements
+$("#grille").addEventListener("click", e => {
+  const c = e.target.closest(".gcase");
+  if (c && !e.target.matches("input")) choisir(c.dataset.id, e);
+});
+$("#modeVue").addEventListener("click", e => {
+  const b = e.target.closest("button[data-mode]");
+  if (!b) return;
+  modeVue = b.dataset.mode;
+  try { localStorage.setItem("modeVue", modeVue); } catch (err) {}
+  rendu();
+});
+$("#lignes").addEventListener("click", e => {
+  const tr = e.target.closest("tr");
+  if (tr) choisir(tr.dataset.id, e);
+});
+$("#cols").addEventListener("input", e => {  // pas de re-rendu : on change juste la grille
+  colonnes = +e.target.value;
+  $("#grille").style.setProperty("--cols", colonnes);
+  $("#colsN").textContent = colonnes;
+  try { localStorage.setItem("colonnes", colonnes); } catch (err) {}
+});
+
+function choisir(id, e) {
+  sel = id;
+  rendu(); panneau();
+  rafraichirClic(tous().find(i => i.id === sel));
+  // petit écran : le panneau est sous le tableau, on l'amène à l'écran
+  if (innerWidth <= 860 && e.target.type !== "checkbox") $("#panneau").scrollIntoView({ behavior: "smooth" });
+}
+
+// Prix frais pour l'item cliqué (s'il a plus d'une minute)
+async function rafraichirClic(it) {
+  const p = it && it.slug && prix[cle(it)];
+  if (!it || !it.slug || (p && Date.now() / 1000 - p.t < 60)) return;
+  try {
+    prix[cle(it)] = await api(`/api/prix?slug=${encodeURIComponent(it.slug)}&rang=${it.rang ?? ""}&sous_type=${it.sous_type ?? ""}&frais=1`);
+  } catch (e) { return; }
+  rendu();
+  if (sel === it.id && !$("#panneau").contains(document.activeElement)) panneau();
+}
+$("#panneau").addEventListener("input", e => {
+  if (e.target.id === "vPrix") brouillon.prix = e.target.value;
+  else if (e.target.id === "vQte") brouillon.qte = e.target.value;
+  else if (e.target.id === "vVisible") brouillon.visible = e.target.checked;
+  else return;
+  $("#vBtn").textContent = t("vendreBtn", brouillon.prix || "?");
+});
+$("#panneau").addEventListener("click", async e => {
+  const da = e.target.closest("button[data-a]");
+  if (da) return actionVente(da.dataset.a, da);
+  const it = tous().find(i => i.id === sel), p = it && prixDe(it);
+  if (!p) return;
+  let texte, bouton = e.target.closest("button");
+  if (!bouton) return;
+  if (bouton.id === "annonce") {
+    const nom = it.nom_en + (it.rang_max ? ` R${it.rang}` : "") + (it.sous_type ? ` (${it.sous_type})` : "");
+    texte = `WTS [${nom}] ${p.min}p`;
+  } else texte = messageAchat(it, p.top[+bouton.dataset.i]);
+  try {
+    await navigator.clipboard.writeText(texte);
+    const avant = bouton.textContent;
+    bouton.textContent = t("copie");
+    setTimeout(() => bouton.textContent = avant, 1200);
+  } catch (err) { prompt("", texte); }
+});
+$("#onglets").addEventListener("click", e => {
+  const b = e.target.closest("button");
+  if (!b) return;
+  onglet = b.dataset.c; limite = PAGE;
+  if (onglet === "set") tri = { k: "progression", asc: false };  // les sets presque complets d'abord
+  else if (tri.k === "progression") tri = { k: "min", asc: false };
+  chargerPrix(false);  // repart en donnant la priorité au nouvel onglet
+  if (onglet === "relique") calculerReliques();
+  if (onglet === "souhait") chargerCatalogue().catch(err => $("#sMsg").textContent = err.message);
+  rendu();
+});
+document.querySelectorAll("th").forEach(th => th.addEventListener("click", () => {
+  const k = th.dataset.k;
+  tri = tri.k === k ? { k, asc: !tri.asc } : { k, asc: k === "nom" };
+  rendu();
+}));
+$("#filtre").addEventListener("input", () => { limite = PAGE; rendu(); });
+$("#seuil").addEventListener("change", e => {
+  seuil = +e.target.value;
+  try { localStorage.setItem("seuil", seuil); } catch (err) {}
+  limite = PAGE; rendu();
+});
+$("#plus").addEventListener("click", () => { limite += PAGE; rendu(); });
+$("#btnJeu").addEventListener("click", () => chargerInventaire(true));
+$("#btnPrix").addEventListener("click", () => { chargerCompte(true); chargerPrix(true); });
+$("#btnCompte").addEventListener("click", async () => {
+  if (!compte.connecte) return ouvrirConnexion();
+  try { compte = await api("/api/deconnexion", {}); } catch (e) {}
+  if (onglet === "offre") onglet = "tous";
+  textes(); rendu(); panneau();
+});
+$("#coAnnuler").addEventListener("click", () => $("#dlgCo").close());
+$("#formCo").addEventListener("submit", async e => {
+  e.preventDefault();
+  const b = $("#coBtn");
+  b.disabled = true;
+  $("#coMsg").textContent = "";
+  try {
+    compte = await api("/api/connexion", { email: $("#coEmail").value, password: $("#coMdp").value });
+    $("#dlgCo").close();
+    textes(); rendu(); panneau();
+  } catch (err) {
+    $("#coMsg").textContent = traduitErreur(err.message);
+  } finally {
+    $("#coMdp").value = "";  // le mot de passe ne reste pas dans la page
+    b.disabled = false;
+  }
+});
+
+// ---------------------------------------------------------------- écran de démarrage
+let majEnCours = false;
+function finSplash() { if (!majEnCours) $("#splash").classList.add("fin"); }
+setTimeout(finSplash, 15000);  // filet de sécurité si le chargement traîne
+
+// Au démarrage : cherche une nouvelle version sur GitHub et l'installe tout de suite.
+// Renvoie true si l'app est en train de se mettre à jour (elle va redémarrer).
+async function verifierMaj() {
+  const msg = $("#splashMsg");
+  msg.textContent = t("majRecherche");
+  try {
+    const r = await Promise.race([api("/api/maj"), new Promise((_, ko) => setTimeout(() => ko(new Error("délai")), 9000))]);
+    $("#splashVersion").textContent = "v" + r.version;
+    if (!r.nouvelle) { msg.textContent = ""; return false; }
+    majEnCours = true;
+    msg.textContent = t("majInstall", r.derniere);
+    await api("/api/maj/installer", {});
+    msg.textContent = t("majRedemarrage");
+    // la fenêtre se ferme et la nouvelle version s'ouvre ; si rien ne se passe, on recharge
+    setTimeout(() => location.reload(), 20000);
+    return true;
+  } catch (e) {
+    majEnCours = false;
+    msg.textContent = e.message === "pas_de_maj" ? "" : t("majErreur");
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------- bandeau Baro Ki'Teer
+let baroInfo = null;
+async function chargerBaro() {
+  try { baroInfo = await api("/api/baro"); } catch (e) { baroInfo = null; }
+  rendreBaro();
+}
+function rendreBaro() {
+  const box = $("#baro");
+  if (!baroInfo?.debut) { box.hidden = true; return; }
+  const debut = new Date(baroInfo.debut), fin = new Date(baroInfo.fin), now = new Date();
+  if (now > fin) { box.hidden = true; return; }
+  const loc = lang === "tc" ? "zh-TW" : lang;
+  const jour = d => d.toLocaleString(loc, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
+  const ici = now >= debut;
+  const pieces = items.filter(baro);
+  const ducats = pieces.reduce((s, i) => s + i.ducats * i.qte, 0);
+  box.innerHTML = `<b>Baro Ki'Teer</b><span>${esc(ici ? t("baroIci", baroInfo.lieu, jour(fin))
+      : t("baroBientot", jour(debut), Math.ceil((debut - now) / 864e5), baroInfo.lieu))}</span>
+    ${pieces.length ? `<span class="duc">${t("baroPieces", pieces.length, ducats)}</span>
+      <button id="baroVoir">${t("baroVoir")}</button>` : ""}`;
+  box.hidden = false;
+}
+$("#baro").addEventListener("click", e => {
+  if (e.target.id !== "baroVoir") return;
+  onglet = "prime"; tri = { k: "ducats", asc: false }; limite = PAGE;
+  rendu();
+});
+
+// ---------------------------------------------------------------- reliques (valeur moyenne)
+let relEnCours = false;
+async function calculerReliques(liste) {
+  const file = (liste || items.filter(i => i.cat === "relique")).filter(i => !relVals[i.chemin]);
+  if (relEnCours || !file.length) return;
+  relEnCours = true;
+  for (const [n, it] of file.entries()) {
+    if (relVals[it.chemin]) continue;
+    if (file.length > 1) etat(`${t("relCalc")} ${n + 1}/${file.length}`);
+    try { relVals[it.chemin] = await api(`/api/relique?chemin=${encodeURIComponent(it.chemin)}&lang=${lang}`); }
+    catch (e) { console.warn(it.chemin, e); }
+    rendu();
+    if (sel === it.id) panneau();
+  }
+  relEnCours = false;
+  if (file.length > 1) ligneEtat();
+}
+
+// ---------------------------------------------------------------- alertes + statut en jeu
+function rendreAlertes() {
+  const box = $("#alertes");
+  if (!alertes.length) { box.innerHTML = ""; return; }
+  box.innerHTML = `<h2>🔔 ${t("alertes")} (${alertes.length})</h2>` + alertes.map((a, i) => {
+    const nom = tous().find(x => x.slug === a.slug)?.nom || a.nom_en;
+    return a.type === "depasse"
+      ? `<div class="alerte">${esc(t("alDepasse", nom, a.vendeur, a.leur_prix, a.mon_prix))}<br>
+         <button class="petit" data-al="${i}">${t("aligner", a.leur_prix)}</button></div>`
+      : `<div class="alerte">${esc(t("alSouhait", nom, a.prix, a.vendeur, a.prix_max))}<br>
+         <button class="petit" data-al="${i}">${t("copierAchat")}</button></div>`;
+  }).join("");
+}
+
+$("#alertes").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-al]");
+  if (!b) return;
+  const a = alertes[+b.dataset.al];
+  if (a.type === "depasse") {
+    const o = compte.offres.find(x => x.id === a.offre);
+    if (!o) return;
+    b.disabled = true;
+    try {
+      compte = await api("/api/offre/modifier", { id: o.id, prix: a.leur_prix, qte: o.qte, visible: o.visible });
+      alertes = alertes.filter(x => x !== a);
+    } catch (err) { etat(traduitErreur(err.message), true); }
+    rendreAlertes(); rendu(); panneau();
+  } else {
+    let nom = a.nom_en + (a.rang != null ? ` (rank ${a.rang})` : "");
+    const txt = `/w ${a.vendeur} Hi! I want to buy: "${nom}" for ${a.prix} platinum. (warframe.market)`;
+    try { await navigator.clipboard.writeText(txt); b.textContent = t("copie"); } catch (err) { prompt("", txt); }
+  }
+});
+
+$("#presAuto").addEventListener("change", e => api("/api/presence", { auto: e.target.checked }).catch(() => {}));
+
+// ---------------------------------------------------------------- vente en lot
+for (const zone of ["#lignes", "#grille"]) $(zone).addEventListener("change", e => {  // liste et grille
+  const c = e.target.closest("input[data-coche]");
+  if (!c) return;
+  c.checked ? coches.add(c.dataset.coche) : coches.delete(c.dataset.coche);
+  $("#lot").hidden = !coches.size;
+  $("#lotN").textContent = t("lotN", coches.size);
+  $("#lotMsg").textContent = "";
+});
+$("#toutCocher").addEventListener("change", e => {
+  for (const it of visibles(onglet, $("#filtre").value)) {
+    if (!peutCocher(it)) continue;
+    e.target.checked ? coches.add(it.id) : coches.delete(it.id);
+  }
+  rendu();
+});
+$("#lotVider").addEventListener("click", () => { coches.clear(); $("#toutCocher").checked = false; rendu(); });
+
+async function vendreLot(mode) {
+  const lots = [];
+  for (const id of coches) {
+    const it = tous().find(i => i.id === id), p = it && prixDe(it);
+    if (!it || !p || mesOffres(it).length) continue;  // déjà en vente : on ne double pas
+    const prixV = autreMin(p, it.rang)?.prix ?? p.min;
+    if (!prixV) continue;
+    lots.push({ slug: it.slug, prix: prixV, qte: it.cat === "set" ? Math.max(it.qte, 1) : it.qte,
+                rang: it.rang, sous_type: it.sous_type });
+  }
+  if (!lots.length) { $("#lotMsg").textContent = t("lotDeja"); return; }
+  if (!confirm(`${t("vendreTitre")} : ${lots.length} item(s), ${lots.reduce((s, l) => s + l.prix * l.qte, 0)}p ?`)) return;
+  $("#lotMin").disabled = true;
+  try {
+    const r = await api("/api/vendre-lot", { lots });
+    compte = r;
+    coches.clear();
+    $("#lotMsg").textContent = t("lotFait", r.faites) + (r.erreurs.length ? " " + r.erreurs.join(" · ") : "");
+  } catch (e) {
+    $("#lotMsg").textContent = traduitErreur(e.message);
+  } finally {
+    $("#lotMin").disabled = false;
+  }
+  rendu(); panneau();
+  $("#lot").hidden = false;
+}
+$("#lotMin").addEventListener("click", () => vendreLot("min"));
+
+// ---------------------------------------------------------------- liste de souhaits
+async function chargerSouhaits() {
+  try { souhaits = await api(`/api/souhaits?lang=${lang}`); } catch (e) {}
+  rendu();
+  chargerPrix(false);
+}
+async function chargerCatalogue() {
+  if (catalogue && catalogue.lang === lang) return;
+  const liste = await api(`/api/catalogue?lang=${lang}`);
+  catalogue = { lang, liste };
+  $("#catalogue").innerHTML = liste.map(c => `<option value="${esc(c.nom)}">${c.nom !== c.nom_en ? esc(c.nom_en) : ""}</option>`).join("");
+}
+$("#sItem").addEventListener("input", () => {
+  const c = catalogue?.liste.find(x => x.nom === $("#sItem").value || x.nom_en === $("#sItem").value);
+  $("#sRang").hidden = !c?.rang_max;
+  $("#sRang").placeholder = c?.rang_max ? `${t("colRang")} 0-${c.rang_max}` : "";
+});
+$("#ajoutSouhait").addEventListener("submit", async e => {
+  e.preventDefault();
+  const v = $("#sItem").value.trim();
+  const c = catalogue?.liste.find(x => x.nom === v || x.nom_en.toLowerCase() === v.toLowerCase());
+  if (!c || !(+$("#sPrix").value > 0)) { $("#sMsg").textContent = t("souhaitPas"); return; }
+  const rang = c.rang_max && $("#sRang").value !== "" ? +$("#sRang").value : (c.rang_max ? 0 : null);
+  try {
+    souhaits = await api("/api/souhaits", { slug: c.slug, rang, prix_max: +$("#sPrix").value });
+    $("#sItem").value = ""; $("#sPrix").value = ""; $("#sRang").value = ""; $("#sMsg").textContent = "";
+    sel = `souhait:${c.slug}|${rang}`;
+    rendu(); panneau(); chargerPrix(false);
+  } catch (err) { $("#sMsg").textContent = traduitErreur(err.message); }
+});
+
+async function chargerCompte(maj) {
+  try { compte = await api("/api/compte" + (maj ? "?maj=1" : "")); }
+  catch (e) { try { compte = await api("/api/compte"); } catch (e2) {} }
+  textes(); rendu(); panneau();
+}
+$("#auto").addEventListener("change", e => api("/api/auto", { auto: e.target.checked }).catch(() => {}));
+$("#langue").addEventListener("change", e => {
+  lang = e.target.value;
+  try { localStorage.setItem("langue", lang); } catch (err) {}
+  relVals = {}; catalogue = null;  // noms traduits : à recharger
+  textes(); graphique(); rendreAlertes(); chargerInventaire(false); chargerSouhaits();
+  if (onglet === "souhait") chargerCatalogue().catch(() => {});
+});
+
+(async () => {
+  textes();
+  if (await verifierMaj()) return;  // mise à jour en cours : l'app redémarre
+  try { const e = await api("/api/etat"); info.langues = e.langues; textes(); } catch (e) {}
+  try { histo = await api("/api/historique"); } catch (e) {}
+  graphique(); panneau();
+  surveiller();
+  setInterval(surveiller, 5000);
+  chargerCompte(true);
+  chargerSouhaits();
+  chargerBaro();
+  chargerInventaire(false);
+})();
+</script>
+</body>
+</html>

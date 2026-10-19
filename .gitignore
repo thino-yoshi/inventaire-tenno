@@ -1,0 +1,13 @@
+# Liste blanche : tout est ignoré, sauf le code de l'app.
+# Ainsi les données personnelles (inventaire, session Warframe Market, ventes,
+# souhaits, caches, historique...) ne partent jamais sur GitHub.
+/*
+!/.gitignore
+!/app.py
+!/index.html
+!/prime_inventory.py
+!/Lancer.bat
+!/LISEZMOI.txt
+!/README.md
+!/assets/
+!/tools/

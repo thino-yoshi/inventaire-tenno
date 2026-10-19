@@ -1,0 +1,29 @@
+INVENTAIRE TENNO - Warframe
+===========================
+
+Affiche ce que vaut ton inventaire sur Warframe Market : pieces Prime, sets, arcanes,
+mods et reliques, avec les 10 meilleures offres de chaque item.
+
+Installation (une seule fois) :
+1. Installer Python : https://www.python.org/downloads/
+   -> pendant l'installation, cocher "Add python.exe to PATH".
+2. Dezipper ce dossier ou tu veux (il y range ses donnees).
+
+Utilisation :
+1. Lancer Warframe et passer un ecran de chargement (relais, mission ou retour a l'orbiteur).
+2. Double-cliquer sur Lancer.bat. La premiere fois, il installe les dependances.
+3. L'app s'ouvre dans sa fenetre. L'inventaire se lit tout seul (une fois par minute).
+
+Mises a jour : l'app verifie a chaque demarrage s'il existe une nouvelle version
+et l'installe toute seule (tes donnees sont conservees).
+
+Astuces :
+- Fermer la fenetre la range pres de l'horloge (icone Lotus). Clic droit -> Quitter pour l'arreter.
+- Clique sur un item pour voir ses 10 meilleures offres et le mettre en vente.
+- Le menu "≥ 10p" ignore les mods/arcanes/reliques trop peu chers pour se vendre.
+
+Si l'antivirus bloque l'app, c'est parce qu'elle lit la memoire d'un autre programme.
+Si "Lire le jeu" ne marche pas : lancer Lancer.bat en tant qu'administrateur.
+
+Attention : l'app lit la memoire du jeu en lecture seule (comme AlecaFrame/Overwolf).
+Outil non officiel, utilisation a tes risques.
