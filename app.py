@@ -27,7 +27,7 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.0.2"
+VERSION = "1.0.3"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"
@@ -54,7 +54,7 @@ EXPORTS = {"resources": "ExportResources.json", "recipes": "ExportRecipes.json",
            "arcanes": "ExportArcanes.json", "relics": "ExportRelics.json"}
 RELIC_QUALITY = {"VPQ_BRONZE": ("Bronze", "intact"), "VPQ_SILVER": ("Silver", "exceptional"),
                  "VPQ_GOLD": ("Gold", "flawless"), "VPQ_PLATINUM": ("Platinum", "radiant")}
-CAT_ORDER = {"prime": 0, "arcane": 1, "relique": 2, "mod": 3}
+CAT_ORDER = {"prime": 0, "arcane": 1, "relique": 2, "mod": 3, "objet": 4, "ressource": 5}
 
 _lock = threading.Lock()
 
@@ -128,6 +128,19 @@ class GameData:
         if not hasattr(self, "_rewards"):
             self._rewards = load_json(fetch_data_file("ExportRewards.json"))
         return self._rewards
+
+    def icon_url(self, path, depth=0):
+        """Icone officielle du jeu (servie par browse.wf), pour les items absents de WFM."""
+        if depth > 3:
+            return None
+        for sect in self.sections:
+            e = sect.get(path)
+            if e and e.get("icon"):
+                return "https://browse.wf" + e["icon"]
+        rec = self.ex["recipes"].get(path)
+        if rec and rec.get("resultType"):
+            return self.icon_url(rec["resultType"], depth + 1)
+        return None
 
     def relic_quality(self, path, lang):
         rel = self.ex["relics"].get(path)
@@ -837,6 +850,11 @@ def classify(path, g):
         return "arcane"
     if path in g.ex["upgrades"] and "/Randomized/" not in path:
         return "mod"
+    # le reste n'est en general pas echangeable, mais on veut savoir ce qu'on possede
+    if path.startswith("/Lotus/Types/Recipes/") or path in g.ex["recipes"]:
+        return "objet"      # schemas et pieces non Prime (ex. Banshee - Neuroptiques)
+    if path in g.ex["resources"]:
+        return "ressource"  # Orokin, Plastides, Neurodes...
     return None
 
 
@@ -880,9 +898,12 @@ def build_items(inv, lang):
             sub_label, sub = g.relic_quality(path, lang)
             lookup = re.sub(r"(Bronze|Silver|Gold|Platinum)$", "", path)
         slug = cat.find(lookup, en) or (cat.find(path, en) if lookup != path else None)
-        if kind != "prime" and not slug:
+        if kind in ("arcane", "mod", "relique") and not slug:
             continue  # pas echangeable
         meta = cat.by_slug.get(slug, {}) if slug else {}
+        thumb, big = cat.images(slug)
+        if not thumb:  # pas sur WFM : icone officielle du jeu
+            thumb = big = g.icon_url(path)
         if kind == "relique" and sub_label:
             name = f"{name} ({sub_label})"
         items.append({
@@ -890,10 +911,11 @@ def build_items(inv, lang):
             "nom_en": cat.en(slug) if slug else en, "qte": qty,
             "rang": rank if meta.get("maxRank") else None, "rang_max": meta.get("maxRank"),
             "sous_type": sub, "slug": slug, "ducats": meta.get("ducats"),
-            "vignette": cat.images(slug)[0], "image": cat.images(slug)[1],
+            "vignette": thumb, "image": big,
             # reliques : couleur de l'ere (lith, meso, neo, axi, requiem) ; sinon rarete WFM
             "rarete": ("ere-" + g.ex["relics"][path]["era"].lower()) if kind == "relique"
-                      else "prime" if kind == "prime" else cat.rarity(slug),
+                      else "prime" if kind == "prime"
+                      else "neutre" if kind in ("objet", "ressource") and not slug else cat.rarity(slug),
         })
     items.sort(key=lambda i: (CAT_ORDER[i["cat"]], i["nom"]))
     return items

@@ -225,7 +225,7 @@
   .r-common { --r: #a8714a; } .r-uncommon { --r: #b9c1cf; } .r-rare { --r: #d8b76a; }
   .r-legendary { --r: #f0f0f0; } .r-prime { --r: #e6d6a8; }
   .r-ere-lith { --r: #a07a58; } .r-ere-meso { --r: #8fa8c0; } .r-ere-neo { --r: #c9a96e; }
-  .r-ere-axi { --r: #e8dfc8; } .r-ere-requiem { --r: #c0504a; } .r-ere-vanguard { --r: #7fd4e6; }
+  .r-neutre { --r: #6b7285; } .r-ere-axi { --r: #e8dfc8; } .r-ere-requiem { --r: #c0504a; } .r-ere-vanguard { --r: #7fd4e6; }
 
   /* bandeau Baro Ki'Teer */
   .baro { margin: 0 20px 14px; padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
@@ -671,7 +671,7 @@ const T3 = {
     valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
-    relCalc: "Calcul de la valeur des reliques…", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
+    relCalc: "Calcul de la valeur des reliques…", objet: "Objets", ressource: "Ressources", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
     chargementArsenal: "Chargement de l'arsenal",
     majRecherche: "Recherche de mises à jour…", majInstall: v => `Installation de la version ${v}…`,
     majRedemarrage: "Redémarrage de l'app…", majErreur: "Mise à jour impossible, lancement de la version actuelle",
@@ -704,7 +704,7 @@ const T3 = {
     valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
-    relCalc: "Computing relic values…", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
+    relCalc: "Computing relic values…", objet: "Items", ressource: "Resources", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
     chargementArsenal: "Loading arsenal",
     majRecherche: "Checking for updates…", majInstall: v => `Installing version ${v}…`,
     majRedemarrage: "Restarting the app…", majErreur: "Update failed, starting the current version",
@@ -726,8 +726,9 @@ for (const l in T3) Object.assign(T[l], T3[l]);
 
 // ---------------------------------------------------------------- état
 const $ = s => document.querySelector(s);
-const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "offre", "souhait"];
-const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5 };
+const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "offre", "souhait"];
+const NON_ECHANGE = ["objet", "ressource"];  // pour savoir ce qu'on possède : hors « Tout » et hors totaux
+const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5, objet: 6, ressource: 7 };
 let souhaits = [], alertes = [], presence = {}, coches = new Set(), relVals = {}, volumes = {}, catalogue = null;
 const PAGE = 150;
 let lang = "fr", items = [], sets = [], prix = {}, sel = null, onglet = "tous",
@@ -760,7 +761,7 @@ const tous = () => items.concat(sets, lignesOffres(), lignesSouhaits());
 // Images officielles des items, servies par Warframe Market
 const IMG = "https://warframe.market/static/assets/";
 const image = (chemin, cls) => chemin
-  ? `<img class="${cls}" src="${IMG}${esc(chemin)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
+  ? `<img class="${cls}" src="${/^https?:/.test(chemin) ? "" : IMG}${esc(chemin)}" alt="" loading="lazy" onerror="this.style.visibility='hidden'">`
   : `<span class="${cls}"></span>`;
 const lignesSouhaits = () => souhaits.map(w => ({
   id: `souhait:${w.slug}|${w.rang}`, cat: "souhait", slug: w.slug, nom: w.nom, nom_en: w.nom_en, qte: 0,
@@ -867,14 +868,14 @@ function onglets() {
 
 // Les Prime restent toujours visibles (leur valeur en ducats compte même à 1p).
 function assezCher(it) {
-  if (!seuil || ["prime", "set", "offre", "souhait"].includes(it.cat)) return true;
+  if (!seuil || ["prime", "set", "offre", "souhait", ...NON_ECHANGE].includes(it.cat)) return true;
   const p = prixDe(it);
   return !p || p.min == null || p.min >= seuil;
 }
 
 function visibles(tab, texte) {
   const f = (texte || "").trim().toLowerCase();
-  const source = tab === "tous" ? items : tab === "set" ? sets : tab === "offre" ? lignesOffres()
+  const source = tab === "tous" ? items.filter(i => !NON_ECHANGE.includes(i.cat)) : tab === "set" ? sets : tab === "offre" ? lignesOffres()
                : tab === "souhait" ? lignesSouhaits() : items.filter(i => i.cat === tab);
   return source.filter(i => assezCher(i) &&
     (!f || i.nom.toLowerCase().includes(f) || (i.nom_en || "").toLowerCase().includes(f)));
@@ -995,7 +996,7 @@ function rendu() {
     const ligne = `<tr data-id="${esc(it.id)}" class="${sel === it.id ? "sel" : ""}">
       ${coche}<td><div class="nomcell">${image(it.vignette, "vign r-" + (it.rarete || "common"))}<div>${esc(it.nom)}${tags}${sous}</div></div></td>
       <td class="num muted">${it.rang_max ? `${it.rang}/${it.rang_max}` : ""}</td>
-      <td class="num">${it.qte}</td>
+      <td class="num">${it.qte.toLocaleString(lang === "tc" ? "zh-TW" : lang)}</td>
       ${vide ? `<td class="num muted" colspan="2">${vide}</td>` :
         `<td class="num">${pl(p.min)}</td><td class="num">${pl(tot)}</td>`}
       <td class="num hide-sm duc">${it.ducats ? DUC + it.ducats : ""}</td>
@@ -1004,7 +1005,7 @@ function rendu() {
     // même item en grosse case (mode Images)
     const cas = `<div class="gcase r-${it.rarete || "common"} ${sel === it.id ? "sel" : ""}" data-id="${esc(it.id)}">
       ${!$("#thCoche").hidden && peutCocher(it) ? `<input type="checkbox" data-coche="${esc(it.id)}" ${coches.has(it.id) ? "checked" : ""}>` : ""}
-      ${it.qte > 1 ? `<span class="gqte">×${it.qte}</span>` : ""}
+      ${it.qte > 1 ? `<span class="gqte">×${it.qte.toLocaleString(lang === "tc" ? "zh-TW" : lang)}</span>` : ""}
       ${image(it.image || it.vignette, "gvide")}
       <div class="gnom">${esc(it.nom)}</div>
       <div class="gprix">${vide ? `<span class="gsub">${vide}</span>` : pl(p.min)}</div>
@@ -1424,6 +1425,7 @@ $("#onglets").addEventListener("click", e => {
   if (!b) return;
   onglet = b.dataset.c; limite = PAGE;
   if (onglet === "set") tri = { k: "progression", asc: false };  // les sets presque complets d'abord
+  else if (NON_ECHANGE.includes(onglet)) tri = { k: "qte", asc: false };  // pas de prix : par quantité
   else if (tri.k === "progression") tri = { k: "min", asc: false };
   chargerPrix(false);  // repart en donnant la priorité au nouvel onglet
   if (onglet === "relique") calculerReliques();
