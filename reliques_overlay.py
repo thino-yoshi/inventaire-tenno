@@ -52,6 +52,10 @@ $stream = Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Wind
 $dec = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
 $bmp = Await ($dec.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
 $eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new($lang))
+# langue demandee absente (ex. Windows anglais sans pack francais) : langue(s) du compte Windows
+if (-not $eng) { $eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages() }
+if (-not $eng) { [Console]::Error.WriteLine('OCR_INDISPONIBLE'); exit 2 }
+[Console]::Error.WriteLine('OCR_LANG ' + $eng.RecognizerLanguage.LanguageTag)
 $res = Await ($eng.RecognizeAsync($bmp)) ([Windows.Media.Ocr.OcrResult])
 $out = @(foreach ($l in $res.Lines) {
   $r = $l.Words | ForEach-Object { $_.BoundingRect }
@@ -123,7 +127,15 @@ def ocr(image_path, lang="fr-FR"):
                        encoding="utf-8", errors="replace",
                        creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
     out = (r.stdout or "").strip()
+    err = (r.stderr or "").strip()
+    m = re.search(r"OCR_LANG (\S+)", err)
+    ocr.last_info = (f"langue OCR {m.group(1)}" if m else
+                     "OCR de Windows indisponible" if "OCR_INDISPONIBLE" in err else
+                     f"erreur OCR : {err[:200] or 'code ' + str(r.returncode)}")
     return json.loads(out) if out.startswith("[") else []
+
+
+ocr.last_info = ""
 
 
 def columns(lines, width):
@@ -161,11 +173,29 @@ class RewardOverlay:
         self.relics = {}          # chemin de relique -> derniere fois vue
         self.known = []           # recompenses donnees par le journal pour l'ecran en cours
         self.window = None
-        self.status = "en attente"
+        self.status = "pret : en attente d'un ecran de recompenses"
         self.last = None          # dernier resultat (pour l'interface)
+        self.log_dir = None       # dossier de l'app : overlay.log + derniere capture lue
+
+    def log(self, msg):
+        """Journal de diagnostic (overlay.log) : pourquoi l'overlay s'est affiche ou non."""
+        print("overlay :", msg)
+        if not self.log_dir:
+            return
+        try:
+            f = Path(self.log_dir) / "overlay.log"
+            if f.exists() and f.stat().st_size > 300_000:  # on garde la fin
+                f.write_text(f.read_text(encoding="utf-8", errors="replace")[-150_000:], encoding="utf-8")
+            with open(f, "a", encoding="utf-8") as fh:
+                fh.write(time.strftime("%Y-%m-%d %H:%M:%S ") + msg + "\n")
+        except Exception:
+            pass
 
     # ---------------------------------------------------------------- journal du jeu
     def follow_log(self):
+        self.log(f"demarrage, journal du jeu : {LOG} ({'trouve' if LOG.exists() else 'INTROUVABLE'})")
+        if not LOG.exists():
+            self.status = "journal du jeu introuvable : lance Warframe une fois"
         pos = LOG.stat().st_size if LOG.exists() else 0  # on ignore l'historique
         buf = b""
         while True:
@@ -182,6 +212,8 @@ class RewardOverlay:
                     for raw in lines:
                         self.on_line(raw.decode("utf-8", "replace"))
             except Exception as e:
+                if not self.status.startswith("journal illisible"):
+                    self.log(f"journal du jeu illisible : {e}")
                 self.status = f"journal illisible : {e}"
             time.sleep(0.25)
 
@@ -194,7 +226,12 @@ class RewardOverlay:
         if m:
             self.known.append(m.group(1).replace("/StoreItems/", "/", 1))
             return
-        if OPEN_MARK in line and self.enabled:
+        if OPEN_MARK in line:
+            if not self.enabled:
+                self.log("ecran de recompenses detecte, mais l'overlay est desactive")
+                return
+            squad = [p.rsplit("/", 1)[-1] for p, t in self.relics.items() if time.time() - t < RELIC_MEMORY]
+            self.log(f"ecran de recompenses detecte ; reliques de l'escouade vues : {squad or 'aucune'}")
             self.known = []
             threading.Timer(1.3, self.capture).start()  # le temps que les cartes s'affichent
 
@@ -237,6 +274,7 @@ class RewardOverlay:
             # la fenetre du jeu, sur l'ecran ou elle se trouve (sinon l'ecran principal)
             rect = find_game_rect()
             shot = ImageGrab.grab(bbox=rect, all_screens=True) if rect else ImageGrab.grab()
+            self.log(f"fenetre du jeu : {rect or 'introuvable, ecran principal utilise'}")
             if not rect:
                 rect = (0, 0, shot.width, shot.height)
             self.rect = rect
@@ -246,14 +284,19 @@ class RewardOverlay:
             band = band.resize((band.width * 2, band.height * 2))  # texte plus gros = OCR plus fiable
             path = Path(tempfile.gettempdir()) / "inventaire_tenno_recompenses.png"
             band.save(path)
+            if self.log_dir:  # derniere capture lue, pour comprendre un echec
+                band.save(Path(self.log_dir) / "overlay_derniere_capture.png")
             self.status = "lecture de l'ecran"
             lines = ocr(path, "fr-FR" if lang == "fr" else "en-US")
+            self.log(f"{ocr.last_info} ; {len(lines)} ligne(s) lue(s) : {[ln['t'] for ln in lines][:20]}")
             for ln in lines:  # retour en coordonnees ecran
                 ln["x"], ln["w"] = ln["x"] / 2, ln["w"] / 2
                 ln["y"], ln["h"] = ln["y"] / 2 + top, ln["h"] / 2
             self.show_rewards(lines, W, H, lang)
         except Exception as e:
+            import traceback
             self.status = f"erreur : {e}"
+            self.log("ERREUR " + traceback.format_exc().replace("\n", " | "))
 
     def show_rewards(self, lines, W, H, lang):
         cands, squad = self.candidates(lang)
@@ -265,6 +308,8 @@ class RewardOverlay:
                 p2, s2 = self.match(" ".join(ln["t"] for ln in grp), cands)
                 if s2 > score:
                     path, score, used = p2, s2, grp
+            texte = " ".join(ln["t"] for ln in used) if used else " ".join(ln["t"] for ln in col)
+            self.log(f"  carte '{texte}' -> {path.rsplit('/', 1)[-1] if path else 'rien'} (score {score:.2f})")
             if path and score >= 0.6:
                 x = min(ln["x"] for ln in used) + max(ln["x"] + ln["w"] for ln in used)
                 rewards.append({"chemin": path, "x": x / 2, "y": min(ln["y"] for ln in used),
@@ -273,7 +318,11 @@ class RewardOverlay:
         for r in rewards:
             r["meilleur"] = best > 0 and r["prix"] == best
         self.last = {"t": time.time(), "recompenses": rewards, "escouade": len(squad)}
-        self.status = f"{len(rewards)} recompense(s) reconnue(s)"
+        heure = time.strftime("%H:%M")
+        self.status = (f"dernier ecran ({heure}) : {len(rewards)} recompense(s) reconnue(s)" if rewards else
+                       f"dernier ecran ({heure}) : aucune recompense reconnue, voir overlay.log")
+        self.log(f"resultat : {len(rewards)} reconnue(s) sur {len(columns(lines, W))} carte(s) lue(s), "
+                 f"{len(cands)} recompenses possibles")
         if rewards and self.window:
             # positions relatives a la fenetre du jeu : l'overlay se pose exactement dessus
             self.window.show(rewards, SHOW_SECONDS, getattr(self, "rect", None))
@@ -314,7 +363,8 @@ class RewardOverlay:
         self._images[key] = data
         return data
 
-    def start(self, assets=None):
+    def start(self, assets=None, log_dir=None):
+        self.log_dir = log_dir
         set_dpi_aware()
         self.window = OverlayWindow(assets)
         threading.Thread(target=self.window.run, daemon=True).start()

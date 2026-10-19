@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.3.1"
+VERSION = "1.3.2"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
@@ -1147,9 +1147,17 @@ def start_overlay():
     try:
         import reliques_overlay
         OVERLAY = reliques_overlay.RewardOverlay(sys.modules[__name__])
-        OVERLAY.start(RES / "assets")
+        OVERLAY.start(RES / "assets", BASE)  # BASE : overlay.log + derniere capture lue
     except Exception as e:
         print("overlay des reliques :", e)
+
+
+def open_overlay_log(icon=None, item=None):
+    """Ouvre overlay.log (ce que l'overlay a detecte, lu et reconnu a chaque ecran de recompenses)."""
+    f = BASE / "overlay.log"
+    if not f.exists():
+        f.write_text("Aucun ecran de recompenses detecte pour l'instant.\n", encoding="utf-8")
+    os.startfile(str(f))
 
 
 def toggle_overlay(icon=None, item=None):
@@ -1492,6 +1500,7 @@ def make_tray(open_fn, quit_fn):
                          checked=lambda it: PRESENCE.auto),
         pystray.MenuItem("Prix des récompenses de reliques (overlay)", toggle_overlay,
                          checked=lambda it: bool(OVERLAY and OVERLAY.enabled)),
+        pystray.MenuItem("Ouvrir le journal de l'overlay", open_overlay_log),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quitter", lambda i, it: quit_fn())))
     _notify = lambda msg, title: icon.notify(msg, title)
