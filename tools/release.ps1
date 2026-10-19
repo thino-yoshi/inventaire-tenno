@@ -56,5 +56,8 @@ git add -A
 git commit -m "Version $Version" | Out-Null
 git tag "v$Version"
 git push -u origin HEAD --tags
-gh release create "v$Version" @assets --repo $Repo --title "Version $Version" --notes $(if ($Notes) { $Notes } else { "Version $Version" })
+# notes passees par un fichier UTF-8 : en argument, PowerShell 5 abime les accents
+$notesFile = "$tmp\notes.md"
+[IO.File]::WriteAllText($notesFile, $(if ($Notes) { $Notes } else { "Version $Version" }), (New-Object Text.UTF8Encoding $false))
+gh release create "v$Version" @assets --repo $Repo --title "Version $Version" --notes-file $notesFile
 Write-Host "Version $Version publiee : https://github.com/$Repo/releases/tag/v$Version"
