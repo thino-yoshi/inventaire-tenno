@@ -27,7 +27,7 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.0.3"
+VERSION = "1.0.4"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"
@@ -1089,7 +1089,10 @@ def install_update():
                 os.replace(tmp, dest)
         cmd = [sys.executable, str(BASE / "app.py")]
     # la nouvelle version attend que celle-ci soit fermee avant de demarrer
-    subprocess.Popen(cmd + ["--attendre-pid", str(os.getpid())], cwd=str(BASE),
+    # exe "tout-en-un" : un processus lanceur (le parent) garde l'ancien exe ouvert jusqu'a la
+    # fin ; la nouvelle version doit donc attendre ce parent, pas seulement ce processus-ci
+    waited = os.getppid() if FROZEN else os.getpid()
+    subprocess.Popen(cmd + ["--attendre-pid", str(waited)], cwd=str(BASE),
                      creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
     threading.Timer(1.0, shutdown).start()
     return {"ok": True, "version": info["derniere"]}
@@ -1111,8 +1114,21 @@ def wait_for_pid(pid, timeout=30):
     end = time.time() + timeout
     while time.time() < end and pid and psutil_pid_exists(pid):
         time.sleep(0.3)
-    if FROZEN:
-        Path(sys.executable).with_suffix(".old").unlink(missing_ok=True)
+    remove_old_exe()
+
+
+def remove_old_exe(tries=20):
+    """Efface l'ancien exe garde apres une mise a jour. Ne plante jamais : s'il est encore
+    verrouille, on reessaie un moment, puis on laisse tomber (nouvel essai au prochain lancement)."""
+    if not FROZEN:
+        return
+    old = Path(sys.executable).with_suffix(".old")
+    for _ in range(tries):
+        try:
+            old.unlink(missing_ok=True)
+            return
+        except OSError:
+            time.sleep(0.5)
 
 
 def psutil_pid_exists(pid):
@@ -1287,6 +1303,8 @@ def main():
     args = ap.parse_args()
     if args.attendre_pid:
         wait_for_pid(args.attendre_pid)
+    else:  # reste d'une mise a jour precedente (ex. 1.0.3 qui a plante sur ce point)
+        threading.Thread(target=remove_old_exe, args=(4,), daemon=True).start()
     if sys.stdout is None:  # lance avec pyw.exe (sans console) : les print iraient nulle part
         sys.stdout = sys.stderr = open(BASE / "app.log", "a", encoding="utf-8")
     url = f"http://localhost:{args.port}"
