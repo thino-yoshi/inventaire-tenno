@@ -47,7 +47,7 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.2.1"
+VERSION = "1.2.2"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"
@@ -1247,8 +1247,11 @@ class Handler(BaseHTTPRequestHandler):
                                 "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
                                             "statut": OVERLAY.status if OVERLAY else "indisponible"}})
-            elif u.path == "/api/maj":
-                self.send(200, check_update())
+            elif u.path == "/api/maj":  # aussi le petit bouton "rechercher les mises a jour"
+                info = check_update()
+                UPDATE_INFO.clear()
+                UPDATE_INFO.update(info)
+                self.send(200, info)
             elif u.path == "/api/baro":
                 self.send(200, baro())
             elif u.path == "/api/alertes":

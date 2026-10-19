@@ -269,6 +269,12 @@
   .ap-btn { margin: 9px; padding: 8px; text-align: center; letter-spacing: 2px; font-weight: 600;
             background: var(--gold); color: var(--on-gold); clip-path: var(--cut); }
   @media (max-width: 700px) { .pgrid { grid-template-columns: 1fr; } }
+  button.check { clip-path: none; border-radius: 50%; width: 22px; height: 22px; padding: 0; font-size: 12px;
+                 line-height: 1; letter-spacing: 0; margin-left: 4px; opacity: .65; }
+  button.check:hover { opacity: 1; }
+  button.check.tourne { animation: tourne .8s linear infinite; }
+  @keyframes tourne { to { transform: rotate(360deg); } }
+  .checkmsg { font-size: 11px; letter-spacing: .5px; text-transform: none; color: var(--muted); font-weight: 500; }
   button.maj { background: var(--gold); color: var(--on-gold); animation: majpulse 2s ease-in-out infinite; }
   button.maj:hover { background: color-mix(in srgb, var(--gold) 75%, white); color: var(--on-gold); }
   @keyframes majpulse { 50% { box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 60%, transparent); } }
@@ -306,7 +312,8 @@
 <div id="splash"><img src="/assets/lotus.png" alt=""><div data-t="chargementArsenal"></div>
   <small id="splashMsg"></small><small id="splashVersion"></small></div>
 <header>
-  <h1><img src="/assets/lotus.png" alt="">Inventaire <span>Tenno</span></h1>
+  <h1><img src="/assets/lotus.png" alt="">Inventaire <span>Tenno</span>
+    <button id="btnCheck" class="check" type="button">⟳</button><small id="checkMsg" class="checkmsg"></small></h1>
   <div class="stats">
     <div class="stat"><b id="tMin">–</b><small data-t="totMin"></small></div>
     <div class="stat"><b id="tDuc">–</b><small data-t="totDuc"></small></div>
@@ -746,7 +753,8 @@ const T3 = {
     valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
-    relCalc: "Calcul de la valeur des reliques…", parametres: "Paramètres", themes: "Thèmes",
+    relCalc: "Calcul de la valeur des reliques…", checkTip: "Rechercher des mises à jour",
+    checkAJour: v => `à jour (v${v})`, checkNouvelle: v => `v${v} disponible`, checkErreur: "GitHub injoignable", parametres: "Paramètres", themes: "Thèmes",
     couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
     cAccent: "Accent (titres, boutons)", cPlat: "Platine (prix)", cBg: "Fond", cPanel: "Panneaux", cText: "Texte", majBouton: v => `⟳ Mettre à jour (v${v})`,
     majBoutonTip: "Installe la nouvelle version et redémarre l'app",
@@ -783,7 +791,8 @@ const T3 = {
     valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
-    relCalc: "Computing relic values…", parametres: "Settings", themes: "Themes",
+    relCalc: "Computing relic values…", checkTip: "Check for updates",
+    checkAJour: v => `up to date (v${v})`, checkNouvelle: v => `v${v} available`, checkErreur: "GitHub unreachable", parametres: "Settings", themes: "Themes",
     couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
     cAccent: "Accent (titles, buttons)", cPlat: "Platinum (prices)", cBg: "Background", cPanel: "Panels", cText: "Text", majBouton: v => `⟳ Update (v${v})`,
     majBoutonTip: "Installs the new version and restarts the app",
@@ -934,6 +943,7 @@ function textes() {
   $("#filtre").placeholder = t("filtre");
   $("#sItem").placeholder = t("souhaitItem");
   $("#pseudoAcheteur").placeholder = t("pseudoAcheteur");
+  $("#btnCheck").title = t("checkTip");
   $("#sPrix").placeholder = t("prixMax");
   if (!$("#sMsg").textContent || $("#sMsg").dataset.aide) { $("#sMsg").textContent = t("souhaitVide"); $("#sMsg").dataset.aide = 1; }
   $("#toutCocher").title = t("toutCocher");
@@ -1728,6 +1738,23 @@ $("#alertes").addEventListener("click", async e => {
 
 $("#presAuto").addEventListener("change", e => api("/api/presence", { auto: e.target.checked }).catch(() => {}));
 $("#ovActif").addEventListener("change", e => api("/api/overlay", { actif: e.target.checked }).catch(() => {}));
+
+
+// Petit bouton ⟳ en haut à gauche : recherche une mise à jour tout de suite
+$("#btnCheck").addEventListener("click", async () => {
+  const b = $("#btnCheck"), msg = $("#checkMsg");
+  b.classList.add("tourne"); msg.textContent = "";
+  try {
+    const r = await api("/api/maj");
+    if (r.nouvelle) {
+      $("#btnMaj").hidden = false;
+      $("#btnMaj").textContent = t("majBouton", r.derniere);
+      msg.textContent = t("checkNouvelle", r.derniere);
+    } else msg.textContent = t("checkAJour", r.version);
+  } catch (e) { msg.textContent = t("checkErreur"); }
+  b.classList.remove("tourne");
+  setTimeout(() => msg.textContent = "", 6000);
+});
 
 // « Mettre à jour » : réaffiche l'écran de chargement le temps d'installer, puis l'app redémarre
 $("#btnMaj").addEventListener("click", async () => {
