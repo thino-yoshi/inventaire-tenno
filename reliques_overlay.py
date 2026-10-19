@@ -64,6 +64,49 @@ ConvertTo-Json -InputObject $out -Compress
 """
 
 
+def set_dpi_aware():
+    """Coordonnees en vrais pixels partout (capture, position de la fenetre du jeu, overlay)."""
+    try:
+        ctypes.windll.shcore.SetProcessDpiAwareness(2)
+    except Exception:
+        try:
+            ctypes.windll.user32.SetProcessDPIAware()
+        except Exception:
+            pass
+
+
+def find_game_rect(process="warframe.x64.exe"):
+    """(gauche, haut, droite, bas) de la zone d'affichage de Warframe, sur n'importe quel ecran.
+    None si le jeu n'est pas ouvert (on retombe alors sur l'ecran principal)."""
+    import ctypes.wintypes as wt
+    try:
+        import psutil
+        pids = {p.pid for p in psutil.process_iter(["name"]) if (p.info["name"] or "").lower() == process}
+    except Exception:
+        return None
+    if not pids:
+        return None
+    u32 = ctypes.windll.user32
+    found = []
+
+    @ctypes.WINFUNCTYPE(ctypes.c_bool, wt.HWND, wt.LPARAM)
+    def each(hwnd, _):
+        pid = wt.DWORD()
+        u32.GetWindowThreadProcessId(hwnd, ctypes.byref(pid))
+        if pid.value in pids and u32.IsWindowVisible(hwnd) and not u32.IsIconic(hwnd):
+            rc = wt.RECT()
+            u32.GetClientRect(hwnd, ctypes.byref(rc))  # zone de jeu, sans la barre de titre
+            pt = wt.POINT(0, 0)
+            u32.ClientToScreen(hwnd, ctypes.byref(pt))
+            if rc.right > 200 and rc.bottom > 200:
+                found.append((pt.x, pt.y, pt.x + rc.right, pt.y + rc.bottom))
+        return True
+
+    u32.EnumWindows(each, 0)
+    # la plus grande fenetre du jeu (pas une petite fenetre d'erreur ou de lanceur)
+    return max(found, key=lambda r: (r[2] - r[0]) * (r[3] - r[1]), default=None)
+
+
 def norm(s):
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     s = re.sub(r"\b(schema|blueprint)\b", "", s)
@@ -172,7 +215,12 @@ class RewardOverlay:
         try:
             from PIL import ImageGrab
             lang = self.app.CURRENT_LANG[0]
-            shot = ImageGrab.grab()
+            # la fenetre du jeu, sur l'ecran ou elle se trouve (sinon l'ecran principal)
+            rect = find_game_rect()
+            shot = ImageGrab.grab(bbox=rect, all_screens=True) if rect else ImageGrab.grab()
+            if not rect:
+                rect = (0, 0, shot.width, shot.height)
+            self.rect = rect
             W, H = shot.size
             top, bottom = int(H * 0.22), int(H * 0.62)  # bande des noms des cartes
             band = shot.crop((0, top, W, bottom))
@@ -212,7 +260,8 @@ class RewardOverlay:
         self.last = {"t": time.time(), "recompenses": rewards, "escouade": len(squad)}
         self.status = f"{len(rewards)} recompense(s) reconnue(s)"
         if rewards and self.window:
-            self.window.show(rewards, SHOW_SECONDS)
+            # positions relatives a la fenetre du jeu : l'overlay se pose exactement dessus
+            self.window.show(rewards, SHOW_SECONDS, getattr(self, "rect", None))
 
     def value(self, path, lang):
         app = self.app
@@ -229,6 +278,7 @@ class RewardOverlay:
         return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats}
 
     def start(self, assets=None):
+        set_dpi_aware()
         self.window = OverlayWindow(assets)
         threading.Thread(target=self.window.run, daemon=True).start()
         threading.Thread(target=self.follow_log, daemon=True).start()
@@ -243,15 +293,13 @@ class OverlayWindow:
         self.q = queue.Queue()
         self.assets = Path(assets) if assets else None  # icones platine / ducats
 
-    def show(self, rewards, seconds):
-        self.q.put(("show", rewards, seconds))
+    def show(self, rewards, seconds, rect=None):
+        """rect = (gauche, haut, droite, bas) de la fenetre du jeu, en pixels ecran."""
+        self.q.put(("show", rewards, seconds, rect))
 
     def run(self):
         import tkinter as tk
-        try:
-            ctypes.windll.shcore.SetProcessDpiAwareness(2)  # memes pixels que la capture
-        except Exception:
-            pass
+        set_dpi_aware()  # memes pixels que la capture
         root = tk.Tk()
         root.withdraw()
         root.overrideredirect(True)
@@ -317,6 +365,10 @@ class OverlayWindow:
                 while True:
                     cmd = self.q.get_nowait()
                     if cmd[0] == "show":
+                        L, T, R, B = cmd[3] or (0, 0, W, H)
+                        # se place sur l'ecran du jeu (ecran de gauche = coordonnees negatives)
+                        root.geometry(f"{R - L}x{B - T}{L:+d}{T:+d}")
+                        canvas.config(width=R - L, height=B - T)
                         draw(cmd[1])
                         root.deiconify()
                         root.attributes("-topmost", True)
