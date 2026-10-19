@@ -47,7 +47,7 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.1.0"
+VERSION = "1.2.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"

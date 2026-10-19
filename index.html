@@ -24,10 +24,10 @@
   .stat b { display: block; font-size: 19px; color: var(--gold); font-variant-numeric: tabular-nums; }
   .stat small { color: var(--muted); font-size: 12px; }
   .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-  button, select { background: var(--gold-soft); color: var(--gold); border: 1px solid #d9b45a55;
+  button, select { background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 33%, transparent);
            padding: 7px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
   select { background: var(--bg); }
-  button:hover { background: #d9b45a33; }
+  button:hover { background: color-mix(in srgb, var(--gold) 20%, transparent); }
   button:disabled { opacity: .5; cursor: wait; }
   input[type=search] { background: var(--bg); color: var(--text); border: 1px solid var(--line);
            border-radius: 6px; padding: 7px 10px; font: inherit; width: 180px; }
@@ -36,7 +36,7 @@
   .barre { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 10px 20px; }
   .onglets { display: flex; gap: 4px; flex-wrap: wrap; }
   .onglets button { background: transparent; border-color: var(--line); color: var(--muted); padding: 5px 11px; }
-  .onglets button.on { color: var(--gold); border-color: #d9b45a88; background: var(--gold-soft); }
+  .onglets button.on { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 53%, transparent); background: var(--gold-soft); }
   .onglets button small { opacity: .7; margin-left: 3px; }
   #etat { color: var(--muted); font-size: 12px; margin-left: auto; }
   #etat.err { color: var(--red); }
@@ -80,7 +80,7 @@
   .dot.ingame { background: var(--green); } .dot.online { background: var(--blue); }
   .annonce { margin-top: 10px; width: 100%; }
   svg.graph { width: 100%; height: 90px; display: block; }
-  .tag.vente { color: var(--gold); border-color: #d9b45a66; }
+  .tag.vente { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 40%, transparent); }
   dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
            padding: 20px; width: min(380px, calc(100vw - 32px)); }
   dialog::backdrop { background: #000a; }
@@ -96,8 +96,8 @@
   .vente .ligne label { display: flex; flex-direction: column; gap: 3px; font-size: 12px; color: var(--muted); }
   .vente input[type=number] { width: 90px; }
   .vente .petit { padding: 4px 8px; font-size: 12px; }
-  .vente .principal { width: 100%; background: #d9b45a; color: #17130a; font-weight: 600; }
-  .vente .principal:hover { background: #e5c470; }
+  .vente .principal { width: 100%; background: var(--gold); color: var(--on-gold); font-weight: 600; }
+  .vente .principal:hover { background: color-mix(in srgb, var(--gold) 75%, white); }
   .offre { display: flex; gap: 6px; align-items: center; flex-wrap: wrap; padding: 6px 0; border-bottom: 1px solid var(--line); }
   .offre input { width: 70px !important; }
   .msg { font-size: 12px; margin-top: 6px; min-height: 16px; }
@@ -135,11 +135,11 @@
   .grille { display: grid; grid-template-columns: repeat(var(--cols, 5), minmax(0, 1fr)); gap: 10px; padding: 12px; }
   #colsBox { display: inline-flex; gap: 6px; align-items: center; font-size: 12px; color: var(--muted); }
   #colsBox[hidden] { display: none; }
-  #colsBox input { width: 110px; accent-color: #d9b45a; }
+  #colsBox input { width: 110px; accent-color: var(--gold); }
   .grille[hidden] { display: none; }
   .gcase { position: relative; border: 1px solid var(--line); border-radius: 10px; padding: 10px; cursor: pointer;
            display: flex; flex-direction: column; align-items: center; text-align: center; gap: 4px; background: var(--bg); }
-  .gcase:hover { border-color: #d9b45a55; }
+  .gcase:hover { border-color: color-mix(in srgb, var(--gold) 33%, transparent); }
   .gcase.sel { border-color: var(--gold); background: var(--gold-soft); }
   /* seule l'image de l'item suit la taille de la case ; le logo platine/ducats reste petit */
   .gcase .gvide { width: 75%; max-width: 260px; aspect-ratio: 1; height: auto; object-fit: contain; }
@@ -164,15 +164,25 @@
 
   /* ================= thème Orokin (menus de Warframe) ================= */
   :root {
-    --bg: #0a0d14; --panel: #111724; --line: #c9a96e24; --text: #ece6d6; --muted: #8d8878;
-    --gold: #c9a96e; --gold-soft: #c9a96e1c; --plat: #7fd4e6; --hover: #161e2e;
+    /* 5 couleurs de base, modifiables dans Paramètres (--gold = couleur d'accent) */
+    --bg: #0a0d14; --panel: #111724; --text: #ece6d6; --gold: #c9a96e; --plat: #7fd4e6;
+    /* teintes dérivées : suivent automatiquement le thème choisi */
+    --line: color-mix(in srgb, var(--gold) 14%, transparent);
+    --gold-soft: color-mix(in srgb, var(--gold) 11%, transparent);
+    --muted: color-mix(in srgb, var(--text) 52%, var(--bg));
+    --hover: color-mix(in srgb, var(--panel) 94%, var(--plat) 6%);
+    --panel-lo: color-mix(in srgb, var(--panel) 80%, var(--bg));
+    --panel-hi: color-mix(in srgb, var(--panel) 97%, white 3%);
+    --glow: color-mix(in srgb, var(--panel) 88%, var(--plat) 12%);
+    --field: color-mix(in srgb, var(--bg) 70%, black);
+    --on-gold: var(--bg);
     --cut: polygon(9px 0, 100% 0, 100% calc(100% - 9px), calc(100% - 9px) 100%, 0 100%, 0 9px);
   }
   body { font-family: "Rajdhani", "Segoe UI", system-ui, sans-serif; font-size: 15px; font-weight: 500;
-         background: radial-gradient(1200px 500px at 20% -10%, #1a2336 0%, var(--bg) 60%) fixed var(--bg); }
-  header { background: #0e1420cc; border-bottom: 1px solid #c9a96e40; backdrop-filter: blur(4px); }
+         background: radial-gradient(1200px 500px at 20% -10%, var(--glow) 0%, var(--bg) 60%) fixed var(--bg); }
+  header { background: color-mix(in srgb, var(--panel-lo) 80%, transparent); border-bottom: 1px solid color-mix(in srgb, var(--gold) 25%, transparent); backdrop-filter: blur(4px); }
   h1 { display: flex; align-items: center; gap: 10px; font-weight: 600; letter-spacing: 4px; text-transform: uppercase; font-size: 18px; }
-  h1 img { width: 40px; height: 40px; object-fit: contain; flex: none; filter: drop-shadow(0 0 6px #c9a96e55); }
+  h1 img { width: 40px; height: 40px; object-fit: contain; flex: none; filter: drop-shadow(0 0 6px color-mix(in srgb, var(--gold) 33%, transparent)); }
   .ico { width: 1.15em; height: 1.15em; object-fit: contain; vertical-align: -0.2em; margin-right: 3px; }
   .stat b { font-size: 22px; font-weight: 600; color: var(--text); }
   .stat small, th, .carte h2, .sub b, dialog h2 { text-transform: uppercase; letter-spacing: 1.5px; }
@@ -181,25 +191,25 @@
   .plat { color: var(--plat); font-variant-numeric: tabular-nums; }
   .duc { color: var(--gold); }
   button, select { border-radius: 0; clip-path: var(--cut); letter-spacing: 1px; font-weight: 600;
-                   background: #c9a96e14; border-color: #c9a96e66; transition: background .15s, color .15s; }
-  button:hover { background: #c9a96e30; color: #f3e7c6; }
+                   background: color-mix(in srgb, var(--gold) 8%, transparent); border-color: color-mix(in srgb, var(--gold) 40%, transparent); transition: background .15s, color .15s; }
+  button:hover { background: color-mix(in srgb, var(--gold) 19%, transparent); color: color-mix(in srgb, var(--gold) 75%, white); }
   input[type=search], .outils input, .champ input, .vente input[type=number], #lignesVentes input[type=number] {
-    border-radius: 0; border-color: #c9a96e33; background: #070a10; }
-  .carte, .table, dialog { border-radius: 0; clip-path: var(--cut); border-color: #c9a96e30;
-                           background: linear-gradient(180deg, #131a28, #0f1520); }
-  .carte { border-top: 1px solid #c9a96e80; }
+    border-radius: 0; border-color: color-mix(in srgb, var(--gold) 20%, transparent); background: var(--field); }
+  .carte, .table, dialog { border-radius: 0; clip-path: var(--cut); border-color: color-mix(in srgb, var(--gold) 19%, transparent);
+                           background: linear-gradient(180deg, var(--panel-hi), var(--panel-lo)); }
+  .carte { border-top: 1px solid color-mix(in srgb, var(--gold) 50%, transparent); }
   .carte h2 { font-size: 13px; color: var(--gold); font-weight: 600; }
-  .vente .principal { clip-path: var(--cut); background: var(--gold); color: #0a0d14; letter-spacing: 2px; text-transform: uppercase; }
-  .vente .principal:hover { background: #dcc08a; }
+  .vente .principal { clip-path: var(--cut); background: var(--gold); color: var(--on-gold); letter-spacing: 2px; text-transform: uppercase; }
+  .vente .principal:hover { background: color-mix(in srgb, var(--gold) 75%, white); }
   .p { color: var(--plat); }
-  th { color: var(--gold); font-size: 11px; background: #111724; }
+  th { color: var(--gold); font-size: 11px; background: var(--panel); }
   tbody tr { transition: background .12s; }
-  tbody tr:hover { background: linear-gradient(90deg, #c9a96e1a, transparent 60%); box-shadow: inset 2px 0 0 var(--gold); }
-  tbody tr.sel { background: linear-gradient(90deg, #c9a96e2e, transparent 70%); box-shadow: inset 3px 0 0 var(--gold); }
+  tbody tr:hover { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 10%, transparent), transparent 60%); box-shadow: inset 2px 0 0 var(--gold); }
+  tbody tr.sel { background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 18%, transparent), transparent 70%); box-shadow: inset 3px 0 0 var(--gold); }
   .tag { border-radius: 0; letter-spacing: .5px; text-transform: uppercase; font-size: 9.5px; font-weight: 700; }
-  .tag.vente { background: var(--gold); color: #0a0d14; border-color: var(--gold); }
-  .tag.alerte { background: #e06c6c; color: #0a0d14; border-color: #e06c6c; }
-  .tag.baro { color: var(--plat); border-color: #7fd4e666; }
+  .tag.vente { background: var(--gold); color: var(--on-gold); border-color: var(--gold); }
+  .tag.alerte { background: #e06c6c; color: var(--on-gold); border-color: #e06c6c; }
+  .tag.baro { color: var(--plat); border-color: color-mix(in srgb, var(--plat) 40%, transparent); }
 
   /* menu latéral façon navigation du vaisseau */
   main { grid-template-columns: 190px minmax(0, 1fr) 350px; }
@@ -208,20 +218,20 @@
   .onglets button { clip-path: none; text-align: left; border: none; border-left: 2px solid transparent; background: transparent;
                     color: var(--muted); padding: 9px 12px; text-transform: uppercase; letter-spacing: 2px; font-size: 13px;
                     display: flex; justify-content: space-between; }
-  .onglets button:hover { color: var(--text); background: linear-gradient(90deg, #c9a96e14, transparent); }
-  .onglets button.on { color: var(--text); border-left-color: var(--gold); background: linear-gradient(90deg, #c9a96e2e, transparent); }
-  .mode { border-color: #c9a96e40; border-radius: 0; }
+  .onglets button:hover { color: var(--text); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 8%, transparent), transparent); }
+  .onglets button.on { color: var(--text); border-left-color: var(--gold); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 18%, transparent), transparent); }
+  .mode { border-color: color-mix(in srgb, var(--gold) 25%, transparent); border-radius: 0; }
   .mode button { clip-path: none; }
 
   /* cartes : cadre selon la rareté, comme les mods du jeu */
   .gcase { border-radius: 0; clip-path: var(--cut); border: none; --r: #a8714a;
-           box-shadow: inset 0 0 0 1.5px var(--r); background: linear-gradient(180deg, color-mix(in srgb, var(--r) 22%, #121826), #0f1520 55%);
+           box-shadow: inset 0 0 0 1.5px var(--r); background: linear-gradient(180deg, color-mix(in srgb, var(--r) 22%, var(--panel-hi)), var(--panel-lo) 55%);
            transition: transform .12s, box-shadow .15s; }
   .gcase:hover { transform: translateY(-2px); box-shadow: inset 0 0 0 1.5px var(--r), inset 0 0 22px color-mix(in srgb, var(--r) 35%, transparent); }
-  .gcase.sel { box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 26px #c9a96e40; background: linear-gradient(180deg, #2a2416, #0f1520 60%); }
+  .gcase.sel { box-shadow: inset 0 0 0 2px var(--gold), inset 0 0 26px color-mix(in srgb, var(--gold) 25%, transparent); background: linear-gradient(180deg, color-mix(in srgb, var(--gold) 18%, var(--panel)), var(--panel-lo) 60%); }
   .gcase .gprix { color: var(--plat); font-size: 20px; }
   .gcase .gnom { font-weight: 600; letter-spacing: .3px; }
-  .vign, .grande { border-radius: 0; box-shadow: inset 0 0 0 1px var(--r, #c9a96e40); background: color-mix(in srgb, var(--r, #888) 12%, transparent); }
+  .vign, .grande { border-radius: 0; box-shadow: inset 0 0 0 1px var(--r, color-mix(in srgb, var(--gold) 25%, transparent)); background: color-mix(in srgb, var(--r, #888) 12%, transparent); }
   .r-common { --r: #a8714a; } .r-uncommon { --r: #b9c1cf; } .r-rare { --r: #d8b76a; }
   .r-legendary { --r: #f0f0f0; } .r-prime { --r: #e6d6a8; }
   .r-ere-lith { --r: #a07a58; } .r-ere-meso { --r: #8fa8c0; } .r-ere-neo { --r: #c9a96e; }
@@ -229,24 +239,52 @@
 
   /* bandeau Baro Ki'Teer */
   .baro { margin: 0 20px 14px; padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
-          clip-path: var(--cut); background: linear-gradient(90deg, #2a2416, #111724 70%); border-left: 3px solid var(--gold); }
+          clip-path: var(--cut); background: linear-gradient(90deg, color-mix(in srgb, var(--gold) 18%, var(--panel)), var(--panel) 70%); border-left: 3px solid var(--gold); }
   .baro[hidden] { display: none; }
-  button.maj { background: var(--gold); color: #0a0d14; animation: majpulse 2s ease-in-out infinite; }
-  button.maj:hover { background: #dcc08a; color: #0a0d14; }
-  @keyframes majpulse { 50% { box-shadow: 0 0 14px #c9a96e99; } }
+  dialog.param { width: min(820px, calc(100vw - 32px)); }
+  .pgrid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 20px; }
+  .themes { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 6px; }
+  .themes button { display: flex; align-items: center; gap: 8px; text-align: left; clip-path: none; padding: 7px 9px; }
+  .themes button.on { outline: 2px solid var(--gold); }
+  .pastilles { display: inline-flex; gap: 3px; margin-left: auto; }
+  .pastilles i { width: 12px; height: 12px; border-radius: 50%; display: block; border: 1px solid #ffffff30; }
+  .couleurs label { display: flex; align-items: center; justify-content: space-between; padding: 5px 0;
+                    border-bottom: 1px solid var(--line); font-size: 13px; }
+  .couleurs input[type=color] { width: 54px; height: 26px; border: 1px solid var(--line); background: none; padding: 0; cursor: pointer; }
+  .apercu { background: var(--bg); border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); color: var(--text);
+            font-size: 13px; overflow: hidden; }
+  .ap-head { display: flex; align-items: center; gap: 8px; padding: 9px 11px; background: var(--panel-lo);
+             border-bottom: 1px solid color-mix(in srgb, var(--gold) 30%, transparent); letter-spacing: 2px; }
+  .ap-head img { width: 24px; } .ap-head b { font-weight: 600; } .ap-head b span { color: var(--gold); }
+  .ap-tot { margin-left: auto; color: var(--plat); font-weight: 600; }
+  .ap-body { display: grid; grid-template-columns: 92px minmax(0, 1fr); gap: 8px; padding: 9px; }
+  .ap-nav div { padding: 6px 8px; font-size: 11px; letter-spacing: 1.5px; color: var(--muted); border-left: 2px solid transparent; }
+  .ap-nav .on { color: var(--text); border-left-color: var(--gold); background: linear-gradient(90deg, var(--gold-soft), transparent); }
+  .ap-main { background: var(--panel); border: 1px solid var(--line); }
+  .ap-row { display: flex; justify-content: space-between; padding: 7px 9px; border-bottom: 1px solid var(--line); }
+  .ap-row.sel { box-shadow: inset 3px 0 0 var(--gold); background: linear-gradient(90deg, var(--gold-soft), transparent 70%); }
+  .ap-p { color: var(--plat); font-weight: 600; } .ap-mut { color: var(--muted); }
+  .ap-tag { font-style: normal; font-size: 9.5px; font-weight: 700; padding: 1px 5px; margin-left: 5px;
+            background: var(--gold); color: var(--on-gold); }
+  .ap-btn { margin: 9px; padding: 8px; text-align: center; letter-spacing: 2px; font-weight: 600;
+            background: var(--gold); color: var(--on-gold); clip-path: var(--cut); }
+  @media (max-width: 700px) { .pgrid { grid-template-columns: 1fr; } }
+  button.maj { background: var(--gold); color: var(--on-gold); animation: majpulse 2s ease-in-out infinite; }
+  button.maj:hover { background: color-mix(in srgb, var(--gold) 75%, white); color: var(--on-gold); }
+  @keyframes majpulse { 50% { box-shadow: 0 0 14px color-mix(in srgb, var(--gold) 60%, transparent); } }
   .baro b { color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
   .baro button { margin-left: auto; }
 
   /* écran de démarrage */
   #splash { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
-            gap: 18px; background: radial-gradient(circle at 50% 45%, #1a2336, #07090e 70%); transition: opacity .5s; }
+            gap: 18px; background: radial-gradient(circle at 50% 45%, var(--glow), #07090e 70%); transition: opacity .5s; }
   #splash.fin { opacity: 0; pointer-events: none; }
   #splash small { color: var(--muted); letter-spacing: 2px; font-size: 12px; min-height: 16px; }
   #splash #splashVersion { position: absolute; bottom: 18px; opacity: .6; }
   #splash img { width: 150px; height: 150px; object-fit: contain; animation: lotus 2.4s ease-in-out infinite; }
   #splash div { letter-spacing: 6px; color: var(--gold); text-transform: uppercase; font-size: 14px; }
-  @keyframes lotus { 0%, 100% { opacity: .55; filter: drop-shadow(0 0 4px #c9a96e55); transform: scale(.96); }
-                     50% { opacity: 1; filter: drop-shadow(0 0 18px #c9a96eaa); transform: scale(1.03); } }
+  @keyframes lotus { 0%, 100% { opacity: .55; filter: drop-shadow(0 0 4px color-mix(in srgb, var(--gold) 33%, transparent)); transform: scale(.96); }
+                     50% { opacity: 1; filter: drop-shadow(0 0 18px color-mix(in srgb, var(--gold) 67%, transparent)); transform: scale(1.03); } }
   @media (prefers-reduced-motion: reduce) { #splash img, .gcase { animation: none; transition: none; } }
 
   @media (max-width: 860px) {
@@ -283,8 +321,40 @@
     <button id="btnJeu" data-t="lire"></button>
     <button id="btnPrix" data-t="rafraichir"></button>
     <button id="btnCompte"></button>
+    <button id="btnParam" title="Paramètres">⚙</button>
   </div>
 </header>
+<dialog id="dlgParam" class="param">
+  <h2 data-t="parametres"></h2>
+  <div class="pgrid">
+    <div>
+      <div class="sub" data-t="themes"></div>
+      <div class="themes" id="themes"></div>
+      <div class="sub" style="margin-top:14px" data-t="couleursPerso"></div>
+      <div class="couleurs" id="couleurs"></div>
+    </div>
+    <div>
+      <div class="sub" data-t="apercu"></div>
+      <div class="apercu" id="apercu">
+        <div class="ap-head"><img src="/assets/lotus.png" alt=""><b>INVENTAIRE <span>TENNO</span></b><span class="ap-tot"><img class="ico" src="/assets/platine.png" alt="">3 553</span></div>
+        <div class="ap-body">
+          <div class="ap-nav"><div class="on">PRIME</div><div>MODS</div><div>ARCANES</div></div>
+          <div class="ap-main">
+            <div class="ap-row sel"><span>Arcane Énergétique</span><span class="ap-p"><img class="ico" src="/assets/platine.png" alt="">119</span></div>
+            <div class="ap-row"><span>Okina Prime - Manche <i class="ap-tag">en vente</i></span><span class="ap-p"><img class="ico" src="/assets/platine.png" alt="">35</span></div>
+            <div class="ap-row"><span class="ap-mut">Ferrite</span><span class="ap-mut">226 442</span></div>
+            <div class="ap-btn">METTRE EN VENTE À 119P</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div class="boutons" style="margin-top:16px">
+    <button type="button" id="pReset" data-t="reinitialiser" style="margin-right:auto"></button>
+    <button type="button" id="pAnnuler" data-t="annuler"></button>
+    <button type="button" id="pOk" class="maj" data-t="enregistrer"></button>
+  </div>
+</dialog>
 <dialog id="dlgCo">
   <form id="formCo" method="dialog">
     <h2 data-t="coTitre"></h2>
@@ -676,7 +746,9 @@ const T3 = {
     valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
-    relCalc: "Calcul de la valeur des reliques…", majBouton: v => `⟳ Mettre à jour (v${v})`,
+    relCalc: "Calcul de la valeur des reliques…", parametres: "Paramètres", themes: "Thèmes",
+    couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
+    cAccent: "Accent (titres, boutons)", cPlat: "Platine (prix)", cBg: "Fond", cPanel: "Panneaux", cText: "Texte", majBouton: v => `⟳ Mettre à jour (v${v})`,
     majBoutonTip: "Installe la nouvelle version et redémarre l'app",
     overlayLbl: "Overlay reliques", overlayTip: "Affiche le prix des récompenses par-dessus le jeu au moment du choix. Le jeu doit être en plein écran sans bordure.", objet: "Objets", ressource: "Ressources", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
     chargementArsenal: "Chargement de l'arsenal",
@@ -711,7 +783,9 @@ const T3 = {
     valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
-    relCalc: "Computing relic values…", majBouton: v => `⟳ Update (v${v})`,
+    relCalc: "Computing relic values…", parametres: "Settings", themes: "Themes",
+    couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
+    cAccent: "Accent (titles, buttons)", cPlat: "Platinum (prices)", cBg: "Background", cPanel: "Panels", cText: "Text", majBouton: v => `⟳ Update (v${v})`,
     majBoutonTip: "Installs the new version and restarts the app",
     overlayLbl: "Relic overlay", overlayTip: "Shows reward prices over the game when choosing. The game must be in borderless fullscreen.", objet: "Items", ressource: "Resources", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
     chargementArsenal: "Loading arsenal",
@@ -735,6 +809,25 @@ for (const l in T3) Object.assign(T[l], T3[l]);
 
 // ---------------------------------------------------------------- état
 const $ = s => document.querySelector(s);
+
+// ---------------------------------------------------------------- thèmes de couleurs
+// 5 couleurs de base ; tout le reste (bordures, survols, fonds secondaires) en découle en CSS.
+const THEMES = {
+  orokin:   { nom: "Orokin",   gold: "#c9a96e", plat: "#7fd4e6", bg: "#0a0d14", panel: "#111724", text: "#ece6d6" },
+  tenno:    { nom: "Tenno",    gold: "#4fc3e0", plat: "#b4ecf7", bg: "#070c14", panel: "#0d1622", text: "#e4f1f6" },
+  lotus:    { nom: "Lotus",    gold: "#b48cf0", plat: "#7fd4e6", bg: "#0c0a14", panel: "#161226", text: "#ece6f6" },
+  infeste:  { nom: "Infesté",  gold: "#8fd14f", plat: "#d6f08a", bg: "#0b100a", panel: "#131b10", text: "#e6efd9" },
+  grineer:  { nom: "Grineer",  gold: "#e0703a", plat: "#f2b066", bg: "#120c0a", panel: "#1c1411", text: "#f0e2d6" },
+  corpus:   { nom: "Corpus",   gold: "#5b8def", plat: "#7fd4e6", bg: "#0a0e18", panel: "#111a2b", text: "#e3ebfa" },
+  sentient: { nom: "Sentient", gold: "#e0567a", plat: "#f5a3c0", bg: "#10090c", panel: "#1b1015", text: "#f3e3e8" },
+};
+const CLES_THEME = ["gold", "plat", "bg", "panel", "text"];
+function appliquerTheme(th, cible = document.documentElement) {
+  for (const k of CLES_THEME) if (th[k]) cible.style.setProperty("--" + k, th[k]);
+}
+let theme = { ...THEMES.orokin };
+try { const s = JSON.parse(localStorage.getItem("theme") || "null"); if (s) theme = { ...theme, ...s }; } catch (e) {}
+appliquerTheme(theme);
 const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "offre", "souhait"];
 const NON_ECHANGE = ["objet", "ressource"];  // pour savoir ce qu'on possède : hors « Tout » et hors totaux
 const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5, objet: 6, ressource: 7 };
@@ -1239,8 +1332,8 @@ function graphique() {
   box.innerHTML = `<h2>${t("histo")}</h2>
     <div class="sub">${last}p <span style="color:${diff >= 0 ? "var(--green)" : "var(--red)"}">${diff >= 0 ? "+" : ""}${diff}p</span> · ${dateFr(t0)} → ${dateFr(t1)}</div>
     <svg class="graph" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
-      <path d="${line}L${xy[xy.length - 1][0]},${H}L${xy[0][0]},${H}Z" fill="#d9b45a18"/>
-      <path d="${line}" fill="none" stroke="#d9b45a" stroke-width="2" vector-effect="non-scaling-stroke"/>
+      <path d="${line}L${xy[xy.length - 1][0]},${H}L${xy[0][0]},${H}Z" style="fill:color-mix(in srgb, var(--gold) 9%, transparent)"/>
+      <path d="${line}" fill="none" style="stroke:var(--gold)" stroke-width="2" vector-effect="non-scaling-stroke"/>
     </svg>
     <div class="sub" style="display:flex;justify-content:space-between;margin:4px 0 0"><span>${lo}p</span><span>${hi}p</span></div>`;
 }
@@ -1485,6 +1578,44 @@ $("#formCo").addEventListener("submit", async e => {
     $("#coMdp").value = "";  // le mot de passe ne reste pas dans la page
     b.disabled = false;
   }
+});
+
+
+// ---------------------------------------------------------------- fenêtre Paramètres
+let brouillonTheme = null;
+function rendreParam() {
+  const actuel = Object.entries(THEMES).find(([, th]) => CLES_THEME.every(k => th[k].toLowerCase() === (brouillonTheme[k] || "").toLowerCase()));
+  $("#themes").innerHTML = Object.entries(THEMES).map(([id, th]) => `<button type="button" data-th="${id}" class="${actuel && actuel[0] === id ? "on" : ""}">
+      ${th.nom}<span class="pastilles">${["gold", "plat", "panel"].map(k => `<i style="background:${th[k]}"></i>`).join("")}</span></button>`).join("");
+  const libelles = { gold: "cAccent", plat: "cPlat", bg: "cBg", panel: "cPanel", text: "cText" };
+  $("#couleurs").innerHTML = CLES_THEME.map(k => `<label>${t(libelles[k])}<input type="color" data-c="${k}" value="${brouillonTheme[k]}"></label>`).join("");
+  appliquerTheme(brouillonTheme, $("#apercu"));
+}
+$("#btnParam").addEventListener("click", () => {
+  brouillonTheme = { ...theme };
+  rendreParam();
+  $("#dlgParam").showModal();
+});
+$("#themes").addEventListener("click", e => {
+  const b = e.target.closest("button[data-th]");
+  if (!b) return;
+  brouillonTheme = { ...THEMES[b.dataset.th] };
+  rendreParam();
+});
+$("#couleurs").addEventListener("input", e => {
+  if (!e.target.dataset.c) return;
+  brouillonTheme[e.target.dataset.c] = e.target.value;
+  appliquerTheme(brouillonTheme, $("#apercu"));  // aperçu en direct, sans toucher au reste
+  $("#themes").querySelectorAll("button").forEach(b => b.classList.remove("on"));
+});
+$("#pReset").addEventListener("click", () => { brouillonTheme = { ...THEMES.orokin }; rendreParam(); });
+$("#pAnnuler").addEventListener("click", () => $("#dlgParam").close());
+$("#pOk").addEventListener("click", () => {
+  theme = { ...brouillonTheme };
+  appliquerTheme(theme);
+  try { localStorage.setItem("theme", JSON.stringify(theme)); } catch (e) {}
+  $("#dlgParam").close();
+  graphique();  // le graphique reprend la nouvelle couleur d'accent
 });
 
 // ---------------------------------------------------------------- écran de démarrage
