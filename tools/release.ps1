@@ -28,7 +28,7 @@ $zip = "$tmp\inventaire-tenno-src.zip"
 py -I -c @"
 import zipfile, pathlib, sys
 root = pathlib.Path(sys.argv[1])
-files = ['app.py', 'index.html', 'prime_inventory.py', 'Lancer.bat', 'LISEZMOI.txt']
+files = ['app.py', 'index.html', 'prime_inventory.py', 'reliques_overlay.py', 'Lancer.bat', 'LISEZMOI.txt']
 files += ['assets/' + p.name for p in sorted((root / 'assets').iterdir()) if p.is_file()]
 with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as z:
     for f in files:

@@ -47,7 +47,7 @@ import requests
 
 import prime_inventory as pi
 
-VERSION = "1.0.5"
+VERSION = "1.1.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"
@@ -1048,7 +1048,8 @@ def history_add(entry):
 # ================================================================ mises a jour (GitHub Releases)
 # Seuls ces fichiers peuvent etre remplaces : jamais les donnees de l'utilisateur
 # (inventaire, session WFM, souhaits, ventes, caches...).
-UPDATABLE = {"app.py", "index.html", "prime_inventory.py", "Lancer.bat", "LISEZMOI.txt"}
+UPDATABLE = {"app.py", "index.html", "prime_inventory.py", "reliques_overlay.py", "Lancer.bat",
+             "LISEZMOI.txt"}
 
 
 def version_tuple(v):
@@ -1118,6 +1119,41 @@ def install_update():
                      creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
     threading.Timer(3.0, shutdown).start()
     return {"ok": True, "version": info["derniere"]}
+
+
+UPDATE_INFO = {}           # derniere verification des mises a jour (toutes les 30 min)
+UPDATE_CHECK_EVERY = 30 * 60
+
+
+def update_loop():
+    """Verifie GitHub toutes les 30 min : l'interface affiche alors un bouton « Mettre a jour »."""
+    while True:
+        try:
+            UPDATE_INFO.clear()
+            UPDATE_INFO.update(check_update())
+        except Exception as e:
+            print("verification des mises a jour :", e)
+        time.sleep(UPDATE_CHECK_EVERY)
+
+
+OVERLAY = None   # overlay des recompenses de reliques
+
+
+def start_overlay():
+    global OVERLAY
+    if not pi.IS_WINDOWS:
+        return
+    try:
+        import reliques_overlay
+        OVERLAY = reliques_overlay.RewardOverlay(sys.modules[__name__])
+        OVERLAY.start(RES / "assets")
+    except Exception as e:
+        print("overlay des reliques :", e)
+
+
+def toggle_overlay(icon=None, item=None):
+    if OVERLAY:
+        OVERLAY.enabled = not OVERLAY.enabled
 
 
 def shutdown():
@@ -1207,7 +1243,10 @@ class Handler(BaseHTTPRequestHandler):
                                 "source": STATE.source, "quand": STATE.when,
                                 "erreur": STATE.error, "langues": LANGS,
                                 "presence": {"auto": PRESENCE.auto, "statut": PRESENCE.statut},
-                                "nb_alertes": len(_alerts), "version_app": VERSION})
+                                "nb_alertes": len(_alerts), "version_app": VERSION,
+                                "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
+                                "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
+                                            "statut": OVERLAY.status if OVERLAY else "indisponible"}})
             elif u.path == "/api/maj":
                 self.send(200, check_update())
             elif u.path == "/api/baro":
@@ -1277,6 +1316,10 @@ class Handler(BaseHTTPRequestHandler):
                     raise RuntimeError("pas_de_fenetre")
                 show_window()
                 self.send(200, {"ok": True})
+            elif u.path == "/api/overlay":
+                if OVERLAY:
+                    OVERLAY.enabled = bool(body.get("actif"))
+                self.send(200, {"actif": bool(OVERLAY and OVERLAY.enabled)})
             elif u.path == "/api/presence":
                 PRESENCE.auto = bool(body.get("auto"))
                 self.send(200, {"auto": PRESENCE.auto, "statut": PRESENCE.statut})
@@ -1354,6 +1397,8 @@ def main():
     threading.Thread(target=shared_loop, daemon=True).start()
     threading.Thread(target=watch_loop, daemon=True).start()
     threading.Thread(target=presence_loop, daemon=True).start()
+    threading.Thread(target=update_loop, daemon=True).start()
+    start_overlay()
     print(f"App prete : {url}")
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     with_tray = not args.sans_icone
@@ -1441,6 +1486,8 @@ def make_tray(open_fn, quit_fn):
         pystray.MenuItem("Lecture auto du jeu", toggle_auto, checked=lambda it: STATE.auto),
         pystray.MenuItem("Statut « en jeu » sur Warframe Market", toggle_presence,
                          checked=lambda it: PRESENCE.auto),
+        pystray.MenuItem("Prix des récompenses de reliques (overlay)", toggle_overlay,
+                         checked=lambda it: bool(OVERLAY and OVERLAY.enabled)),
         pystray.Menu.SEPARATOR,
         pystray.MenuItem("Quitter", lambda i, it: quit_fn())))
     _notify = lambda msg, title: icon.notify(msg, title)

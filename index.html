@@ -231,6 +231,9 @@
   .baro { margin: 0 20px 14px; padding: 10px 16px; display: flex; gap: 14px; align-items: center; flex-wrap: wrap;
           clip-path: var(--cut); background: linear-gradient(90deg, #2a2416, #111724 70%); border-left: 3px solid var(--gold); }
   .baro[hidden] { display: none; }
+  button.maj { background: var(--gold); color: #0a0d14; animation: majpulse 2s ease-in-out infinite; }
+  button.maj:hover { background: #dcc08a; color: #0a0d14; }
+  @keyframes majpulse { 50% { box-shadow: 0 0 14px #c9a96e99; } }
   .baro b { color: var(--gold); letter-spacing: 2px; text-transform: uppercase; }
   .baro button { margin-left: auto; }
 
@@ -272,6 +275,7 @@
     <div class="stat"><b id="tNb">–</b><small data-t="nbItems"></small></div>
   </div>
   <div class="actions">
+    <button id="btnMaj" class="maj" hidden></button>
     <input type="search" id="filtre">
     <select id="seuil"></select>
     <select id="langue"></select>
@@ -304,6 +308,7 @@
     <input type="range" id="cols" min="2" max="10" step="1"><b id="colsN"></b></label>
   <span class="jeu muted" id="jeu"></span>
   <span class="jeu muted" id="presence" hidden></span>
+  <label class="auto" id="overlayBox" hidden><input type="checkbox" id="ovActif"> <span data-t="overlayLbl"></span></label>
   <label class="auto" id="presenceAuto" hidden><input type="checkbox" id="presAuto"> <span data-t="presAuto"></span></label>
   <span id="etat"></span>
 </div>
@@ -671,7 +676,9 @@ const T3 = {
     valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
-    relCalc: "Calcul de la valeur des reliques…", objet: "Objets", ressource: "Ressources", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
+    relCalc: "Calcul de la valeur des reliques…", majBouton: v => `⟳ Mettre à jour (v${v})`,
+    majBoutonTip: "Installe la nouvelle version et redémarre l'app",
+    overlayLbl: "Overlay reliques", overlayTip: "Affiche le prix des récompenses par-dessus le jeu au moment du choix. Le jeu doit être en plein écran sans bordure.", objet: "Objets", ressource: "Ressources", modeListe: "☰ Liste", modeImages: "▦ Images", parLigne: "Cases par ligne",
     chargementArsenal: "Chargement de l'arsenal",
     majRecherche: "Recherche de mises à jour…", majInstall: v => `Installation de la version ${v}…`,
     majRedemarrage: "Redémarrage de l'app…", majErreur: "Mise à jour impossible, lancement de la version actuelle",
@@ -704,7 +711,9 @@ const T3 = {
     valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
-    relCalc: "Computing relic values…", objet: "Items", ressource: "Resources", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
+    relCalc: "Computing relic values…", majBouton: v => `⟳ Update (v${v})`,
+    majBoutonTip: "Installs the new version and restarts the app",
+    overlayLbl: "Relic overlay", overlayTip: "Shows reward prices over the game when choosing. The game must be in borderless fullscreen.", objet: "Items", ressource: "Resources", modeListe: "☰ List", modeImages: "▦ Images", parLigne: "Tiles per row",
     chargementArsenal: "Loading arsenal",
     majRecherche: "Checking for updates…", majInstall: v => `Installing version ${v}…`,
     majRedemarrage: "Restarting the app…", majErreur: "Update failed, starting the current version",
@@ -1346,6 +1355,14 @@ async function surveiller() {
     presence = e.presence || {};
     $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
     $("#presAuto").checked = !!presence.auto;
+    // bouton « Mettre à jour » : le serveur vérifie GitHub toutes les 30 min
+    const maj = e.maj || {};
+    $("#btnMaj").hidden = !maj.nouvelle;
+    if (maj.nouvelle) { $("#btnMaj").textContent = t("majBouton", maj.derniere); $("#btnMaj").title = t("majBoutonTip"); }
+    const ov = e.overlay || {};
+    $("#overlayBox").hidden = ov.statut === "indisponible";
+    $("#overlayBox").title = t("overlayTip") + (ov.statut ? ` (${ov.statut})` : "");
+    if (document.activeElement !== $("#ovActif")) $("#ovActif").checked = !!ov.actif;
     $("#presence").title = t("presTip");
     $("#presence").innerHTML = `<span class="dot ${presence.statut === "ingame" ? "ingame" : ""}"></span>${t("pres_" + presence.statut) || presence.statut}`;
     const avant = JSON.stringify(alertes);
@@ -1579,6 +1596,24 @@ $("#alertes").addEventListener("click", async e => {
 });
 
 $("#presAuto").addEventListener("change", e => api("/api/presence", { auto: e.target.checked }).catch(() => {}));
+$("#ovActif").addEventListener("change", e => api("/api/overlay", { actif: e.target.checked }).catch(() => {}));
+
+// « Mettre à jour » : réaffiche l'écran de chargement le temps d'installer, puis l'app redémarre
+$("#btnMaj").addEventListener("click", async () => {
+  majEnCours = true;
+  const s = $("#splash"), msg = $("#splashMsg");
+  s.classList.remove("fin");
+  msg.textContent = t("majInstall", ($("#btnMaj").textContent.match(/v([\d.]+)/) || [])[1] || "");
+  try {
+    await api("/api/maj/installer", {});
+    msg.textContent = t("majRedemarrage");
+    setTimeout(() => location.reload(), 20000);  // si la fenêtre ne s'est pas rouverte d'elle-même
+  } catch (err) {
+    majEnCours = false;
+    msg.textContent = t("majErreur");
+    setTimeout(() => s.classList.add("fin"), 2500);
+  }
+});
 
 // ---------------------------------------------------------------- vente en lot
 for (const zone of ["#lignes", "#grille"]) $(zone).addEventListener("change", e => {  // liste et grille
