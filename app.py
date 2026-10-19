@@ -231,12 +231,83 @@ _prices = load_json(PRICE_CACHE, {}) or {}
 _prices_saved = 0.0
 
 
+# ---------------------------------------------------------------- prix partages
+# Une GitHub Action releve tous les prix toutes les 6 h (tools/snapshot_prix.py). L'app telecharge
+# ce fichier au demarrage : tous les prix s'affichent tout de suite, meme au premier lancement.
+SHARED_URL = f"https://github.com/{UPDATE_REPO}/releases/download/prix/prix.json.gz"
+SHARED_FILE = BASE / "prix_partages.json.gz"
+SHARED_MAX_AGE = 3 * 3600
+_shared = {"t": 0, "items": {}}
+_shared_ready = threading.Event()
+
+
+def load_shared():
+    """Telecharge le fichier de prix s'il est vieux de plus de 3 h, puis le charge en memoire."""
+    import gzip
+    try:
+        fresh = SHARED_FILE.exists() and time.time() - SHARED_FILE.stat().st_mtime < SHARED_MAX_AGE
+        if not fresh:
+            r = requests.get(SHARED_URL, timeout=30)
+            if r.ok:
+                SHARED_FILE.write_bytes(r.content)
+        if SHARED_FILE.exists():
+            data = json.loads(gzip.decompress(SHARED_FILE.read_bytes()))
+            _shared.update(t=data.get("t", 0), items=data.get("items", {}))
+    except Exception as e:  # pas grave : on retombe sur les requetes item par item
+        print("prix partages :", e)
+    finally:
+        _shared_ready.set()
+
+
+def shared_loop():
+    while True:
+        load_shared()
+        time.sleep(SHARED_MAX_AGE)
+
+
+def shared_prices(slug, rank=None, subtype=None):
+    """Meme calcul que prices(), a partir du releve partage. None si l'item n'y est pas."""
+    groups = _shared["items"].get(slug)
+    if not groups:
+        return None
+    parsed = []
+    for key, (n_off, n_onl, top) in groups.items():
+        r, st = key.split("|")
+        parsed.append((None if r == "None" else int(r), None if st == "None" else st, n_off, n_onl, top))
+    if subtype:
+        parsed = [g for g in parsed if g[1] in (subtype, None)]
+    note = ""
+    if rank is not None:
+        exact = [g for g in parsed if g[0] == rank]
+        if exact:
+            parsed = exact
+        else:
+            zero = [g for g in parsed if (g[0] or 0) == 0]
+            parsed, note = (zero, "rang0") if zero else (parsed, "tous_rangs")
+    me = ((ACCOUNT.user or {}).get("pseudo") if ACCOUNT else None)
+    offers = sorted((o for g in parsed for o in g[4] if o[2] != me), key=lambda o: o[0])
+    top = [{"prix": o[0], "rang": o[1], "vendeur": o[2], "statut": o[3], "qte": o[4], "rep": o[5]}
+           for o in offers[:TOP_N]]
+    return {"t": _shared["t"], "top": top, "min": top[0]["prix"] if top else None,
+            "median": round(statistics.median(t["prix"] for t in top)) if top else None,
+            "nb_offres": sum(g[2] for g in parsed), "nb_en_ligne": sum(g[3] for g in parsed),
+            "note": note, "partage": True}
+
+
 def prices(slug, rank=None, subtype=None, force=False, cached_ok=False):
     """cached_ok : renvoie le dernier prix connu meme ancien (l'interface le rafraichit ensuite)."""
     key = f"{slug}|{rank}|{subtype}"
     hit = _prices.get(key)
     if hit and not force and (cached_ok or time.time() - hit["t"] < PRICE_TTL):
-        return hit
+        if not (cached_ok and _shared["t"] > hit["t"]):
+            return hit
+    if cached_ok and not force:
+        _shared_ready.wait(15)  # au demarrage, le fichier partage arrive en 1-2 s
+        shared = shared_prices(slug, rank, subtype)
+        if shared and (not hit or shared["t"] > hit["t"]):
+            return shared
+        if hit:
+            return hit
     orders = wfm_get(f"{pi.WFM}/orders/item/{slug}")["data"]
     me = ((ACCOUNT.user or {}).get("pseudo") if ACCOUNT else None)
     # mes propres offres ne comptent pas dans le prix du marche (sinon le min serait mon prix)
@@ -1218,6 +1289,7 @@ def main():
         threading.Thread(target=srv6.serve_forever, daemon=True).start()
     except OSError:
         pass
+    threading.Thread(target=shared_loop, daemon=True).start()
     threading.Thread(target=watch_loop, daemon=True).start()
     threading.Thread(target=presence_loop, daemon=True).start()
     print(f"App prete : {url}")

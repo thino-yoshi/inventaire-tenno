@@ -1,0 +1,36 @@
+# Releve les prix de tous les items de Warframe Market toutes les 6 heures et les publie
+# dans la release "prix" (marquee pre-release : elle n'est pas prise pour une mise a jour de l'app).
+name: Prix partages
+
+on:
+  schedule:
+    - cron: "17 */6 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: prix
+  cancel-in-progress: false
+
+jobs:
+  releve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install requests
+      - name: Relever les prix
+        run: python tools/snapshot_prix.py prix.json.gz
+      - name: Publier
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release view prix >/dev/null 2>&1 || \
+            gh release create prix --prerelease --title "Prix partagés" \
+              --notes "Prix Warframe Market relevés automatiquement toutes les 6 heures (utilisé par l'app au démarrage)."
+          gh release upload prix prix.json.gz --clobber
