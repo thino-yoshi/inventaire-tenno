@@ -23,11 +23,31 @@ from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
 from urllib.parse import urlparse, parse_qs
 
+RELAUNCH_FLAG = "INVENTAIRE_RELANCE"
+
+
+def clean_env():
+    """Environnement pour lancer un autre exe de l'app : sans les variables internes de
+    PyInstaller, sinon le nouvel exe reutilise le dossier temporaire de l'ancien (efface a sa
+    fermeture) et plante faute de fichiers."""
+    env = {k: v for k, v in os.environ.items() if not k.startswith("_PYI_") and k != "_MEIPASS2"}
+    env["PYINSTALLER_RESET_ENVIRONMENT"] = "1"
+    env[RELAUNCH_FLAG] = "1"
+    return env
+
+
+# Lance par une ancienne version (<= 1.0.4) apres une mise a jour, avec son environnement :
+# on se relance tout de suite proprement, avant que l'ancienne efface son dossier temporaire.
+if getattr(sys, "frozen", False) and "--attendre-pid" in sys.argv and not os.environ.get(RELAUNCH_FLAG):
+    subprocess.Popen([sys.executable] + sys.argv[1:], env=clean_env(),
+                     creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
+    os._exit(0)
+
 import requests
 
 import prime_inventory as pi
 
-VERSION = "1.0.4"
+VERSION = "1.0.5"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"
@@ -1092,9 +1112,11 @@ def install_update():
     # exe "tout-en-un" : un processus lanceur (le parent) garde l'ancien exe ouvert jusqu'a la
     # fin ; la nouvelle version doit donc attendre ce parent, pas seulement ce processus-ci
     waited = os.getppid() if FROZEN else os.getpid()
-    subprocess.Popen(cmd + ["--attendre-pid", str(waited)], cwd=str(BASE),
+    args = [a for i, a in enumerate(sys.argv[1:])  # memes options (port...), sans l'ancien --attendre-pid
+            if a != "--attendre-pid" and (i == 0 or sys.argv[i] != "--attendre-pid")]
+    subprocess.Popen(cmd + args + ["--attendre-pid", str(waited)], cwd=str(BASE), env=clean_env(),
                      creationflags=getattr(subprocess, "DETACHED_PROCESS", 0))
-    threading.Timer(1.0, shutdown).start()
+    threading.Timer(3.0, shutdown).start()
     return {"ok": True, "version": info["derniere"]}
 
 
