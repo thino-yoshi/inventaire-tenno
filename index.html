@@ -821,7 +821,6 @@ const T3 = {
     majRedemarrage: "Redémarrage de l'app…", majErreur: "Mise à jour impossible, lancement de la version actuelle",
     baroIci: (lieu, fin) => `Baro Ki'Teer est au ${lieu} jusqu'au ${fin}`,
     baroBientot: (date, j, lieu) => `Prochaine visite de Baro Ki'Teer : ${date} (dans ${j} j) · ${lieu}`,
-    baroPieces: (n, d) => `${n} pièce(s) qui rapportent plus en ducats · ${DUC}${d}`, baroVoir: "Voir les pièces",
     jeuIllisible: "inventaire illisible : passe un écran de chargement (relais, mission)",
     tropBas: p => `trop bas : jusqu'à ${p}p`, monter: p => `Monter à ${p}p`,
     tropBasTip: "Le vendeur suivant est bien plus cher : tu peux monter ton prix et rester le moins cher.",
@@ -862,7 +861,6 @@ const T3 = {
     majRedemarrage: "Restarting the app…", majErreur: "Update failed, starting the current version",
     baroIci: (lieu, fin) => `Baro Ki'Teer is at ${lieu} until ${fin}`,
     baroBientot: (date, j, lieu) => `Next Baro Ki'Teer visit: ${date} (in ${j} d) · ${lieu}`,
-    baroPieces: (n, d) => `${n} part(s) worth more in ducats · ${DUC}${d}`, baroVoir: "Show parts",
     jeuIllisible: "inventory unreadable: go through a loading screen (relay, mission)",
     tropBas: p => `too low: up to ${p}p`, monter: p => `Raise to ${p}p`,
     tropBasTip: "The next seller is much pricier: you can raise your price and still be the cheapest.",
@@ -1747,22 +1745,11 @@ function rendreBaro() {
   const loc = lang === "tc" ? "zh-TW" : lang;
   const jour = d => d.toLocaleString(loc, { weekday: "long", day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" });
   const ici = now >= debut;
-  const pieces = items.filter(baro);
-  const ducats = pieces.reduce((s, i) => s + i.ducats * i.qte, 0);
+  // seulement le nom et la visite (le compteur de pièces et le bouton ont été retirés)
   box.innerHTML = `<b>Baro Ki'Teer</b><span>${esc(ici ? t("baroIci", baroInfo.lieu, jour(fin))
-      : t("baroBientot", jour(debut), Math.ceil((debut - now) / 864e5), baroInfo.lieu))}</span>
-    ${pieces.length ? `<span class="duc">${t("baroPieces", pieces.length, ducats)}</span>
-      <button id="baroVoir">${t("baroVoir")}</button>` : ""}`;
+      : t("baroBientot", jour(debut), Math.ceil((debut - now) / 864e5), baroInfo.lieu))}</span>`;
   box.hidden = false;
 }
-$("#baro").addEventListener("click", e => {
-  if (!e.target.closest("#baroVoir")) return;
-  // le bandeau est visible depuis tous les onglets : on revient sur l'Inventaire, pièces Prime par ducats
-  montrerPage("inventaire");
-  onglet = "prime"; tri = { k: "ducats", asc: false }; limite = PAGE;
-  rendu();
-  $("#vueInventaire").scrollIntoView({ behavior: "smooth", block: "start" });
-});
 
 // ---------------------------------------------------------------- reliques (valeur moyenne)
 let relEnCours = false;
