@@ -35,9 +35,10 @@ RELIC_MEMORY = 30 * 60     # reliques vues dans les 30 dernieres minutes = escou
 
 # OCR integre a Windows (Windows.Media.Ocr) appele depuis PowerShell : sortie JSON des lignes lues
 OCR_PS = r"""
-param($path, $lang)
+param($lang)
 $ErrorActionPreference = 'Stop'
 [Console]::OutputEncoding = [Text.Encoding]::UTF8
+[Console]::InputEncoding = [Text.Encoding]::UTF8
 Add-Type -AssemblyName System.Runtime.WindowsRuntime
 $null = [Windows.Storage.StorageFile, Windows.Storage, ContentType = WindowsRuntime]
 $null = [Windows.Media.Ocr.OcrEngine, Windows.Foundation, ContentType = WindowsRuntime]
@@ -47,16 +48,21 @@ $asTask = ([System.WindowsRuntimeSystemExtensions].GetMethods() | Where-Object {
   $_.Name -eq 'AsTask' -and $_.GetParameters().Count -eq 1 -and
   $_.GetParameters()[0].ParameterType.Name -eq 'IAsyncOperation`1' })[0]
 function Await($op, $type) { $t = $asTask.MakeGenericMethod($type).Invoke($null, @($op)); $t.Wait(); $t.Result }
+$eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new($lang))
+# langue demandee absente (ex. Windows anglais sans pack francais) : langue(s) du compte Windows
+if (-not $eng) { $eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages() }
+if (-not $eng) { [Console]::Out.WriteLine('OCR_INDISPONIBLE'); exit 2 }
+[Console]::Out.WriteLine('OCR_LANG ' + $eng.RecognizerLanguage.LanguageTag)
+while ($true) {
+$path = [Console]::In.ReadLine()
+if ($path -eq $null) { break }
+try {
 $file = Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($path)) ([Windows.Storage.StorageFile])
 $stream = Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
 $dec = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
 $bmp = Await ($dec.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
-$eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromLanguage([Windows.Globalization.Language]::new($lang))
-# langue demandee absente (ex. Windows anglais sans pack francais) : langue(s) du compte Windows
-if (-not $eng) { $eng = [Windows.Media.Ocr.OcrEngine]::TryCreateFromUserProfileLanguages() }
-if (-not $eng) { [Console]::Error.WriteLine('OCR_INDISPONIBLE'); exit 2 }
-[Console]::Error.WriteLine('OCR_LANG ' + $eng.RecognizerLanguage.LanguageTag)
 $res = Await ($eng.RecognizeAsync($bmp)) ([Windows.Media.Ocr.OcrResult])
+$stream.Dispose()
 $out = @(foreach ($l in $res.Lines) {
   $r = $l.Words | ForEach-Object { $_.BoundingRect }
   $x = ($r | ForEach-Object { $_.X } | Measure-Object -Minimum).Minimum
@@ -64,7 +70,10 @@ $out = @(foreach ($l in $res.Lines) {
   $x2 = ($r | ForEach-Object { $_.X + $_.Width } | Measure-Object -Maximum).Maximum
   $y2 = ($r | ForEach-Object { $_.Y + $_.Height } | Measure-Object -Maximum).Maximum
   [pscustomobject]@{ t = $l.Text; x = $x; y = $y; w = $x2 - $x; h = $y2 - $y } })
-ConvertTo-Json -InputObject $out -Compress
+[Console]::Out.WriteLine((ConvertTo-Json -InputObject $out -Compress))
+} catch { [Console]::Out.WriteLine('ERREUR ' + ($_.Exception.Message -replace '\s+', ' ')) }
+[Console]::Out.Flush()
+}
 """
 
 
@@ -114,25 +123,97 @@ def find_game_rect(process="warframe.x64.exe"):
 def norm(s):
     s = unicodedata.normalize("NFKD", s or "").encode("ascii", "ignore").decode().lower()
     s = re.sub(r"\b(schema|blueprint)\b", "", s)
-    return re.sub(r"[^a-z0-9]+", " ", s).strip()
+    s = re.sub(r"[^a-z0-9]+", " ", s).strip()
+    return re.sub(r"^\d+ x |  ?x \d+$", "", s).strip()  # "2 X Forma", "Forma X 2"
+
+
+class OcrWorker:
+    """PowerShell lance une seule fois et garde le moteur OCR de Windows charge : une image lue
+    prend ~0,2 s au lieu de ~1 s (demarrage de PowerShell + chargement de WinRT a chaque fois)."""
+
+    def __init__(self):
+        self.proc, self.lang, self.info = None, None, ""
+        self.lines = queue.Queue()
+        self.lock = threading.Lock()
+
+    def _start(self, lang):
+        self.stop()
+        script = Path(tempfile.gettempdir()) / "inventaire_tenno_ocr.ps1"
+        script.write_text(OCR_PS, encoding="utf-8-sig")
+        self.proc = subprocess.Popen(
+            ["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script), lang],
+            stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.DEVNULL,
+            text=True, encoding="utf-8", errors="replace", bufsize=1,
+            creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
+        self.lang, self.lines = lang, queue.Queue()
+        out, lines = self.proc.stdout, self.lines
+
+        def lire():  # lecture dans un fil a part : permet un delai maximum par image
+            for ln in out:
+                lines.put(ln.strip())
+            lines.put(None)
+        threading.Thread(target=lire, daemon=True).start()
+        first = self._next(20)
+        if first and first.startswith("OCR_LANG "):
+            self.info = "langue OCR " + first[9:]
+        else:
+            self.info = "OCR de Windows indisponible" if first == "OCR_INDISPONIBLE" else f"erreur OCR : {first}"
+            self.stop()
+
+    def _next(self, timeout):
+        while True:
+            try:
+                ln = self.lines.get(timeout=timeout)
+            except queue.Empty:
+                return None
+            if ln != "":
+                return ln
+
+    def stop(self):
+        if self.proc:
+            try:
+                self.proc.kill()
+            except Exception:
+                pass
+        self.proc = None
+
+    def warm(self, lang):
+        with self.lock:
+            if not self.proc or self.proc.poll() is not None or self.lang != lang:
+                self._start(lang)
+
+    def read(self, image_path, lang):
+        """Lignes lues dans l'image : [{t, x, y, w, h}] (coordonnees de l'image)."""
+        with self.lock:
+            for _ in range(2):  # PowerShell ferme entre-temps : on le relance une fois
+                if not self.proc or self.proc.poll() is not None or self.lang != lang:
+                    self._start(lang)
+                if not self.proc:
+                    return []
+                try:
+                    self.proc.stdin.write(os.path.abspath(image_path) + "\n")  # l'OCR refuse les "/"
+                    self.proc.stdin.flush()
+                except OSError:
+                    self.stop()
+                    continue
+                out = self._next(10)
+                if out is None:
+                    self.stop()
+                    continue
+                if out.startswith("ERREUR"):
+                    self.info = "erreur OCR : " + out[:200]
+                    return []
+                return json.loads(out) if out.startswith("[") else []
+            return []
+
+
+OCR = OcrWorker()
 
 
 def ocr(image_path, lang="fr-FR"):
-    """Lignes lues dans l'image : [{t, x, y, w, h}] (coordonnees de l'image)."""
-    script = Path(tempfile.gettempdir()) / "inventaire_tenno_ocr.ps1"
-    script.write_text(OCR_PS, encoding="utf-8-sig")
-    r = subprocess.run(["powershell", "-NoProfile", "-ExecutionPolicy", "Bypass", "-File", str(script),
-                        os.path.abspath(image_path),  # l'OCR de Windows refuse les "/"
-                        lang], capture_output=True, text=True, timeout=30,
-                       encoding="utf-8", errors="replace",
-                       creationflags=getattr(subprocess, "CREATE_NO_WINDOW", 0))
-    out = (r.stdout or "").strip()
-    err = (r.stderr or "").strip()
-    m = re.search(r"OCR_LANG (\S+)", err)
-    ocr.last_info = (f"langue OCR {m.group(1)}" if m else
-                     "OCR de Windows indisponible" if "OCR_INDISPONIBLE" in err else
-                     f"erreur OCR : {err[:200] or 'code ' + str(r.returncode)}")
-    return json.loads(out) if out.startswith("[") else []
+    lines = OCR.read(image_path, lang)
+    ocr.last_info = OCR.info
+    return lines
 
 
 ocr.last_info = ""
@@ -176,6 +257,9 @@ class RewardOverlay:
         self.status = "pret : en attente d'un ecran de recompenses"
         self.last = None          # dernier resultat (pour l'interface)
         self.log_dir = None       # dossier de l'app : overlay.log + derniere capture lue
+        self.ecran = 0            # numero de l'ecran de recompenses en cours (annule les anciens)
+        self.index = {}           # langue -> [(chemin, noms normalises)] de TOUTES les recompenses
+        self.rect_cache = (0, None)
 
     def log(self, msg):
         """Journal de diagnostic (overlay.log) : pourquoi l'overlay s'est affiche ou non."""
@@ -215,11 +299,13 @@ class RewardOverlay:
                 if not self.status.startswith("journal illisible"):
                     self.log(f"journal du jeu illisible : {e}")
                 self.status = f"journal illisible : {e}"
-            time.sleep(0.25)
+            time.sleep(0.1)
 
     def on_line(self, line):
         m = RELIC_RE.search(line)
         if m and m.group(1) in self.app.game().ex["relics"]:
+            if m.group(1) not in self.relics:
+                threading.Thread(target=self.prefetch, args=([m.group(1)],), daemon=True).start()
             self.relics[m.group(1)] = time.time()
             return
         m = GETS_RE.search(line)
@@ -233,84 +319,161 @@ class RewardOverlay:
             squad = [p.rsplit("/", 1)[-1] for p, t in self.relics.items() if time.time() - t < RELIC_MEMORY]
             self.log(f"ecran de recompenses detecte ; reliques de l'escouade vues : {squad or 'aucune'}")
             self.known = []
-            threading.Timer(1.3, self.capture).start()  # le temps que les cartes s'affichent
+            self.ecran += 1
+            threading.Thread(target=self.scan, args=(self.ecran,), daemon=True).start()
 
     # ---------------------------------------------------------------- recompenses possibles
-    def candidates(self, lang):
-        """[(chemin, noms normalises)] : recompenses des reliques de l'escouade (ou de toutes)."""
+    def reward_paths(self, relics):
         g = self.app.game()
-        now = time.time()
-        squad = [p for p, t in self.relics.items() if now - t < RELIC_MEMORY]
-        relics = squad or list(g.ex["relics"])
-        paths = set(self.known)
+        paths = set()
         for rp in relics:
             manifest = g.ex["relics"][rp].get("rewardManifest")
             for r in (g.rewards().get(manifest) or [[]])[0]:
                 paths.add(r["type"].replace("/StoreItems/", "/", 1))
-        out = []
-        for p in paths:
-            names = {norm(g.name(p, l)) for l in {lang, "en"} if g.name(p, l)}
-            if names:
-                out.append((p, names))
-        return out, squad
+        return paths
 
-    def match(self, text, cands):
+    def all_rewards(self, lang):
+        """[(chemin, noms normalises)] de toutes les recompenses de reliques (calcule une fois)."""
+        if lang not in self.index:
+            g = self.app.game()
+            out = []
+            for p in self.reward_paths(list(g.ex["relics"])):
+                names = {norm(g.name(p, l)) for l in {lang, "en"} if g.name(p, l)}
+                if names:
+                    out.append((p, names))
+            self.index[lang] = out
+        return self.index[lang]
+
+    def candidates(self, lang):
+        """(toutes les recompenses, chemins de l'escouade, reliques de l'escouade)."""
+        now = time.time()
+        squad = [p for p, t in self.relics.items() if now - t < RELIC_MEMORY]
+        likely = self.reward_paths(squad) | set(self.known)
+        return self.all_rewards(lang), likely, squad
+
+    def match(self, text, cands, likely=()):
         t = norm(text)
         if len(t) < 4:
             return None, 0
         best, score = None, 0
+        sm = difflib.SequenceMatcher(None, "", t)  # le texte lu est compare a chaque nom
         for p, names in cands:
+            bonus = 0.04 if p in likely else 0  # a egalite, une recompense des reliques vues gagne
             for n in names:
-                s = difflib.SequenceMatcher(None, t, n).ratio()
+                sm.set_seq1(n)
+                if sm.real_quick_ratio() + bonus <= score or sm.quick_ratio() + bonus <= score:
+                    continue
+                s = sm.ratio() + bonus
                 if s > score:
                     best, score = p, s
-        return best, score
+        return best, min(score, 1.0)
 
     # ---------------------------------------------------------------- capture + OCR
-    def capture(self):
-        try:
-            from PIL import ImageGrab
-            lang = self.app.CURRENT_LANG[0]
-            # la fenetre du jeu, sur l'ecran ou elle se trouve (sinon l'ecran principal)
+    def game_rect(self):
+        """Position de la fenetre du jeu, gardee 30 s (la chercher prend ~50 ms)."""
+        t, rect = self.rect_cache
+        if not rect or time.time() - t > 30:
             rect = find_game_rect()
-            shot = ImageGrab.grab(bbox=rect, all_screens=True) if rect else ImageGrab.grab()
-            self.log(f"fenetre du jeu : {rect or 'introuvable, ecran principal utilise'}")
-            if not rect:
-                rect = (0, 0, shot.width, shot.height)
-            self.rect = rect
-            W, H = shot.size
-            top, bottom = int(H * 0.22), int(H * 0.62)  # bande des noms des cartes
-            band = shot.crop((0, top, W, bottom))
-            band = band.resize((band.width * 2, band.height * 2))  # texte plus gros = OCR plus fiable
-            path = Path(tempfile.gettempdir()) / "inventaire_tenno_recompenses.png"
-            band.save(path)
-            if self.log_dir:  # derniere capture lue, pour comprendre un echec
-                band.save(Path(self.log_dir) / "overlay_derniere_capture.png")
-            self.status = "lecture de l'ecran"
-            lines = ocr(path, "fr-FR" if lang == "fr" else "en-US")
-            self.log(f"{ocr.last_info} ; {len(lines)} ligne(s) lue(s) : {[ln['t'] for ln in lines][:20]}")
-            for ln in lines:  # retour en coordonnees ecran
-                ln["x"], ln["w"] = ln["x"] / 2, ln["w"] / 2
-                ln["y"], ln["h"] = ln["y"] / 2 + top, ln["h"] / 2
-            self.show_rewards(lines, W, H, lang)
-        except Exception as e:
-            import traceback
-            self.status = f"erreur : {e}"
-            self.log("ERREUR " + traceback.format_exc().replace("\n", " | "))
+            self.rect_cache = (time.time(), rect)
+        return rect
 
-    def show_rewards(self, lines, W, H, lang):
-        cands, squad = self.candidates(lang)
+    def grab(self, n):
+        """Capture + OCR de la bande des noms. (lignes en coordonnees ecran, largeur, hauteur)."""
+        from PIL import ImageGrab
+        lang = self.app.CURRENT_LANG[0]
+        rect = self.game_rect()
+        shot = ImageGrab.grab(bbox=rect, all_screens=True) if rect else ImageGrab.grab()
+        if not rect:
+            rect = (0, 0, shot.width, shot.height)
+        self.rect = rect
+        W, H = shot.size
+        top, bottom = int(H * 0.22), int(H * 0.62)  # bande des noms des cartes
+        band = shot.crop((0, top, W, bottom)).convert("RGB")
+        band = band.resize((band.width * 2, band.height * 2))  # texte plus gros = OCR plus fiable
+        path = Path(tempfile.gettempdir()) / f"inventaire_tenno_recompenses{n % 2}.bmp"
+        band.save(path)  # BMP : ~0,01 s au lieu de ~0,5 s en PNG
+        lines = ocr(path, "fr-FR" if lang == "fr" else "en-US")
+        for ln in lines:  # retour en coordonnees ecran
+            ln["x"], ln["w"] = ln["x"] / 2, ln["w"] / 2
+            ln["y"], ln["h"] = ln["y"] / 2 + top, ln["h"] / 2
+        return lines, W, H, lang, band
+
+    def scan(self, ecran):
+        """Lit l'ecran des que les cartes apparaissent : un essai toutes les ~0,3 s pendant 4 s,
+        puis encore un ou deux essais pour attraper une carte affichee un peu plus tard."""
+        t0 = time.time()
+        time.sleep(0.3)
+        self.status = "lecture de l'ecran"
+        shown, extra, n, band = 0, 0, 0, None
+        while self.ecran == ecran and time.time() - t0 < 5:
+            n += 1
+            try:
+                lines, W, H, lang, band = self.grab(n)
+                rewards = self.show_rewards(lines, W, H, lang, quiet=n > 1 and not shown)
+            except Exception:
+                import traceback
+                self.status = "erreur de lecture"
+                self.log("ERREUR " + traceback.format_exc().replace("\n", " | "))
+                return
+            if len(rewards) > shown:
+                self.log(f"  affiche apres {time.time() - t0:.2f} s (essai {n}) : {len(rewards)} recompense(s)")
+                shown = len(rewards)
+                if self.window:
+                    self.window.show(rewards, SHOW_SECONDS - (time.time() - t0), getattr(self, "rect", None))
+                threading.Thread(target=self.fill_images, args=(rewards, ecran, t0), daemon=True).start()
+            if shown:
+                extra += 1
+                if shown >= 4 or extra > 2:
+                    break
+                time.sleep(0.4)
+            else:
+                time.sleep(0.2)
+        if not shown:
+            self.log(f"  rien reconnu en {time.time() - t0:.1f} s ({n} essai(s))")
+        if band is not None and self.log_dir:  # derniere capture lue, pour comprendre un echec
+            try:
+                band.save(Path(self.log_dir) / "overlay_derniere_capture.png")
+            except Exception:
+                pass
+
+    def fill_images(self, rewards, ecran, t0):
+        """Images manquantes telechargees apres coup, puis l'overlay est redessine avec."""
+        missing = [r for r in rewards if r.get("image") is None and r["_key"] not in self._images]
+        if not missing:
+            return
+        for r in missing:
+            self.image_bytes(r["_slug"], r["chemin"])
+        for r in rewards:
+            r["image"] = self._images.get(r["_key"])
+        if self.ecran == ecran and self.window and time.time() - t0 < SHOW_SECONDS:
+            self.window.show(rewards, SHOW_SECONDS - (time.time() - t0), getattr(self, "rect", None))
+
+    def prefetch(self, relics):
+        """Prix et images des recompenses d'une relique, prepares a l'avance."""
+        try:
+            lang = self.app.CURRENT_LANG[0]
+            self.all_rewards(lang)
+            for p in self.reward_paths(relics):
+                v = self.value(p, lang)
+                if v["image"] is None:
+                    self.image_bytes(v["_slug"], p)
+        except Exception as e:
+            self.log(f"preparation des recompenses impossible : {e}")
+
+    def show_rewards(self, lines, W, H, lang, quiet=False):
+        cands, likely, squad = self.candidates(lang)
         rewards = []
         for col in columns(lines, W):
             # le meilleur morceau de texte de la carte (le nom), sans le pseudo du joueur en dessous
             path, score, used = None, 0, None
             for grp in text_groups(col):
-                p2, s2 = self.match(" ".join(ln["t"] for ln in grp), cands)
+                p2, s2 = self.match(" ".join(ln["t"] for ln in grp), cands, likely)
                 if s2 > score:
                     path, score, used = p2, s2, grp
             texte = " ".join(ln["t"] for ln in used) if used else " ".join(ln["t"] for ln in col)
-            self.log(f"  carte '{texte}' -> {path.rsplit('/', 1)[-1] if path else 'rien'} (score {score:.2f})")
-            if path and score >= 0.6:
+            if not quiet:
+                self.log(f"  carte '{texte}' -> {path.rsplit('/', 1)[-1] if path else 'rien'} (score {score:.2f})")
+            if path and score >= 0.72:
                 x = min(ln["x"] for ln in used) + max(ln["x"] + ln["w"] for ln in used)
                 rewards.append({"chemin": path, "x": x / 2, "y": min(ln["y"] for ln in used),
                                 "score": round(score, 2), **self.value(path, lang)})
@@ -321,11 +484,10 @@ class RewardOverlay:
         heure = time.strftime("%H:%M")
         self.status = (f"dernier ecran ({heure}) : {len(rewards)} recompense(s) reconnue(s)" if rewards else
                        f"dernier ecran ({heure}) : aucune recompense reconnue, voir overlay.log")
-        self.log(f"resultat : {len(rewards)} reconnue(s) sur {len(columns(lines, W))} carte(s) lue(s), "
-                 f"{len(cands)} recompenses possibles")
-        if rewards and self.window:
-            # positions relatives a la fenetre du jeu : l'overlay se pose exactement dessus
-            self.window.show(rewards, SHOW_SECONDS, getattr(self, "rect", None))
+        if not quiet:
+            self.log(f"resultat : {len(rewards)} reconnue(s) sur {len(columns(lines, W))} carte(s) lue(s), "
+                     f"{len(likely)} recompenses des reliques vues")
+        return rewards
 
     def value(self, path, lang):
         app = self.app
@@ -339,8 +501,9 @@ class RewardOverlay:
             except Exception:
                 pass
         ducats = cat.by_slug.get(slug, {}).get("ducats") if slug else None
+        key = slug or path
         return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
-                "image": self.image_bytes(slug, path)}
+                "image": self._images.get(key), "_slug": slug, "_key": key}
 
     _images = {}
 
@@ -366,6 +529,15 @@ class RewardOverlay:
     def start(self, assets=None, log_dir=None):
         self.log_dir = log_dir
         set_dpi_aware()
+
+        def warm():  # moteur OCR et liste des recompenses prets avant le premier ecran
+            try:
+                lang = self.app.CURRENT_LANG[0]
+                OCR.warm("fr-FR" if lang == "fr" else "en-US")
+                self.all_rewards(lang)
+            except Exception as e:
+                self.log(f"preparation impossible : {e}")
+        threading.Thread(target=warm, daemon=True).start()
         self.window = OverlayWindow(assets)
         threading.Thread(target=self.window.run, daemon=True).start()
         threading.Thread(target=self.follow_log, daemon=True).start()
