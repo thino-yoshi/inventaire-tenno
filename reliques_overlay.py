@@ -605,8 +605,10 @@ class RewardOverlay:
             return self._images[key]
         app = self.app
         thumb, big = app.catalog().images(slug) if slug else (None, None)
-        url = ("https://warframe.market/static/assets/" + (big or thumb)) if (big or thumb) \
-            else app.game().icon_url(path)
+        url = big or thumb
+        if url and not url.startswith("http"):  # chemin relatif aux images de WFM (sinon icone du jeu)
+            url = "https://warframe.market/static/assets/" + url
+        url = url or app.game().icon_url(path)
         data = None
         if url:
             try:

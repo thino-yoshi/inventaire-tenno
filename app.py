@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.8.0"
+VERSION = "1.8.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
@@ -243,7 +243,18 @@ class Catalog:
 
     def images(self, slug):
         """(vignette 128px, grande image) de l'item, chemins relatifs aux assets de WFM."""
-        en = (self.by_slug.get(slug, {}).get("i18n", {}).get("en", {}) or {}) if slug else {}
+        meta = self.by_slug.get(slug, {}) if slug else {}
+        tags = meta.get("tags") or []
+        # pieces de Warframe (neuroptiques, chassis, systemes) : WFM reprend l'image de la Warframe
+        # entiere, qu'on confondrait avec son schema ; on prend l'icone de la piece du jeu
+        if "component" in tags and "weapon" not in tags and meta.get("gameRef"):
+            try:
+                ic = game().icon_url(meta["gameRef"])
+                if ic:
+                    return ic, ic
+            except Exception:
+                pass
+        en = (meta.get("i18n", {}).get("en", {}) or {}) if slug else {}
         return en.get("thumb"), en.get("icon")
 
     def en(self, slug):
