@@ -80,6 +80,8 @@
   .pieces { list-style: none; padding: 0; margin: 0 0 12px; }
   .pieces li { display: flex; justify-content: space-between; padding: 3px 0; font-size: 13px; }
   .pieces .ok { color: var(--green); } .pieces .ko { color: var(--red); }
+  .copierNom { padding: 0 6px; font-size: 12px; line-height: 18px; margin-right: 6px; color: var(--muted); background: transparent; }
+  .copierNom:hover { color: var(--gold); }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px;
          background: var(--muted); }
   .dot.ingame { background: var(--green); } .dot.online { background: var(--blue); }
@@ -823,7 +825,7 @@ const T3 = {
     pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
     sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
     rareteToutes: "Toutes les raretés", rCommon: "Commun", rUncommon: "Peu commun", rRare: "Rare", rLegendary: "Légendaire",
-    doublons: "Doublons seulement", trierPar: "Trier par", ordreDesc: "▼ décroissant", ordreAsc: "▲ croissant", colProg: "Progression",
+    doublons: "Doublons seulement", copierNomTip: "Copier le nom exact (à coller dans la recherche des reliques du jeu)", trierPar: "Trier par", ordreDesc: "▼ décroissant", ordreAsc: "▲ croissant", colProg: "Progression",
     seuilLbl: "Masquer les mods, arcanes et reliques moins chers que", versionTxt: v => `Version installée : v${v}`, checkTip: "Rechercher des mises à jour",
     checkAJour: v => `à jour (v${v})`, checkNouvelle: v => `v${v} disponible`, checkErreur: "GitHub injoignable", parametres: "Paramètres", themes: "Thèmes",
     couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
@@ -865,7 +867,7 @@ const T3 = {
     pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
     sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
     rareteToutes: "All rarities", rCommon: "Common", rUncommon: "Uncommon", rRare: "Rare", rLegendary: "Legendary",
-    doublons: "Duplicates only", trierPar: "Sort by", ordreDesc: "▼ descending", ordreAsc: "▲ ascending", colProg: "Progress",
+    doublons: "Duplicates only", copierNomTip: "Copy the exact name (paste it in the in-game relic search)", trierPar: "Sort by", ordreDesc: "▼ descending", ordreAsc: "▲ ascending", colProg: "Progress",
     seuilLbl: "Hide mods, arcanes and relics cheaper than", versionTxt: v => `Installed version: v${v}`, checkTip: "Check for updates",
     checkAJour: v => `up to date (v${v})`, checkNouvelle: v => `v${v} available`, checkErreur: "GitHub unreachable", parametres: "Settings", themes: "Themes",
     couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
@@ -1276,7 +1278,7 @@ function panneau() {
   if (it.cat === "relique") html += blocRelique(it);
   if (it.cat === "set") {
     html += `<div class="sub">${t("pieces")}</div><ul class="pieces">${it.pieces.map(pc =>
-      `<li><span class="${pc.possede >= pc.requis ? "ok" : "ko"}">${pc.possede >= pc.requis ? "✓" : "✗"} ${esc(pc.nom)}</span><span class="muted">${pc.possede}/${pc.requis}</span></li>`).join("")}</ul>`;
+      `<li><span class="${pc.possede >= pc.requis ? "ok" : "ko"}">${pc.possede >= pc.requis ? "✓" : "✗"} ${esc(pc.nom)}</span><span class="muted"><button class="copierNom" data-nom="${esc(pc.nom)}" title="${esc(t("copierNomTip"))}">⧉</button> ${pc.possede}/${pc.requis}</span></li>`).join("")}</ul>`;
   }
   html += blocVente(it, p);
   html += `<h2 style="margin-top:14px">${t("top")}</h2>`;
@@ -1607,6 +1609,12 @@ $("#panneau").addEventListener("input", e => {
 $("#panneau").addEventListener("click", async e => {
   const da = e.target.closest("button[data-a]");
   if (da) return actionVente(da.dataset.a, da);
+  const cn = e.target.closest("button.copierNom");  // nom exact d'une pièce, pour le filtre des reliques du jeu
+  if (cn) {
+    try { await navigator.clipboard.writeText(cn.dataset.nom); cn.textContent = "✓"; setTimeout(() => cn.textContent = "⧉", 1200); }
+    catch (err) { prompt("", cn.dataset.nom); }
+    return;
+  }
   const it = tous().find(i => i.id === sel), p = it && prixDe(it);
   if (!p) return;
   let texte, bouton = e.target.closest("button");
