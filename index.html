@@ -91,6 +91,28 @@
   dialog { background: var(--panel); color: var(--text); border: 1px solid var(--line); border-radius: 10px;
            padding: 20px; width: min(380px, calc(100vw - 32px)); }
   dialog::backdrop { background: #000a; }
+  dialog.bienvenue { width: min(760px, calc(100vw - 32px)); padding: 0; border-top: 2px solid var(--gold); }
+  .bv-tete { padding: 24px 28px 4px; display: flex; flex-direction: column; gap: 6px; }
+  .bv-tete h2 { margin: 0; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; }
+  .bv-sur { font-size: 11px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; font-weight: 600; }
+  .bv-blocs { padding: 16px 28px; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 12px; }
+  .bv-blocs > div { display: flex; gap: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--line); }
+  .bv-blocs i { width: 32px; height: 32px; flex: none; border: 1px solid var(--gold); color: var(--gold); font-style: normal;
+                display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .bv-blocs b { display: block; letter-spacing: 1px; text-transform: uppercase; margin-bottom: 3px; }
+  .bv-blocs span { color: var(--muted); font-size: 12px; line-height: 1.45; }
+  .bv-pied { padding: 14px 28px 22px; display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap;
+             border-top: 1px solid var(--line); }
+  .bv-ok { background: var(--gold); color: var(--on-gold); border: none; padding: 12px 32px; font-weight: 700; letter-spacing: 3px; text-transform: uppercase; }
+  .bv-ok:hover { background: color-mix(in srgb, var(--gold) 80%, white); }
+  .sync-alerte { margin: 0 20px 14px; background: #2a1014; border: 1px solid #e05a5a; border-left-width: 4px; color: #ff6b6b;
+                 padding: 12px 16px; display: flex; align-items: center; gap: 16px; flex-wrap: wrap; }
+  .sync-alerte[hidden] { display: none; }
+  .sync-alerte div { flex: 1 1 360px; display: flex; flex-direction: column; gap: 3px; }
+  .sync-alerte b { font-size: 16px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .sync-alerte span { color: #f2c6c6; }
+  .sync-alerte button { background: #e05a5a; color: #fff; border: none; padding: 11px 20px; font-weight: 700; letter-spacing: 2px; text-transform: uppercase; }
+  .sync-alerte button:hover { background: #f07070; }
   dialog h2 { margin: 0 0 12px; font-size: 16px; }
   .champ { display: flex; flex-direction: column; gap: 4px; margin-bottom: 10px; font-size: 12px; color: var(--muted); }
   .champ input, .vente input[type=number] { background: var(--bg); color: var(--text); border: 1px solid var(--line);
@@ -482,6 +504,19 @@
     <button type="button" id="pOk" class="maj" data-t="enregistrer"></button>
   </div>
 </dialog>
+<!-- premier lancement : ce que fait l'app -->
+<dialog id="dlgBienvenue" class="bienvenue" aria-labelledby="bvTitre">
+  <div class="bv-tete">
+    <div class="bv-sur" data-t="bvSur"></div>
+    <h2 id="bvTitre" data-t="bvTitre"></h2>
+    <div class="muted" data-t="bvSous"></div>
+  </div>
+  <div class="bv-blocs" id="bvBlocs"></div>
+  <div class="bv-pied">
+    <label class="auto"><input type="checkbox" id="bvNePlus" checked> <span data-t="bvNePlus"></span></label>
+    <button type="button" id="bvOk" class="bv-ok" data-t="bvOk"></button>
+  </div>
+</dialog>
 <dialog id="dlgCo">
   <form id="formCo" method="dialog">
     <h2 data-t="coTitre"></h2>
@@ -509,6 +544,12 @@
     <select id="rareteSel"></select>
     <label class="auto"><input type="checkbox" id="doublons"> <span data-t="doublons"></span></label>
   </div>
+</div>
+<!-- tant que l'inventaire n'a jamais ete lu : il faut lire le jeu -->
+<div class="sync-alerte" id="syncAlerte" role="alert" hidden>
+  <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5"></path><path d="M12 18v.5"></path></svg>
+  <div><b data-t="syncTitre"></b><span data-t="syncTexte"></span></div>
+  <button type="button" id="syncLire" data-t="syncBtn"></button>
 </div>
 <!-- ============ onglet Inventaire (brouillon) ============ -->
 <main id="pageInventaire">
@@ -959,6 +1000,16 @@ const T3 = {
     chat: "Chat", chatLire: "Lire le chat du jeu", chatTous: "Tous",
     chatVide: "Aucun message pour l'instant. Ouvre le chat dans le jeu (touche T) : les messages apparaissent ici, traduits.",
     chatOrig: "original", chatCopier: "Clic : copier le message traduit",
+    bvSur: "Bienvenue, Tenno", bvTitre: "Ce que fait Lotus Desk", bvSous: "Ton inventaire Warframe avec les prix de Warframe Market, et des outils pendant que tu joues.",
+    bvNePlus: "Ne plus afficher au démarrage", bvOk: "OK, c'est parti",
+    bvBlocs: [["Inventaire et prix", "Lit ton inventaire dans le jeu (lecture seule) : Prime, sets, mods, arcanes, reliques, ressources. Prix minimum de chaque item, ducats et conseils pour Baro Ki'Teer."],
+      ["Vendre en un clic", "Connecte-toi à Warframe Market dans Profils : mets en vente en un clic ou en lot, statut « en jeu » automatique, alertes si on te dépasse."],
+      ["Market", "Ventes : tes annonces. Achats : cherche un item et copie le message /w du vendeur. Stats : platine gagné par jour, semaine ou mois."],
+      ["Overlay des reliques", "En fissure, le prix de chaque récompense s'affiche sur l'écran de choix. Sur une fiche de relique, appuie sur Alt + A pour voir ses prix."],
+      ["Chat traduit", "Le bouton Chat recopie le chat du jeu, rangé par canal et traduit dans ta langue."],
+      ["Profils", "Langue, couleurs de l'app, lecture automatique du jeu et mises à jour, qui se font toutes seules."]],
+    syncTitre: "Il faut lire le jeu pour synchroniser ton inventaire", syncBtn: "Lire le jeu",
+    syncTexte: "Lance Warframe, passe un écran de chargement (vaisseau, relais ou mission), puis clique sur « Lire le jeu ». Ensuite l'app relit toute seule toutes les 60 s.",
     sVentes: "Ventes", sAchats: "Achats", sStats: "Stats", enVente: "En vente",
     nbAnnonces: (n, m) => `${n} annonce(s)${m ? ` · ${m} masquée(s)` : ""}`, pasConnecte: "Connecte-toi à Warframe Market (onglet Profils) pour voir tes annonces.",
     aRecherche: "Rechercher un item à acheter…", aEnJeu: "Vendeurs en jeu seulement", aChoisir: "Cherche un item puis choisis-le dans la liste.",
@@ -1016,6 +1067,16 @@ const T3 = {
     chat: "Chat", chatLire: "Read the game chat", chatTous: "All",
     chatVide: "No messages yet. Open the chat in the game (T key): messages show up here, translated.",
     chatOrig: "original", chatCopier: "Click: copy the translated message",
+    bvSur: "Welcome, Tenno", bvTitre: "What Lotus Desk does", bvSous: "Your Warframe inventory with Warframe Market prices, and tools while you play.",
+    bvNePlus: "Don't show at startup again", bvOk: "OK, let's go",
+    bvBlocs: [["Inventory and prices", "Reads your inventory from the game (read-only): Primes, sets, mods, arcanes, relics, resources. Lowest price of each item, ducats and Baro Ki'Teer tips."],
+      ["Sell in one click", "Sign in to Warframe Market in Profile: list items in one click or in bulk, automatic “in game” status, alerts when you get undercut."],
+      ["Market", "Sales: your orders. Buy: search an item and copy the seller's /w message. Stats: platinum earned per day, week or month."],
+      ["Relic overlay", "In fissures, each reward's price shows on the choice screen. On a relic tooltip, press Alt + A to see its prices."],
+      ["Translated chat", "The Chat button copies the game chat, sorted by channel and translated into your language."],
+      ["Profile", "Language, app colors, automatic game reading and updates, which install by themselves."]],
+    syncTitre: "Read the game to sync your inventory", syncBtn: "Read game",
+    syncTexte: "Start Warframe, go through a loading screen (ship, relay or mission), then click “Read game”. After that the app reads it again every 60 s.",
     sVentes: "Sales", sAchats: "Buy", sStats: "Stats", enVente: "On sale",
     nbAnnonces: (n, m) => `${n} order(s)${m ? ` · ${m} hidden` : ""}`, pasConnecte: "Sign in to Warframe Market (Profile tab) to see your orders.",
     aRecherche: "Search an item to buy…", aEnJeu: "In-game sellers only", aChoisir: "Search an item, then pick it in the list.",
@@ -1676,6 +1737,7 @@ async function chargerInventaire(lire) {
   try {
     const r = await api(`/api/inventaire?lang=${lang}${lire ? "&lire=1" : ""}`);
     items = r.items; sets = r.sets; version = r.version;
+    majSync();
     info.source = r.source; info.quand = r.quand;
     if (sel && !tous().some(i => i.id === sel)) sel = null;
     rendu(); panneau();
@@ -1914,7 +1976,33 @@ $("#pages").addEventListener("click", e => {
 
 // ---------------------------------------------------------------- écran de démarrage
 let majEnCours = false;
-function finSplash() { if (!majEnCours) $("#splash").classList.add("fin"); }
+function finSplash() {
+  if (majEnCours) return;
+  $("#splash").classList.add("fin");
+  bienvenue();
+}
+// ---------------------------------------------------------------- premier lancement
+let bienvenueFaite = false;
+function bienvenue() {
+  if (bienvenueFaite) return;
+  bienvenueFaite = true;
+  let vu = false;
+  try { vu = localStorage.getItem("bienvenueVu") === "1"; } catch (e) {}
+  if (vu) return majSync();
+  $("#bvBlocs").innerHTML = t("bvBlocs").map(([titre, texte], i) =>
+    `<div><i>${i + 1}</i><div><b>${esc(titre)}</b><span>${esc(texte)}</span></div></div>`).join("");
+  $("#dlgBienvenue").showModal();
+}
+$("#bvOk").addEventListener("click", () => {
+  if ($("#bvNePlus").checked) try { localStorage.setItem("bienvenueVu", "1"); } catch (e) {}
+  $("#dlgBienvenue").close();
+});
+$("#dlgBienvenue").addEventListener("close", majSync);  // OK ou touche Echap
+// message rouge tant que l'inventaire n'a jamais ete lu (et pas pendant la presentation)
+function majSync() {
+  $("#syncAlerte").hidden = items.length > 0 || $("#dlgBienvenue").open;
+}
+$("#syncLire").addEventListener("click", () => chargerInventaire(true));
 setTimeout(finSplash, 15000);  // filet de sécurité si le chargement traîne
 
 // Au démarrage : cherche une nouvelle version sur GitHub et l'installe tout de suite.
