@@ -31,6 +31,10 @@ RELIC_RE = re.compile(r"ResourceLoader .*\((/Lotus/Types/Game/Projections/[^)\s]
 GETS_RE = re.compile(r"VoidProjections: \S+ gets reward (/Lotus/\S+)")
 OPEN_MARK = "ProjectionRewardChoice.lua: Relic rewards initialized"
 SHOW_SECONDS = 16          # le choix dure 15 s
+FICHE_SECONDS = 8          # prix affiches sur une fiche de relique (touche Alt + A)
+HOTKEY = (0x0001 | 0x4000, 0x41)  # MOD_ALT | MOD_NOREPEAT, touche A
+# titre de la liste sur la fiche d'une relique, dans les langues de l'OCR
+FICHE_TITRES = ("recompenses possibles", "possible rewards")
 RELIC_MEMORY = 30 * 60     # reliques vues dans les 30 dernieres minutes = escouade actuelle
 
 # OCR integre a Windows (Windows.Media.Ocr) appele depuis PowerShell : sortie JSON des lignes lues
@@ -57,8 +61,9 @@ while ($true) {
 $path = [Console]::In.ReadLine()
 if ($path -eq $null) { break }
 try {
-$file = Await ([Windows.Storage.StorageFile]::GetFileFromPathAsync($path)) ([Windows.Storage.StorageFile])
-$stream = Await ($file.OpenAsync([Windows.Storage.FileAccessMode]::Read)) ([Windows.Storage.Streams.IRandomAccessStream])
+# lue en memoire : le fichier n'est jamais garde ouvert (la capture suivante peut l'ecraser)
+$bytes = [IO.File]::ReadAllBytes($path)
+$stream = [System.IO.WindowsRuntimeStreamExtensions]::AsRandomAccessStream([IO.MemoryStream]::new($bytes))
 $dec = Await ([Windows.Graphics.Imaging.BitmapDecoder]::CreateAsync($stream)) ([Windows.Graphics.Imaging.BitmapDecoder])
 $bmp = Await ($dec.GetSoftwareBitmapAsync()) ([Windows.Graphics.Imaging.SoftwareBitmap])
 $res = Await ($eng.RecognizeAsync($bmp)) ([Windows.Media.Ocr.OcrResult])
@@ -448,6 +453,82 @@ class RewardOverlay:
         if self.ecran == ecran and self.window and time.time() - t0 < SHOW_SECONDS:
             self.window.show(rewards, SHOW_SECONDS - (time.time() - t0), getattr(self, "rect", None))
 
+    def hotkey_loop(self):
+        """Raccourci global Alt + A (marche aussi quand le jeu a le focus)."""
+        import ctypes.wintypes as wt
+        u32 = ctypes.windll.user32
+        if not u32.RegisterHotKey(None, 1, *HOTKEY):
+            self.log("raccourci Alt + A indisponible (deja pris par une autre application)")
+            return
+        self.log("raccourci Alt + A pret (prix sur une fiche de relique)")
+        msg = wt.MSG()
+        while u32.GetMessageW(ctypes.byref(msg), None, 0, 0) > 0:
+            if msg.message == 0x0312 and self.enabled:  # WM_HOTKEY
+                threading.Thread(target=self.scan_fiche, daemon=True).start()
+
+    def scan_fiche(self):
+        """Lit la fiche de relique ouverte a l'ecran et affiche le prix a droite de chaque nom."""
+        from PIL import ImageGrab
+        t0 = time.time()
+        try:
+            lang = self.app.CURRENT_LANG[0]
+            rect = self.game_rect()
+            shot = ImageGrab.grab(bbox=rect, all_screens=True) if rect else ImageGrab.grab()
+            if not rect:
+                rect = (0, 0, shot.width, shot.height)
+            self.rect = rect
+            # zone autour de la souris (la fiche s'ouvre a cote du curseur) : moins a lire = plus rapide
+            import ctypes.wintypes as wt
+            pt = wt.POINT()
+            ctypes.windll.user32.GetCursorPos(ctypes.byref(pt))
+            W, H = shot.size
+            mx, my = pt.x - rect[0], pt.y - rect[1]
+            if not (0 <= mx < W and 0 <= my < H):
+                mx, my = W // 2, H // 2
+            L, R = max(0, mx - int(W * 0.35)), min(W, mx + int(W * 0.35))
+            T, B = max(0, my - int(H * 0.6)), min(H, my + int(H * 0.6))
+            zone = shot.crop((L, T, R, B)).convert("RGB")
+            k = 2 if H <= 1440 else 1  # texte agrandi en 1080p, deja assez gros en 4K
+            if k > 1:
+                zone = zone.resize((zone.width * k, zone.height * k))
+            path = Path(tempfile.gettempdir()) / "inventaire_tenno_fiche.bmp"
+            zone.save(path)
+            lines = ocr(path, "fr-FR" if lang == "fr" else "en-US")
+            for ln in lines:  # coordonnees dans la fenetre du jeu
+                ln["x"], ln["w"] = ln["x"] / k + L, ln["w"] / k
+                ln["y"], ln["h"] = ln["y"] / k + T, ln["h"] / k
+            labels = self.fiche_labels(lines, lang)
+            self.log(f"fiche Alt + A : {len(labels)} prix en {time.time() - t0:.2f} s ; "
+                     f"{len(lines)} ligne(s) lue(s) : {[ln['t'] for ln in lines][:25]}")
+            if self.window:
+                self.window.labels(labels, FICHE_SECONDS, rect)
+            if not labels and self.log_dir:
+                zone.save(Path(self.log_dir) / "overlay_derniere_fiche.png")
+        except Exception:
+            import traceback
+            self.log("ERREUR fiche " + traceback.format_exc().replace("\n", " | "))
+
+    def fiche_labels(self, lines, lang):
+        """[{x, y, h, prix, ducats}] : un prix par nom de recompense lu sur la fiche."""
+        cands, likely, _ = self.candidates(lang)
+        # sous le titre « Recompenses possibles » s'il est lu (sinon toute la zone)
+        titre = next((ln for ln in lines if any(t in norm(ln["t"]) for t in FICHE_TITRES)), None)
+        if titre:
+            lines = [ln for ln in lines if ln["y"] > titre["y"] + titre["h"] / 2
+                     and abs(ln["x"] - titre["x"]) < titre["w"] * 1.5]
+        out = []
+        for ln in lines:
+            path, score = self.match(ln["t"], cands)
+            if not path or score < 0.8:
+                continue
+            v = self.value(path, lang)
+            out.append({"x": ln["x"] + ln["w"], "y": ln["y"] + ln["h"] / 2, "h": ln["h"],
+                        "prix": v["prix"], "ducats": v["ducats"], "nom": v["nom"]})
+        best = max((l["prix"] or 0 for l in out), default=0)
+        for l in out:
+            l["meilleur"] = best > 0 and l["prix"] == best
+        return out
+
     def prefetch(self, relics):
         """Prix et images des recompenses d'une relique, prepares a l'avance."""
         try:
@@ -538,6 +619,7 @@ class RewardOverlay:
             except Exception as e:
                 self.log(f"preparation impossible : {e}")
         threading.Thread(target=warm, daemon=True).start()
+        threading.Thread(target=self.hotkey_loop, daemon=True).start()
         self.window = OverlayWindow(assets)
         threading.Thread(target=self.window.run, daemon=True).start()
         threading.Thread(target=self.follow_log, daemon=True).start()
@@ -555,6 +637,10 @@ class OverlayWindow:
     def show(self, rewards, seconds, rect=None):
         """rect = (gauche, haut, droite, bas) de la fenetre du jeu, en pixels ecran."""
         self.q.put(("show", rewards, seconds, rect))
+
+    def labels(self, labels, seconds, rect=None):
+        """Petites etiquettes de prix a droite des noms d'une fiche de relique."""
+        self.q.put(("labels", labels, seconds, rect))
 
     def run(self):
         import tkinter as tk
@@ -659,11 +745,53 @@ class OverlayWindow:
                 for it in ids:
                     canvas.move(it, cx - (bx1 + bx2) / 2, 0)
 
+        def draw_labels(labels):
+            """Prix a droite de chaque nom, sur un petit fond sombre lisible."""
+            canvas.delete("all")
+            keep.clear()
+            for lb in labels:
+                size = max(11, int(lb["h"] * 0.75))
+                x, y = lb["x"] + size * 0.8, lb["y"]
+                ids = []
+                parts = []
+                if lb["prix"] is not None:
+                    parts.append(("platine", str(lb["prix"]), PLAT))
+                if lb["ducats"]:
+                    parts.append(("ducat", str(lb["ducats"]), GOLD))
+                if not parts:
+                    parts.append((None, "–", MUTED))
+                cx = x + 8
+                for ic, txt, color in parts:
+                    if ic and self.assets:
+                        try:
+                            ids.append(canvas.create_image(cx, y, image=icon(ic, int(size * 1.2)), anchor="w"))
+                            cx += size * 1.2 + 4
+                        except Exception:
+                            pass
+                    t = canvas.create_text(cx, y, text=txt, fill=color, anchor="w",
+                                           font=("Segoe UI Semibold", size))
+                    ids.append(t)
+                    cx = canvas.bbox(t)[2] + size * 0.7
+                x1, y1, x2, y2 = canvas.bbox(*ids)
+                bg = canvas.create_rectangle(x1 - 7, y1 - 3, x2 + 7, y2 + 3, fill=PANEL,
+                                             outline=GOLD if lb.get("meilleur") else BORDER,
+                                             width=2 if lb.get("meilleur") else 1)
+                canvas.tag_lower(bg)
+
         def tick():
             try:
                 while True:
                     cmd = self.q.get_nowait()
-                    if cmd[0] == "show":
+                    if cmd[0] == "labels":
+                        L, T, R, B = cmd[3] or (0, 0, W, H)
+                        root.geometry(f"{R - L}x{B - T}{L:+d}{T:+d}")
+                        canvas.config(width=R - L, height=B - T)
+                        draw_labels(cmd[1])
+                        root.deiconify()
+                        root.attributes("-topmost", True)
+                        click_through()
+                        state["hide_at"] = time.time() + (cmd[2] if cmd[1] else 0.1)
+                    elif cmd[0] == "show":
                         L, T, R, B = cmd[3] or (0, 0, W, H)
                         # se place sur l'ecran du jeu (ecran de gauche = coordonnees negatives)
                         root.geometry(f"{R - L}x{B - T}{L:+d}{T:+d}")
