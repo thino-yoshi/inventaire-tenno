@@ -34,6 +34,11 @@
   label.auto { color: var(--muted); font-size: 12px; display: flex; gap: 5px; align-items: center;
                cursor: pointer; white-space: nowrap; }
   .barre { display: flex; flex-wrap: wrap; gap: 6px 14px; align-items: center; padding: 10px 20px; }
+  .recherche { margin-left: auto; display: flex; gap: 8px; align-items: center; }
+  .recherche[hidden] { display: none; }
+  .recherche input[type=search] { width: 240px; }
+  .recherche select { color: var(--text); border: 1px solid var(--line); border-radius: 6px; padding: 6px 8px; font: inherit; }
+  #triOrdre { padding: 6px 10px; }
   .onglets { display: flex; gap: 4px; flex-wrap: wrap; }
   .onglets button { background: transparent; border-color: var(--line); color: var(--muted); padding: 5px 11px; }
   .onglets button.on { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 53%, transparent); background: var(--gold-soft); }
@@ -408,6 +413,11 @@
   <span class="jeu muted" id="presence" hidden></span>
   <label class="auto" id="overlayBox" hidden><input type="checkbox" id="ovActif"> <span data-t="overlayLbl"></span></label>
   <label class="auto" id="presenceAuto" hidden><input type="checkbox" id="presAuto"> <span data-t="presAuto"></span></label>
+  <div class="recherche" id="recherche">
+    <input type="search" id="filtre">
+    <label class="auto"><span data-t="trierPar"></span><select id="triSel"></select></label>
+    <button type="button" id="triOrdre"></button>
+  </div>
 </div>
 <!-- ============ onglet Inventaire (brouillon) ============ -->
 <main id="pageInventaire">
@@ -421,7 +431,6 @@
     <nav class="onglets" id="onglets"></nav>
   </aside>
   <div class="table" id="vueInventaire">
-    <input type="search" id="filtre" hidden>
     <form class="outils" id="ajoutSouhait" hidden>
       <input type="text" id="sItem" list="catalogue" autocomplete="off">
       <datalist id="catalogue"></datalist>
@@ -810,6 +819,7 @@ const T3 = {
     relCalc: "Calcul de la valeur des reliques…", pInventaire: "Inventaire", pMarket: "Market", pInfo: "Info / aide",
     pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
     sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
+    trierPar: "Trier par", ordreDesc: "▼ décroissant", ordreAsc: "▲ croissant", colProg: "Progression",
     seuilLbl: "Masquer les mods, arcanes et reliques moins chers que", versionTxt: v => `Version installée : v${v}`, checkTip: "Rechercher des mises à jour",
     checkAJour: v => `à jour (v${v})`, checkNouvelle: v => `v${v} disponible`, checkErreur: "GitHub injoignable", parametres: "Paramètres", themes: "Thèmes",
     couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
@@ -850,6 +860,7 @@ const T3 = {
     relCalc: "Computing relic values…", pInventaire: "Inventory", pMarket: "Market", pInfo: "Info / help",
     pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
     sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
+    trierPar: "Sort by", ordreDesc: "▼ descending", ordreAsc: "▲ ascending", colProg: "Progress",
     seuilLbl: "Hide mods, arcanes and relics cheaper than", versionTxt: v => `Installed version: v${v}`, checkTip: "Check for updates",
     checkAJour: v => `up to date (v${v})`, checkNouvelle: v => `v${v} available`, checkErreur: "GitHub unreachable", parametres: "Settings", themes: "Themes",
     couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
@@ -1198,6 +1209,11 @@ function rendu() {
     th.classList.toggle("tri", th.dataset.k === tri.k);
     th.classList.toggle("asc", th.dataset.k === tri.k && tri.asc);
   });
+  // menu « Trier par » de la barre du haut (mêmes clés que les colonnes)
+  const cles = [...document.querySelectorAll("thead th[data-k]")].map(th => [th.dataset.k, th.dataset.t]);
+  if (onglet === "set") cles.push(["progression", "colProg"]);
+  $("#triSel").innerHTML = cles.map(([k, l]) => `<option value="${k}" ${k === tri.k ? "selected" : ""}>${esc(t(l))}</option>`).join("");
+  $("#triOrdre").textContent = t(tri.asc ? "ordreAsc" : "ordreDesc");
   const tot = totaux(liste);
   const aucunSet = onglet === "set" && !tot.min;  // aucun set complet : rien à additionner
   $("#tMin").innerHTML = aucunSet ? "–" : PLAT + tot.min;
@@ -1614,6 +1630,12 @@ document.querySelectorAll("th").forEach(th => th.addEventListener("click", () =>
   rendu();
 }));
 $("#filtre").addEventListener("input", () => { limite = PAGE; rendu(); });
+$("#triSel").addEventListener("change", e => {
+  const k = e.target.value;
+  tri = { k, asc: k === "nom" };
+  limite = PAGE; rendu();
+});
+$("#triOrdre").addEventListener("click", () => { tri = { k: tri.k, asc: !tri.asc }; rendu(); });
 $("#seuil").addEventListener("change", e => {
   seuil = +e.target.value;
   try { localStorage.setItem("seuil", seuil); } catch (err) {}
@@ -1694,6 +1716,7 @@ function montrerPage(p) {
   if (!PAGES[p]) p = "inventaire";
   page = p;
   for (const [k, sel] of Object.entries(PAGES)) $(sel).hidden = k !== p;
+  $("#recherche").hidden = p !== "inventaire";
   document.querySelectorAll("#pages button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
   try { localStorage.setItem("page", p); } catch (e) {}
   if (p === "market") { renduVentes(); rendreAlertes(); }
