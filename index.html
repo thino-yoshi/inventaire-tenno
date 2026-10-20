@@ -417,6 +417,9 @@
     <input type="search" id="filtre">
     <label class="auto"><span data-t="trierPar"></span><select id="triSel"></select></label>
     <button type="button" id="triOrdre"></button>
+    <select id="seuilBarre"></select>
+    <select id="rareteSel"></select>
+    <label class="auto"><input type="checkbox" id="doublons"> <span data-t="doublons"></span></label>
   </div>
 </div>
 <!-- ============ onglet Inventaire (brouillon) ============ -->
@@ -819,7 +822,8 @@ const T3 = {
     relCalc: "Calcul de la valeur des reliques…", pInventaire: "Inventaire", pMarket: "Market", pInfo: "Info / aide",
     pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
     sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
-    trierPar: "Trier par", ordreDesc: "▼ décroissant", ordreAsc: "▲ croissant", colProg: "Progression",
+    rareteToutes: "Toutes les raretés", rCommon: "Commun", rUncommon: "Peu commun", rRare: "Rare", rLegendary: "Légendaire",
+    doublons: "Doublons seulement", trierPar: "Trier par", ordreDesc: "▼ décroissant", ordreAsc: "▲ croissant", colProg: "Progression",
     seuilLbl: "Masquer les mods, arcanes et reliques moins chers que", versionTxt: v => `Version installée : v${v}`, checkTip: "Rechercher des mises à jour",
     checkAJour: v => `à jour (v${v})`, checkNouvelle: v => `v${v} disponible`, checkErreur: "GitHub injoignable", parametres: "Paramètres", themes: "Thèmes",
     couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
@@ -860,7 +864,8 @@ const T3 = {
     relCalc: "Computing relic values…", pInventaire: "Inventory", pMarket: "Market", pInfo: "Info / help",
     pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
     sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
-    trierPar: "Sort by", ordreDesc: "▼ descending", ordreAsc: "▲ ascending", colProg: "Progress",
+    rareteToutes: "All rarities", rCommon: "Common", rUncommon: "Uncommon", rRare: "Rare", rLegendary: "Legendary",
+    doublons: "Duplicates only", trierPar: "Sort by", ordreDesc: "▼ descending", ordreAsc: "▲ ascending", colProg: "Progress",
     seuilLbl: "Hide mods, arcanes and relics cheaper than", versionTxt: v => `Installed version: v${v}`, checkTip: "Check for updates",
     checkAJour: v => `up to date (v${v})`, checkNouvelle: v => `v${v} available`, checkErreur: "GitHub unreachable", parametres: "Settings", themes: "Themes",
     couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
@@ -915,6 +920,7 @@ let lang = "fr", items = [], sets = [], prix = {}, sel = null, onglet = "tous",
     tri = { k: "min", asc: false }, gen = 0, version = -1, info = {}, histo = [], limite = PAGE,
     compte = { connecte: false, compte: null, offres: [] }, venteMsg = null;
 
+let filtreRarete = "";
 let seuil = 10;  // sous 10p, les mods communs gonflent le total sans vraiment se vendre
 let modeVue = "liste";  // "liste" (tableau) ou "grille" (grosses cases avec images)
 let colonnes = 5;       // nombre de cases par ligne en mode grille
@@ -1017,8 +1023,11 @@ function textes() {
   if (!$("#sMsg").textContent || $("#sMsg").dataset.aide) { $("#sMsg").textContent = t("souhaitVide"); $("#sMsg").dataset.aide = 1; }
   $("#toutCocher").title = t("toutCocher");
   $("#seuil").title = t("seuilTip");
-  $("#seuil").innerHTML = [0, 5, 10, 20, 50].map(n =>
+  $("#seuil").innerHTML = $("#seuilBarre").innerHTML = [0, 5, 10, 20, 50].map(n =>
     `<option value="${n}" ${n === seuil ? "selected" : ""}>${n ? "≥ " + n + "p" : t("seuil0")}</option>`).join("");
+  $("#seuilBarre").title = t("seuilTip");
+  $("#rareteSel").innerHTML = [["", "rareteToutes"], ["common", "rCommon"], ["uncommon", "rUncommon"], ["rare", "rRare"],
+    ["legendary", "rLegendary"]].map(([v, l]) => `<option value="${v}" ${v === filtreRarete ? "selected" : ""}>${esc(t(l))}</option>`).join("");
   $("#btnCompte").textContent = compte.connecte ? `${compte.compte?.pseudo || "WFM"} · ${t("deconnexion")}` : t("connexion");
   $("#langue").innerHTML = Object.entries(LANG_NAMES).filter(([k]) => (info.langues || Object.keys(LANG_NAMES)).includes(k))
     .map(([k, n]) => `<option value="${k}" ${k === lang ? "selected" : ""}>${n}</option>`).join("");
@@ -1059,6 +1068,7 @@ function visibles(tab, texte) {
   const source = tab === "tous" ? items.filter(i => !NON_ECHANGE.includes(i.cat)) : tab === "set" ? sets : tab === "offre" ? lignesOffres()
                : tab === "souhait" ? lignesSouhaits() : items.filter(i => i.cat === tab);
   return source.filter(i => assezCher(i) &&
+    (!filtreRarete || i.rarete === filtreRarete) && (!$("#doublons").checked || i.qte > 1) &&
     (!f || i.nom.toLowerCase().includes(f) || (i.nom_en || "").toLowerCase().includes(f)));
 }
 
@@ -1636,11 +1646,14 @@ $("#triSel").addEventListener("change", e => {
   limite = PAGE; rendu();
 });
 $("#triOrdre").addEventListener("click", () => { tri = { k: tri.k, asc: !tri.asc }; rendu(); });
-$("#seuil").addEventListener("change", e => {
+$("#rareteSel").addEventListener("change", e => { filtreRarete = e.target.value; limite = PAGE; rendu(); });
+$("#doublons").addEventListener("change", () => { limite = PAGE; rendu(); });
+["#seuil", "#seuilBarre"].forEach(id => $(id).addEventListener("change", e => {
   seuil = +e.target.value;
+  $("#seuil").value = $("#seuilBarre").value = seuil;
   try { localStorage.setItem("seuil", seuil); } catch (err) {}
   limite = PAGE; rendu();
-});
+}));
 $("#plus").addEventListener("click", () => { limite += PAGE; rendu(); });
 $("#btnJeu").addEventListener("click", () => chargerInventaire(true));
 $("#btnPrix").addEventListener("click", () => { chargerCompte(true); chargerPrix(true); });
