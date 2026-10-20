@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.7.0"
+VERSION = "1.8.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
@@ -788,7 +788,8 @@ def catalog_view(lang):
         en = cat.en(slug)
         ref = it.get("gameRef")
         nom = (g.name(ref, lang) if ref and lang != "en" else None) or en
-        out.append({"slug": slug, "nom": nom, "nom_en": en, "rang_max": it.get("maxRank")})
+        out.append({"slug": slug, "nom": nom, "nom_en": en, "rang_max": it.get("maxRank"),
+                    "img": cat.images(slug)[0], "ducats": it.get("ducats")})
     out.sort(key=lambda x: x["nom"])
     return out
 
@@ -871,6 +872,28 @@ def baro():
 
 
 _volumes = {}
+_stats = {}
+
+
+def wfm_stats(slug):
+    """Statistiques des ventes conclues sur Warframe Market (48 h et 90 jours), gardees 1 h."""
+    hit = _stats.get(slug)
+    if hit and time.time() - hit[0] < 3600:
+        return hit[1]
+    data = wfm_get(f"{WFM_V1}/items/{slug}/statistics")["payload"]["statistics_closed"]
+    _stats[slug] = (time.time(), data)
+    return data
+
+
+def price_history(slug, rank=None):
+    """Prix median par jour sur 90 jours : [{d, prix, min, volume}] (onglet Market > Stats/Achats)."""
+    data = wfm_stats(slug).get("90days") or []
+    rangs = {d["mod_rank"] for d in data if "mod_rank" in d}
+    if rangs:  # WFM ne suit que certains rangs (0 et max) : on prend le plus proche
+        r = min(rangs, key=lambda x: abs(x - (rank or 0)))
+        data = [d for d in data if d.get("mod_rank") == r]
+    return [{"d": d["datetime"][:10], "prix": d.get("median") or d.get("avg_price"),
+             "min": d.get("min_price"), "volume": d.get("volume", 0)} for d in data]
 
 
 def volume(slug, rank=None):
@@ -878,7 +901,7 @@ def volume(slug, rank=None):
     hit = _volumes.get(key)
     if hit and time.time() - hit["t"] < 3600:
         return hit
-    data = wfm_get(f"{WFM_V1}/items/{slug}/statistics")["payload"]["statistics_closed"]["48hours"]
+    data = wfm_stats(slug)["48hours"]
     if rank is not None and any("mod_rank" in d for d in data):
         data = [d for d in data if d.get("mod_rank") == rank]
     vol = sum(d.get("volume", 0) for d in data)
@@ -1319,6 +1342,11 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, catalog_view(q.get("lang", "fr")))
             elif u.path == "/api/relique":
                 self.send(200, relic_value(q["chemin"], q.get("lang", "fr")))
+            elif u.path == "/api/historique-prix":
+                rank = int(q["rang"]) if q.get("rang", "") not in ("", "null") else None
+                self.send(200, price_history(q["slug"], rank))
+            elif u.path == "/api/mes-ventes":  # ventes marquees « Vendu » (onglet Market > Stats)
+                self.send(200, load_json(SALES_LOG, []) or [])
             elif u.path == "/api/volume":
                 rank = int(q["rang"]) if q.get("rang", "") not in ("", "null") else None
                 self.send(200, volume(q["slug"], rank))
@@ -1422,6 +1450,45 @@ class Server6(Server):
     address_family = socket.AF_INET6
 
 
+def replace_old_instance(port):
+    """L'app qui occupe deja le port est plus ancienne que celle-ci ? On l'arrete et on renvoie
+    notre serveur. Sinon (meme version ou plus recente, ou autre programme) : None."""
+    try:
+        r = requests.get(f"http://127.0.0.1:{port}/api/etat", timeout=4, headers={"X-Inventaire": "1"})
+        other = r.json().get("version_app")  # absent dans les toutes premieres versions
+    except Exception:
+        other = None
+    if other and version_tuple(other) >= version_tuple(VERSION):
+        return None
+    try:
+        import psutil
+        pids = {c.pid for c in psutil.net_connections("tcp")
+                if c.laddr and c.laddr.port == port and c.status == psutil.CONN_LISTEN and c.pid}
+        procs = []
+        for pid in pids - {os.getpid()}:
+            p = psutil.Process(pid)
+            nom = " ".join([p.name()] + (p.cmdline() or [])).lower()
+            if any(k in nom for k in ("lotusdesk", "inventairewarframe", "app.py")):  # seulement notre app
+                procs.append(p)
+        if not procs:
+            return None
+        print(f"Ancienne version ({other or 'inconnue'}) encore ouverte : je la ferme pour demarrer la {VERSION}.")
+        for p in procs:
+            for child in p.children(recursive=True):
+                child.kill()
+            p.kill()
+        psutil.wait_procs(procs, timeout=5)
+    except Exception as e:
+        print("impossible de fermer l'ancienne version :", e)
+        return None
+    for _ in range(20):  # le port se libere juste apres
+        try:
+            return Server(("127.0.0.1", port), Handler)
+        except OSError:
+            time.sleep(0.25)
+    return None
+
+
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--port", type=int, default=8765)
@@ -1440,14 +1507,18 @@ def main():
     try:
         srv = Server(("127.0.0.1", args.port), Handler)
     except OSError:
-        print(f"L'app est deja ouverte (port {args.port} occupe) : je la remets au premier plan.")
-        if not args.sans_navigateur:
-            try:
-                requests.post(f"http://127.0.0.1:{args.port}/api/afficher", timeout=5,
-                              headers={"X-Inventaire": "1"}).raise_for_status()
-            except requests.RequestException:
-                webbrowser.open(url)  # ancienne version ou mode navigateur
-        return
+        # une ancienne version encore rangee pres de l'horloge : on la ferme et on prend sa place
+        # (sinon on rouvrirait sa fenetre et c'est elle qui continuerait de tourner, overlay compris)
+        srv = replace_old_instance(args.port)
+        if not srv:
+            print(f"L'app est deja ouverte (port {args.port} occupe) : je la remets au premier plan.")
+            if not args.sans_navigateur:
+                try:
+                    requests.post(f"http://127.0.0.1:{args.port}/api/afficher", timeout=5,
+                                  headers={"X-Inventaire": "1"}).raise_for_status()
+                except requests.RequestException:
+                    webbrowser.open(url)  # ancienne version ou mode navigateur
+            return
     print("Chargement des donnees du jeu et de Warframe Market...")
     game().tr("fr")
     catalog()

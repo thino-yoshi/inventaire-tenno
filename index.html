@@ -345,8 +345,59 @@
   .gauche #colsBox { flex-wrap: wrap; }
   .page { padding: 0 20px 20px; }
   .page[hidden], main[hidden] { display: none !important; }  /* main est en grille : il faut forcer */
-  #pageMarket { display: grid; gap: 16px; }
+  #pageMarket { display: flex; flex-direction: column; gap: 16px; }
   #pageMarket[hidden] { display: none; }
+  /* sous-onglets du Market : majuscules espacees, trait fin sous l'actif */
+  .sous-pages { display: flex; gap: 28px; border-bottom: 1px solid var(--line); }
+  .sous-pages button { background: none; border: none; border-bottom: 2px solid transparent; border-radius: 0;
+                       padding: 10px 0 8px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; }
+  .sous-pages button:hover { background: none; color: var(--text); }
+  .sous-pages button.on { color: var(--gold); border-bottom-color: var(--gold); }
+  .m-ventes { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .m-ventes > .table { flex: 999 1 560px; min-width: 0; }
+  .m-cote { flex: 1 1 280px; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
+  .m-ventes[hidden], .m-achats[hidden], .m-stats[hidden] { display: none; }
+  .titre-mini { font-size: 11px; letter-spacing: 1.5px; color: var(--muted); text-transform: uppercase; }
+  .gros { font-size: 28px; font-weight: 700; line-height: 1.2; }
+  .m-achats, .m-stats { display: flex; flex-direction: column; gap: 14px; }
+  .a-barre { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+  .a-recherche { flex: 1 1 320px; display: flex; align-items: center; gap: 10px; background: var(--panel);
+                 border: 1px solid var(--gold); padding: 0 14px; height: 44px; color: var(--gold); }
+  .a-recherche input { flex: 1; background: transparent; border: none; color: var(--text); font: inherit; font-size: 15px; outline: none; width: auto; padding: 0; }
+  .a-corps { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
+  .a-liste { flex: 1 1 260px; max-width: 320px; padding: 0; max-height: 640px; overflow-y: auto; }
+  .a-liste button { display: flex; gap: 10px; align-items: center; width: 100%; text-align: left; background: none;
+                    border: none; border-left: 2px solid transparent; border-bottom: 1px solid var(--line); border-radius: 0; padding: 8px 12px; color: var(--text); }
+  .a-liste button.on { background: var(--gold-soft); border-left-color: var(--gold); }
+  .a-liste small { color: var(--muted); display: block; }
+  .a-detail { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 14px; }
+  .a-fiche { display: flex; gap: 18px; align-items: center; flex-wrap: wrap; }
+  .a-chiffres { display: flex; gap: 26px; flex-wrap: wrap; margin-top: 6px; }
+  .a-chiffres .gros { font-size: 22px; }
+  .a-vendeurs table { width: 100%; }
+  .a-vide { color: var(--muted); padding: 24px 8px; text-align: center; }
+  .pastille { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; background: var(--muted); }
+  .pastille.ingame { background: var(--green); } .pastille.online { background: var(--blue, #6ab0e0); }
+  .st-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; }
+  .segment { display: inline-flex; border: 1px solid var(--line); }
+  .segment button { border: none; border-radius: 0; background: transparent; color: var(--muted); padding: 7px 16px;
+                    letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
+  .segment button.on { background: var(--gold); color: var(--on-gold); }
+  .st-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
+  .st-kpis .carte { display: flex; flex-direction: column; gap: 4px; }
+  .st-corps { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; }
+  .st-graphe { flex: 999 1 520px; min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+  .st-cote { flex: 1 1 300px; display: flex; flex-direction: column; gap: 14px; }
+  .barres { height: 240px; display: flex; align-items: flex-end; gap: 8px; border-bottom: 1px solid var(--line); }
+  .barres div { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; height: 100%; min-width: 0; }
+  .barres i { display: block; width: 100%; max-width: 46px; background: var(--gold); min-height: 1px; }
+  .barres span, .barres-x span { font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .barres-x { display: flex; gap: 8px; } .barres-x span { flex: 1; text-align: center; overflow: hidden; }
+  .st-top div { display: flex; gap: 10px; align-items: center; padding: 4px 0; }
+  .st-top b { width: 18px; color: var(--muted); } .st-top span:nth-child(2) { flex: 1; min-width: 0; }
+  .st-evol-tete { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .st-evol-tete select { max-width: 60%; }
+  .courbe-bas { display: flex; justify-content: space-between; font-size: 12px; color: var(--muted); margin-top: 6px; }
   .reglages { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
   .reglages[hidden] { display: none; }
   .reglages .carte h2 { margin-bottom: 10px; }
@@ -508,7 +559,13 @@
 </main>
 <!-- ============ onglet Market : mes ventes + alertes ============ -->
 <section class="page" id="pageMarket" hidden>
-  <section class="carte" id="alertes"></section>
+  <nav class="sous-pages" id="sousMarket">
+    <button type="button" data-s="ventes" data-t="sVentes"></button>
+    <button type="button" data-s="achats" data-t="sAchats"></button>
+    <button type="button" data-s="stats" data-t="sStats"></button>
+  </nav>
+  <!-- Ventes : mes annonces + resume + alertes -->
+  <div class="m-ventes" id="mVentes">
   <div class="table" id="vueVentes">
     <div class="outils">
       <input type="text" id="pseudoAcheteur" autocomplete="off">
@@ -521,6 +578,48 @@
       </tr></thead>
       <tbody id="lignesVentes"></tbody>
     </table>
+  </div>
+  <aside class="m-cote">
+    <section class="carte" id="ventesResume"></section>
+    <section class="carte" id="alertes"></section>
+  </aside>
+  </div>
+  <!-- Achats : la page Warframe Market dans l'app -->
+  <div class="m-achats" id="mAchats" hidden>
+    <div class="a-barre">
+      <label class="a-recherche"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><circle cx="11" cy="11" r="7"></circle><path d="M20 20l-4-4"></path></svg>
+        <input type="search" id="aRecherche" autocomplete="off"></label>
+      <label class="auto"><input type="checkbox" id="aEnJeu" checked> <span data-t="aEnJeu"></span></label>
+    </div>
+    <div class="a-corps">
+      <div class="carte a-liste" id="aResultats"></div>
+      <div class="a-detail">
+        <section class="carte" id="aFiche"></section>
+        <section class="carte a-vendeurs" id="aVendeurs"></section>
+      </div>
+    </div>
+  </div>
+  <!-- Stats : platine gagne, plus vendus, evolution d'un prix -->
+  <div class="m-stats" id="mStats" hidden>
+    <div class="st-tete">
+      <h2 data-t="stGagne"></h2>
+      <div class="segment" id="stPeriode">
+        <button type="button" data-p="jour" data-t="stJour"></button>
+        <button type="button" data-p="semaine" data-t="stSemaine"></button>
+        <button type="button" data-p="mois" data-t="stMois"></button>
+      </div>
+    </div>
+    <div class="st-kpis" id="stKpis"></div>
+    <div class="st-corps">
+      <section class="carte st-graphe" id="stGraphe"></section>
+      <div class="st-cote">
+        <section class="carte" id="stTop"></section>
+        <section class="carte" id="stEvol">
+          <div class="st-evol-tete"><span class="titre-mini" data-t="stEvol"></span><select id="stItem"></select></div>
+          <div id="stCourbe"></div>
+        </section>
+      </div>
+    </div>
   </div>
 </section>
 <!-- ============ onglet Info / aide : a dessiner ============ -->
@@ -860,6 +959,18 @@ const T3 = {
     chat: "Chat", chatLire: "Lire le chat du jeu", chatTous: "Tous",
     chatVide: "Aucun message pour l'instant. Ouvre le chat dans le jeu (touche T) : les messages apparaissent ici, traduits.",
     chatOrig: "original", chatCopier: "Clic : copier le message traduit",
+    sVentes: "Ventes", sAchats: "Achats", sStats: "Stats", enVente: "En vente",
+    nbAnnonces: (n, m) => `${n} annonce(s)${m ? ` · ${m} masquée(s)` : ""}`, pasConnecte: "Connecte-toi à Warframe Market (onglet Profils) pour voir tes annonces.",
+    aRecherche: "Rechercher un item à acheter…", aEnJeu: "Vendeurs en jeu seulement", aChoisir: "Cherche un item puis choisis-le dans la liste.",
+    aPrixMin: "Prix minimum", aVendus48: "Vendus (48 h)", aTuEnAs: "Tu en as", aPrix90: "Prix médian sur 30 jours",
+    aVendeur: "Vendeur", aStatut: "Statut", aRep: "Réputation", aCopierW: "Copier le message /w", aAucunVendeur: "Aucun vendeur en jeu pour l'instant.",
+    stIngame: "En jeu", stOnline: "En ligne", stOffline: "Hors ligne", aRang: "Rang",
+    stGagne: "Platine gagné", stJour: "Jour", stSemaine: "Semaine", stMois: "Mois", stEvol: "Évolution du prix",
+    stKGagne: "Platine gagné", stKVentes: "Ventes", stKMoyen: "Prix moyen", stKMeilleure: "Meilleure vente",
+    stCeJour: "aujourd'hui", stCetteSemaine: "cette semaine", stCeMois: "ce mois-ci",
+    stParJour: "Par jour (14 derniers jours)", stParSemaine: "Par semaine (8 dernières semaines)", stParMois: "Par mois (6 derniers mois)",
+    stTop: "Les plus vendus", stAucune: "Aucune vente enregistrée. Les ventes comptent quand tu cliques sur « Vendu » dans Ventes.",
+    stIlYa: n => `il y a ${n} j`, stAuj: "aujourd'hui", stPasDHisto: "Pas d'historique pour cet item.",
     pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
     sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
     rareteToutes: "Toutes les raretés", rCommon: "Commun", rUncommon: "Peu commun", rRare: "Rare", rLegendary: "Légendaire",
@@ -905,6 +1016,18 @@ const T3 = {
     chat: "Chat", chatLire: "Read the game chat", chatTous: "All",
     chatVide: "No messages yet. Open the chat in the game (T key): messages show up here, translated.",
     chatOrig: "original", chatCopier: "Click: copy the translated message",
+    sVentes: "Sales", sAchats: "Buy", sStats: "Stats", enVente: "On sale",
+    nbAnnonces: (n, m) => `${n} order(s)${m ? ` · ${m} hidden` : ""}`, pasConnecte: "Sign in to Warframe Market (Profile tab) to see your orders.",
+    aRecherche: "Search an item to buy…", aEnJeu: "In-game sellers only", aChoisir: "Search an item, then pick it in the list.",
+    aPrixMin: "Lowest price", aVendus48: "Sold (48 h)", aTuEnAs: "You own", aPrix90: "Median price over 30 days",
+    aVendeur: "Seller", aStatut: "Status", aRep: "Reputation", aCopierW: "Copy /w message", aAucunVendeur: "No in-game seller right now.",
+    stIngame: "In game", stOnline: "Online", stOffline: "Offline", aRang: "Rank",
+    stGagne: "Platinum earned", stJour: "Day", stSemaine: "Week", stMois: "Month", stEvol: "Price history",
+    stKGagne: "Platinum earned", stKVentes: "Sales", stKMoyen: "Average price", stKMeilleure: "Best sale",
+    stCeJour: "today", stCetteSemaine: "this week", stCeMois: "this month",
+    stParJour: "Per day (last 14 days)", stParSemaine: "Per week (last 8 weeks)", stParMois: "Per month (last 6 months)",
+    stTop: "Best sellers", stAucune: "No sales recorded yet. A sale counts when you click “Sold” in Sales.",
+    stIlYa: n => `${n} d ago`, stAuj: "today", stPasDHisto: "No history for this item.",
     pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
     sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
     rareteToutes: "All rarities", rCommon: "Common", rUncommon: "Uncommon", rRare: "Rare", rLegendary: "Legendary",
@@ -1141,6 +1264,7 @@ function renduVentes() {
           <button class="ko" data-v="suppr">${t("supprimer")}</button>
         </div></td></tr>`;
     }).join("");
+  resumeVentes();
 }
 
 // Messages pour faire patienter l'acheteur (à coller dans le chat du jeu)
@@ -1781,7 +1905,7 @@ function montrerPage(p) {
   $("#recherche").hidden = p !== "inventaire";
   document.querySelectorAll("#pages button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
   try { localStorage.setItem("page", p); } catch (e) {}
-  if (p === "market") { renduVentes(); rendreAlertes(); }
+  if (p === "market") montrerSous(sousMarket);
 }
 $("#pages").addEventListener("click", e => {
   const b = e.target.closest("button[data-p]");
@@ -1822,6 +1946,198 @@ async function chargerBaro() {
   try { baroInfo = await api("/api/baro"); } catch (e) { baroInfo = null; }
   rendreBaro();
 }
+// ---------------------------------------------------------------- Market : Ventes / Achats / Stats
+var sousMarket = "ventes";  // var : montrerPage peut etre appele avant cette ligne
+try { sousMarket = localStorage.getItem("sousMarket") || "ventes"; } catch (e) {}
+function montrerSous(s) {
+  sousMarket = ["ventes", "achats", "stats"].includes(s) ? s : "ventes";
+  $("#mVentes").hidden = sousMarket !== "ventes";
+  $("#mAchats").hidden = sousMarket !== "achats";
+  $("#mStats").hidden = sousMarket !== "stats";
+  document.querySelectorAll("#sousMarket button").forEach(b => b.classList.toggle("on", b.dataset.s === sousMarket));
+  try { localStorage.setItem("sousMarket", sousMarket); } catch (e) {}
+  if (sousMarket === "ventes") { renduVentes(); rendreAlertes(); resumeVentes(); }
+  if (sousMarket === "achats") ouvrirAchats();
+  if (sousMarket === "stats") chargerStats();
+}
+$("#sousMarket").addEventListener("click", e => {
+  const b = e.target.closest("button[data-s]");
+  if (b) montrerSous(b.dataset.s);
+});
+function resumeVentes() {
+  const l = lignesOffres(), vis = l.filter(x => x.offre.visible);
+  $("#ventesResume").innerHTML = !compte.connecte ? `<div class="muted">${esc(t("pasConnecte"))}</div>`
+    : `<div class="titre-mini">${esc(t("enVente"))}</div>
+       <div class="gros">${pl(vis.reduce((s, x) => s + x.offre.prix * x.offre.qte, 0))}</div>
+       <div class="muted">${esc(t("nbAnnonces", l.length, l.length - vis.length))}</div>`;
+}
+
+// ---- Achats
+var achat = { sel: null, rang: 0, liste: [] };
+async function ouvrirAchats() {
+  $("#aRecherche").placeholder = t("aRecherche");
+  try { await chargerCatalogue(); } catch (e) { $("#aResultats").innerHTML = `<div class="a-vide">${esc(e.message)}</div>`; return; }
+  listeAchats();
+  if (achat.sel) ficheAchat(); else $("#aFiche").innerHTML = `<div class="a-vide">${esc(t("aChoisir"))}</div>`, $("#aVendeurs").hidden = true;
+  $("#aRecherche").focus();
+}
+function listeAchats() {
+  const f = $("#aRecherche").value.trim().toLowerCase();
+  const l = !f ? [] : catalogue.liste.filter(c => c.nom.toLowerCase().includes(f) || c.nom_en.toLowerCase().includes(f))
+    .sort((a, b) => (a.nom.toLowerCase().startsWith(f) ? 0 : 1) - (b.nom.toLowerCase().startsWith(f) ? 0 : 1) || a.nom.length - b.nom.length).slice(0, 40);
+  achat.liste = l;
+  $("#aResultats").innerHTML = !f ? `<div class="a-vide">${esc(t("aChoisir"))}</div>` : !l.length ? `<div class="a-vide">–</div>`
+    : l.map((c, i) => `<button type="button" data-i="${i}" class="${achat.sel?.slug === c.slug ? "on" : ""}">${image(c.img, "vign")}
+        <span>${esc(c.nom)}${c.nom !== c.nom_en ? `<small>${esc(c.nom_en)}</small>` : ""}</span></button>`).join("");
+}
+$("#aRecherche").addEventListener("input", listeAchats);
+$("#aResultats").addEventListener("click", e => {
+  const b = e.target.closest("button[data-i]");
+  if (!b) return;
+  achat.sel = achat.liste[+b.dataset.i];
+  achat.rang = achat.sel.rang_max ? achat.sel.rang_max : null;  // mods et arcanes : rang max par defaut
+  listeAchats(); ficheAchat();
+});
+$("#aEnJeu").addEventListener("change", () => achat.sel && ficheAchat(true));
+async function ficheAchat(vendeursSeuls) {
+  const c = achat.sel, rang = c.rang_max ? achat.rang : null;
+  const possede = items.filter(i => i.slug === c.slug && (rang == null || i.rang === rang)).reduce((s, i) => s + i.qte, 0);
+  const box = $("#aFiche"), ven = $("#aVendeurs");
+  ven.hidden = false;
+  if (!vendeursSeuls) box.innerHTML = `<div class="a-fiche">${image(c.img, "grande")}<div style="flex:1;min-width:220px">
+      <h2>${esc(c.nom)}</h2>
+      ${c.rang_max ? `<label class="muted">${t("aRang")} <select id="aRang">${[0, c.rang_max].map(r => `<option value="${r}" ${r === rang ? "selected" : ""}>${r}</option>`).join("")}</select></label>` : ""}
+      <div class="a-chiffres">
+        <div><div class="titre-mini">${t("aPrixMin")}</div><div class="gros" id="aMin">…</div></div>
+        <div><div class="titre-mini">${t("aVendus48")}</div><div class="gros" id="aVol">…</div></div>
+        ${c.ducats ? `<div><div class="titre-mini">Ducats</div><div class="gros">${DUC}${c.ducats}</div></div>` : ""}
+        <div><div class="titre-mini">${t("aTuEnAs")}</div><div class="gros">${possede}</div></div>
+      </div></div>
+      <div style="flex:1;min-width:240px"><div class="titre-mini">${t("aPrix90")}</div><div id="aCourbe">…</div></div></div>`;
+  ven.innerHTML = `<div class="a-vide">…</div>`;
+  const q = `slug=${encodeURIComponent(c.slug)}&rang=${rang ?? ""}`;
+  const [p, v, h] = await Promise.all([api(`/api/prix?${q}&frais=1`).catch(() => null), vendeursSeuls ? null : api(`/api/volume?${q}`).catch(() => null),
+                                       vendeursSeuls ? null : api(`/api/historique-prix?${q}`).catch(() => null)]);
+  if (achat.sel !== c) return;  // un autre item a ete choisi entre-temps
+  if (!vendeursSeuls) {
+    $("#aMin").innerHTML = pl(p?.min);
+    $("#aVol").textContent = v ? v.volume : "–";
+    $("#aCourbe").innerHTML = courbe(h, 30);
+  }
+  const top = (p?.top || []).filter(o => !$("#aEnJeu").checked || o.statut === "ingame");
+  const st = s => s === "ingame" ? t("stIngame") : s === "online" ? t("stOnline") : t("stOffline");
+  ven.innerHTML = !top.length ? `<div class="a-vide">${esc(t("aAucunVendeur"))}</div>` : `<table><thead><tr>
+      <th>${t("aVendeur")}</th><th>${t("aStatut")}</th><th class="num">${t("aRep")}</th><th class="num">${t("colMin")}</th><th class="num">${t("colQte")}</th><th></th></tr></thead>
+      <tbody>${top.map((o, i) => `<tr><td>${esc(o.vendeur)}</td><td><span class="pastille ${esc(o.statut)}"></span>${st(o.statut)}</td>
+        <td class="num">${o.rep ?? ""}</td><td class="num">${pl(o.prix)}</td><td class="num">${o.qte}</td>
+        <td class="num"><button type="button" class="petit" data-w="${i}">${t("aCopierW")}</button></td></tr>`).join("")}</tbody></table>`;
+  achat.top = top;
+}
+$("#aFiche").addEventListener("change", e => {
+  if (e.target.id === "aRang") { achat.rang = +e.target.value; ficheAchat(); }
+});
+$("#aVendeurs").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-w]");
+  if (!b) return;
+  const c = achat.sel, o = achat.top[+b.dataset.w];
+  const txt = messageAchat({ nom_en: c.nom_en, rang_max: c.rang_max, rang: achat.rang }, o);
+  try { await navigator.clipboard.writeText(txt); const a = b.textContent; b.textContent = t("copie"); setTimeout(() => b.textContent = a, 1200); }
+  catch (err) { prompt("", txt); }
+});
+// petite courbe de prix (n derniers jours) : polyline SVG + prix de debut et de fin
+function courbe(h, n) {
+  const l = (h || []).slice(-n).filter(x => x.prix != null);
+  if (l.length < 2) return `<div class="muted">${esc(t("stPasDHisto"))}</div>`;
+  const vals = l.map(x => x.prix), mn = Math.min(...vals), mx = Math.max(...vals), W = 400, H = 100;
+  const pts = l.map((x, i) => `${(i / (l.length - 1) * W).toFixed(1)},${(H - 6 - (x.prix - mn) / ((mx - mn) || 1) * (H - 12)).toFixed(1)}`).join(" ");
+  return `<svg width="100%" height="${H}" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none" role="img" aria-label="${esc(t("stEvol"))} : ${vals[0]} → ${vals[vals.length - 1]}">
+    <polyline points="${pts}" fill="none" stroke="var(--gold)" stroke-width="2.5" vector-effect="non-scaling-stroke"></polyline>
+    <line x1="0" y1="${H - 1}" x2="${W}" y2="${H - 1}" stroke="var(--line)"></line></svg>
+    <div class="courbe-bas"><span>${esc(t("stIlYa", l.length))} : ${pl(vals[0])}</span><span>${esc(t("stAuj"))} : ${pl(vals[vals.length - 1])} · min ${pl(mn)} · max ${pl(mx)}</span></div>`;
+}
+
+// ---- Stats (ventes marquees « Vendu »)
+var statsPer = "semaine", mesVentes = [];
+try { statsPer = localStorage.getItem("statsPer") || "semaine"; } catch (e) {}
+async function chargerStats() {
+  try { mesVentes = await api("/api/mes-ventes"); } catch (e) { mesVentes = []; }
+  rendreStats();
+  remplirEvol();
+}
+function debutPeriode(d, per) {  // debut du jour / de la semaine (lundi) / du mois contenant d
+  const x = new Date(d); x.setHours(0, 0, 0, 0);
+  if (per === "semaine") x.setDate(x.getDate() - ((x.getDay() + 6) % 7));
+  if (per === "mois") x.setDate(1);
+  return x;
+}
+function rendreStats() {
+  document.querySelectorAll("#stPeriode button").forEach(b => b.classList.toggle("on", b.dataset.p === statsPer));
+  const loc = lang === "tc" ? "zh-TW" : lang, n = { jour: 14, semaine: 8, mois: 6 }[statsPer];
+  const cases = [];
+  let d = debutPeriode(new Date(), statsPer);
+  for (let i = 0; i < n; i++) {
+    cases.unshift({ debut: new Date(d), total: 0, ventes: [] });
+    if (statsPer === "jour") d.setDate(d.getDate() - 1);
+    else if (statsPer === "semaine") d.setDate(d.getDate() - 7);
+    else d.setMonth(d.getMonth() - 1);
+  }
+  for (const v of mesVentes) {
+    const t0 = debutPeriode(new Date(v.t * 1000), statsPer).getTime();
+    const c = cases.find(c => c.debut.getTime() === t0);
+    if (c) { c.total += v.prix * (v.qte || 1); c.ventes.push(v); }
+  }
+  const cur = cases[cases.length - 1], nb = cur.ventes.reduce((s, v) => s + (v.qte || 1), 0);
+  const best = cur.ventes.reduce((b, v) => !b || v.prix > b.prix ? v : b, null);
+  const quand = t({ jour: "stCeJour", semaine: "stCetteSemaine", mois: "stCeMois" }[statsPer]);
+  $("#stKpis").innerHTML = [
+    [t("stKGagne"), pl(cur.total), quand], [t("stKVentes"), nb, quand],
+    [t("stKMoyen"), pl(nb ? Math.round(cur.total / nb) : null), quand],
+    [t("stKMeilleure"), pl(best?.prix), best ? esc(best.nom) : quand]
+  ].map(([a, b, c]) => `<div class="carte"><div class="titre-mini">${esc(a)}</div><div class="gros">${b}</div><div class="muted">${c}</div></div>`).join("");
+  const mx = Math.max(1, ...cases.map(c => c.total));
+  const lab = c => statsPer === "mois" ? c.debut.toLocaleDateString(loc, { month: "short" })
+    : c.debut.toLocaleDateString(loc, { day: "2-digit", month: "2-digit" });
+  $("#stGraphe").innerHTML = `<div class="titre-mini">${esc(t({ jour: "stParJour", semaine: "stParSemaine", mois: "stParMois" }[statsPer]))}</div>
+    <div class="barres">${cases.map(c => `<div><span>${c.total || ""}</span><i style="height:${(c.total / mx * 100).toFixed(1)}%"></i></div>`).join("")}</div>
+    <div class="barres-x">${cases.map(c => `<span>${esc(lab(c))}</span>`).join("")}</div>
+    ${!mesVentes.length ? `<div class="muted">${esc(t("stAucune"))}</div>` : ""}`;
+  const parItem = {};
+  for (const v of mesVentes) {
+    const k = v.nom || v.slug;
+    parItem[k] = parItem[k] || { nom: k, nb: 0, total: 0 };
+    parItem[k].nb += v.qte || 1; parItem[k].total += v.prix * (v.qte || 1);
+  }
+  const top = Object.values(parItem).sort((a, b) => b.total - a.total).slice(0, 6);
+  $("#stTop").innerHTML = `<div class="titre-mini">${esc(t("stTop"))}</div><div class="st-top">${!top.length ? `<div class="muted">–</div>`
+    : top.map((x, i) => `<div><b>${i + 1}</b><span>${esc(x.nom)}</span><span class="muted">×${x.nb}</span><span>${pl(x.total)}</span></div>`).join("")}</div>`;
+}
+$("#stPeriode").addEventListener("click", e => {
+  const b = e.target.closest("button[data-p]");
+  if (!b) return;
+  statsPer = b.dataset.p;
+  try { localStorage.setItem("statsPer", statsPer); } catch (err) {}
+  rendreStats();
+});
+// items proposes pour l'evolution du prix : ceux vendus puis ceux en vente
+function remplirEvol() {
+  const vus = new Map();
+  for (const v of mesVentes.slice().reverse()) if (v.slug && !vus.has(v.slug)) vus.set(v.slug, { nom: v.nom || v.slug, rang: v.rang ?? null });
+  for (const o of lignesOffres()) if (o.slug && !vus.has(o.slug)) vus.set(o.slug, { nom: o.nom, rang: o.rang ?? null });
+  const sel = $("#stItem"), avant = sel.value;
+  sel.innerHTML = [...vus].map(([slug, x]) => `<option value="${esc(slug)}|${x.rang ?? ""}">${esc(x.nom)}</option>`).join("");
+  if (avant && [...sel.options].some(o => o.value === avant)) sel.value = avant;
+  evolution();
+}
+async function evolution() {
+  const v = $("#stItem").value;
+  if (!v) { $("#stCourbe").innerHTML = `<div class="muted">–</div>`; return; }
+  const [slug, rang] = v.split("|");
+  $("#stCourbe").innerHTML = "…";
+  try { $("#stCourbe").innerHTML = courbe(await api(`/api/historique-prix?slug=${encodeURIComponent(slug)}&rang=${rang}`), 90); }
+  catch (e) { $("#stCourbe").innerHTML = `<div class="muted">${esc(e.message)}</div>`; }
+}
+$("#stItem").addEventListener("change", evolution);
+
 // ---------------------------------------------------------------- chat du jeu
 const chat = { msgs: [], depuis: 0, maj: 0, canal: "Tous", nonLus: 0, ouvert: false };
 try { chat.canal = localStorage.getItem("chatCanal") || "Tous"; } catch (e) {}
