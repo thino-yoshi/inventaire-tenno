@@ -314,6 +314,31 @@
                   padding: 9px 20px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
                   background: var(--panel); border-color: var(--line); }
   .pages button.on { background: var(--gold); color: var(--on-gold); }
+  /* ---- chat du jeu : meme allure que le chat de Warframe (fond noir, pseudos vert-bleu) ---- */
+  .pages .btn-chat { position: relative; }
+  .pages .btn-chat.on { background: #050405; color: #efefef; border-color: #2aaa8c; }
+  #chatNb { position: absolute; top: 3px; right: 5px; min-width: 16px; padding: 0 4px; border-radius: 8px;
+            background: #2aaa8c; color: #050405; font: 700 10px/16px "Segoe UI", sans-serif; letter-spacing: 0; }
+  #chatNb[hidden] { display: none; }
+  .chat-panel { position: fixed; top: 92px; right: 20px; z-index: 50; width: min(560px, calc(100vw - 32px));
+                height: min(62vh, 560px); display: flex; flex-direction: column;
+                background: rgba(5, 4, 5, .94); border: 1px solid #4a4a4a; box-shadow: 0 12px 40px #000a;
+                font: 15px/1.45 "Roboto", "Segoe UI", sans-serif; color: #efefef; }
+  .chat-panel[hidden] { display: none; }
+  .chat-tete { display: flex; align-items: center; gap: 10px; padding: 6px; border-bottom: 1px solid #333; }
+  .chat-onglets { display: flex; gap: 4px; flex: 1; overflow-x: auto; }
+  .chat-onglets button { background: #000; color: #9a9a9a; border: 1px solid #555; border-radius: 0;
+                         padding: 5px 10px; font: 600 12px "Segoe UI", sans-serif; white-space: nowrap; }
+  .chat-onglets button.on { background: #efefef; color: #000; border-color: #efefef; }
+  .chat-onglets button:hover:not(.on) { color: #efefef; }
+  .chat-msgs { flex: 1; overflow-y: auto; padding: 8px 10px; scrollbar-color: #555 #000; }
+  .cm { padding: 1px 0 3px; word-wrap: break-word; }
+  .cm .ca { color: #2aaa8c; }
+  .cm .cc { color: #777; font-size: 11px; margin-right: 6px; }
+  .cm .co { display: block; color: #8a8a8a; font-size: 12px; font-style: italic; }
+  .cm.jeu { color: #cfcfcf; }
+  .chat-vide { color: #8a8a8a; padding: 20px 6px; text-align: center; }
+  .chat-pied { padding: 4px 10px 6px; font-size: 11px; border-top: 1px solid #222; }
   .barre { padding-top: 8px; padding-bottom: 8px; }
   .gauche { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 10px; align-self: start; }
   .gauche .onglets { position: static; }
@@ -363,8 +388,18 @@
     <button data-p="market" data-t="pMarket"></button>
     <button data-p="info" data-t="pInfo"></button>
     <button data-p="parametres" data-t="pParam"></button>
+    <button type="button" id="btnChat" class="btn-chat"><span data-t="chat"></span><i id="chatNb" hidden></i></button>
   </nav>
 </header>
+<!-- chat du jeu recopie et traduit (deplie sous le bouton Chat) -->
+<section class="chat-panel" id="chatPanel" hidden>
+  <div class="chat-tete">
+    <div class="chat-onglets" id="chatOnglets"></div>
+    <label class="auto" id="chatLireBox"><input type="checkbox" id="chatLire"> <span data-t="chatLire"></span></label>
+  </div>
+  <div class="chat-msgs" id="chatMsgs"></div>
+  <div class="chat-pied muted" id="chatStatut"></div>
+</section>
 <dialog id="dlgParam" class="param">
   <h2 data-t="parametres"></h2>
   <div class="pgrid">
@@ -822,6 +857,9 @@ const T3 = {
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
     relCalc: "Calcul de la valeur des reliques…", pInventaire: "Inventaire", pMarket: "Market", pInfo: "Info / aide",
+    chat: "Chat", chatLire: "Lire le chat du jeu", chatTous: "Tous",
+    chatVide: "Aucun message pour l'instant. Ouvre le chat dans le jeu (touche T) : les messages apparaissent ici, traduits.",
+    chatOrig: "original", chatCopier: "Clic : copier le message traduit",
     pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
     sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
     rareteToutes: "Toutes les raretés", rCommon: "Commun", rUncommon: "Peu commun", rRare: "Rare", rLegendary: "Légendaire",
@@ -864,6 +902,9 @@ const T3 = {
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
     relCalc: "Computing relic values…", pInventaire: "Inventory", pMarket: "Market", pInfo: "Info / help",
+    chat: "Chat", chatLire: "Read the game chat", chatTous: "All",
+    chatVide: "No messages yet. Open the chat in the game (T key): messages show up here, translated.",
+    chatOrig: "original", chatCopier: "Click: copy the translated message",
     pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
     sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
     rareteToutes: "All rarities", rCommon: "Common", rUncommon: "Uncommon", rRare: "Rare", rLegendary: "Legendary",
@@ -1781,6 +1822,72 @@ async function chargerBaro() {
   try { baroInfo = await api("/api/baro"); } catch (e) { baroInfo = null; }
   rendreBaro();
 }
+// ---------------------------------------------------------------- chat du jeu
+const chat = { msgs: [], depuis: 0, maj: 0, canal: "Tous", nonLus: 0, ouvert: false };
+try { chat.canal = localStorage.getItem("chatCanal") || "Tous"; } catch (e) {}
+async function chatPoll() {
+  try {
+    const r = await api(`/api/chat?depuis=${chat.depuis}&maj=${chat.maj}`);
+    $("#chatLire").checked = r.actif;
+    $("#chatStatut").textContent = r.statut || "";
+    $("#chatLireBox").hidden = r.statut === "indisponible";
+    let nouveaux = 0;
+    for (const m of r.messages || []) {
+      const i = chat.msgs.findIndex(x => x.id === m.id);
+      if (i >= 0) chat.msgs[i] = m; else { chat.msgs.push(m); nouveaux++; }
+      chat.depuis = Math.max(chat.depuis, m.id);
+    }
+    if (r.maintenant) chat.maj = r.maintenant - 2;
+    chat.msgs = chat.msgs.slice(-900);
+    if (!chat.ouvert) chat.nonLus += nouveaux;
+    $("#chatNb").hidden = !chat.nonLus;
+    $("#chatNb").textContent = chat.nonLus > 99 ? "99+" : chat.nonLus;
+    if (chat.ouvert && (r.messages || []).length) rendreChat();
+  } catch (e) {}
+  setTimeout(chatPoll, chat.ouvert ? 1500 : 4000);
+}
+function rendreChat() {
+  const canaux = ["Tous", ...new Set(chat.msgs.map(m => m.canal))];
+  if (!canaux.includes(chat.canal)) chat.canal = "Tous";
+  $("#chatOnglets").innerHTML = canaux.map(c =>
+    `<button type="button" data-c="${esc(c)}" class="${c === chat.canal ? "on" : ""}">${esc(c === "Tous" ? t("chatTous") : c)}</button>`).join("");
+  const box = $("#chatMsgs"), enBas = box.scrollHeight - box.scrollTop - box.clientHeight < 40;
+  const liste = chat.msgs.filter(m => chat.canal === "Tous" || m.canal === chat.canal);
+  const heure = s => new Date(s * 1000).toLocaleTimeString(lang, { hour: "2-digit", minute: "2-digit" });
+  box.innerHTML = !liste.length ? `<div class="chat-vide">${esc(t("chatVide"))}</div>` : liste.map(m =>
+    `<div class="cm ${m.auteur ? "" : "jeu"}" data-id="${m.id}" title="${esc(t("chatCopier"))}"><span class="cc">${heure(m.t)}${chat.canal === "Tous" ? " · " + esc(m.canal) : ""}</span>${
+      m.auteur ? `<span class="ca">${esc(m.auteur)}</span>: ` : ""}${esc(m.trad || m.texte)}${
+      m.trad ? `<span class="co">${esc(t("chatOrig"))} (${esc(m.langue || "?")}) : ${esc(m.texte)}</span>` : ""}</div>`).join("");
+  if (enBas) box.scrollTop = box.scrollHeight;
+}
+$("#btnChat").addEventListener("click", () => {
+  chat.ouvert = !chat.ouvert;
+  $("#chatPanel").hidden = !chat.ouvert;
+  $("#btnChat").classList.toggle("on", chat.ouvert);
+  if (chat.ouvert) {
+    chat.nonLus = 0; $("#chatNb").hidden = true;
+    rendreChat();
+    $("#chatMsgs").scrollTop = $("#chatMsgs").scrollHeight;
+  }
+});
+$("#chatOnglets").addEventListener("click", e => {
+  const b = e.target.closest("button[data-c]");
+  if (!b) return;
+  chat.canal = b.dataset.c;
+  try { localStorage.setItem("chatCanal", chat.canal); } catch (err) {}
+  rendreChat();
+  $("#chatMsgs").scrollTop = $("#chatMsgs").scrollHeight;
+});
+$("#chatMsgs").addEventListener("click", async e => {
+  const d = e.target.closest(".cm[data-id]");
+  const m = d && chat.msgs.find(x => x.id === +d.dataset.id);
+  if (!m) return;
+  const txt = m.trad || m.texte;
+  try { await navigator.clipboard.writeText(txt); d.style.opacity = .5; setTimeout(() => d.style.opacity = "", 400); }
+  catch (err) { prompt("", txt); }
+});
+$("#chatLire").addEventListener("change", e => api("/api/chat", { actif: e.target.checked }).catch(() => {}));
+
 function rendreBaro() {
   const box = $("#baro");
   if (!baroInfo?.debut) { box.hidden = true; return; }
@@ -1983,6 +2090,7 @@ $("#langue").addEventListener("change", e => {
   graphique(); panneau();
   surveiller();
   setInterval(surveiller, 5000);
+  chatPoll();
   montrerPage(page);
   chargerCompte(true);
   chargerSouhaits();

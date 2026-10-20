@@ -497,8 +497,8 @@ class RewardOverlay:
             for ln in lines:  # coordonnees dans la fenetre du jeu
                 ln["x"], ln["w"] = ln["x"] / k + L, ln["w"] / k
                 ln["y"], ln["h"] = ln["y"] / k + T, ln["h"] / k
-            labels = self.fiche_labels(lines, lang)
-            self.log(f"fiche Alt + A : {len(labels)} prix en {time.time() - t0:.2f} s ; "
+            labels = self.fiche_labels(lines, lang, W)
+            self.log(f"fiche Alt + A : {len(labels['rows']) if labels else 0} prix en {time.time() - t0:.2f} s ; "
                      f"{len(lines)} ligne(s) lue(s) : {[ln['t'] for ln in lines][:25]}")
             if self.window:
                 self.window.labels(labels, FICHE_SECONDS, rect)
@@ -508,26 +508,36 @@ class RewardOverlay:
             import traceback
             self.log("ERREUR fiche " + traceback.format_exc().replace("\n", " | "))
 
-    def fiche_labels(self, lines, lang):
-        """[{x, y, h, prix, ducats}] : un prix par nom de recompense lu sur la fiche."""
+    def fiche_labels(self, lines, lang, W):
+        """Colonne de prix collee au bord droit de la fiche : {x, cote, size, titre_y, rows}.
+        rows = [{y, prix, ducats, meilleur}], une ligne par nom de recompense lu."""
         cands, likely, _ = self.candidates(lang)
-        # sous le titre « Recompenses possibles » s'il est lu (sinon toute la zone)
         titre = next((ln for ln in lines if any(t in norm(ln["t"]) for t in FICHE_TITRES)), None)
-        if titre:
-            lines = [ln for ln in lines if ln["y"] > titre["y"] + titre["h"] / 2
-                     and abs(ln["x"] - titre["x"]) < titre["w"] * 1.5]
-        out = []
-        for ln in lines:
+        if titre:  # la fiche : lignes alignees sur le titre (pas le reste de l'ecran)
+            h0 = titre["h"]
+            fiche = [ln for ln in lines if titre["x"] - 2 * h0 < ln["x"] < titre["x"] + 3 * h0]
+            noms = [ln for ln in fiche if ln["y"] > titre["y"] + h0 / 2]
+        else:
+            fiche = noms = lines
+        rows, used = [], []
+        for ln in noms:
             path, score = self.match(ln["t"], cands)
             if not path or score < 0.8:
                 continue
             v = self.value(path, lang)
-            out.append({"x": ln["x"] + ln["w"], "y": ln["y"] + ln["h"] / 2, "h": ln["h"],
-                        "prix": v["prix"], "ducats": v["ducats"], "nom": v["nom"]})
-        best = max((l["prix"] or 0 for l in out), default=0)
-        for l in out:
-            l["meilleur"] = best > 0 and l["prix"] == best
-        return out
+            used.append(ln)
+            rows.append({"y": ln["y"] + ln["h"] / 2, "prix": v["prix"], "ducats": v["ducats"]})
+        if not rows:
+            return None
+        best = max((r["prix"] or 0 for r in rows), default=0)
+        for r in rows:
+            r["meilleur"] = best > 0 and r["prix"] == best
+        h = sorted(ln["h"] for ln in used)[len(used) // 2]  # meme taille pour toutes les lignes
+        # bord droit de la fiche ~ fin de la plus longue ligne de texte + sa marge
+        droite = max(ln["x"] + ln["w"] for ln in (fiche or used)) + h * 1.6
+        gauche = min(ln["x"] for ln in (fiche or used)) - h * 1.6
+        return {"droite": droite, "gauche": gauche, "W": W, "size": h,
+                "titre_y": titre["y"] + titre["h"] / 2 if titre else None, "rows": rows}
 
     def prefetch(self, relics):
         """Prix et images des recompenses d'une relique, prepares a l'avance."""
@@ -745,38 +755,51 @@ class OverlayWindow:
                 for it in ids:
                     canvas.move(it, cx - (bx1 + bx2) / 2, 0)
 
-        def draw_labels(labels):
-            """Prix a droite de chaque nom, sur un petit fond sombre lisible."""
+        def draw_labels(data):
+            """Une colonne de prix bien alignee, collee au bord droit de la fiche (ou au bord
+            gauche s'il n'y a pas la place) : icones en en-tete, chiffres alignes a droite."""
+            import tkinter.font as tkfont
             canvas.delete("all")
             keep.clear()
-            for lb in labels:
-                size = max(11, int(lb["h"] * 0.75))
-                x, y = lb["x"] + size * 0.8, lb["y"]
-                ids = []
-                parts = []
-                if lb["prix"] is not None:
-                    parts.append(("platine", str(lb["prix"]), PLAT))
-                if lb["ducats"]:
-                    parts.append(("ducat", str(lb["ducats"]), GOLD))
-                if not parts:
-                    parts.append((None, "–", MUTED))
-                cx = x + 8
-                for ic, txt, color in parts:
-                    if ic and self.assets:
-                        try:
-                            ids.append(canvas.create_image(cx, y, image=icon(ic, int(size * 1.2)), anchor="w"))
-                            cx += size * 1.2 + 4
-                        except Exception:
-                            pass
-                    t = canvas.create_text(cx, y, text=txt, fill=color, anchor="w",
-                                           font=("Segoe UI Semibold", size))
-                    ids.append(t)
-                    cx = canvas.bbox(t)[2] + size * 0.7
-                x1, y1, x2, y2 = canvas.bbox(*ids)
-                bg = canvas.create_rectangle(x1 - 7, y1 - 3, x2 + 7, y2 + 3, fill=PANEL,
-                                             outline=GOLD if lb.get("meilleur") else BORDER,
-                                             width=2 if lb.get("meilleur") else 1)
-                canvas.tag_lower(bg)
+            if not data:
+                return
+            px = data["size"]                       # hauteur d'une ligne de texte du jeu, en pixels
+            f = tkfont.Font(root=root, family="Segoe UI Semibold", size=-int(px * 0.78))
+            fb = tkfont.Font(root=root, family="Segoe UI Semibold", size=-int(px * 0.78), weight="bold")
+            ic = int(px * 0.9)
+            pad, gap = int(px * 0.55), int(px * 0.9)
+            num = f.measure("9999")
+            col1 = max(num, ic)                     # colonne platine
+            col2 = max(f.measure("100"), ic)        # colonne ducats
+            width = pad + col1 + gap + col2 + pad
+            x1 = data["droite"]
+            if x1 + width > data["W"] - 4:         # pas la place a droite : a gauche de la fiche
+                x1 = max(4, data["gauche"] - width)
+            rows = data["rows"]
+            top_y = data["titre_y"] if data["titre_y"] is not None else rows[0]["y"]
+            y1, y2 = top_y - px * 0.85, rows[-1]["y"] + px * 0.85
+            canvas.create_polygon(card_shape(x1, y1, x1 + width, y2, int(px * 0.5)),
+                                  fill=PANEL, outline=BORDER, width=1)
+            c1r, c2r = x1 + pad + col1, x1 + pad + col1 + gap + col2   # bords droits des colonnes
+            # en-tete : les icones, a la hauteur de « Recompenses possibles »
+            if self.assets:
+                for name, right, w in (("platine", c1r, col1), ("ducat", c2r, col2)):
+                    try:
+                        canvas.create_image(right - w / 2, top_y if data["titre_y"] is not None
+                                            else y1 + px * 0.6, image=icon(name, ic))
+                    except Exception:
+                        pass
+            for r in rows:
+                y = r["y"]
+                if r["meilleur"]:  # meilleur choix : fond dore discret + chiffres dores
+                    canvas.create_rectangle(x1 + 2, y - px * 0.55, x1 + width - 2, y + px * 0.55,
+                                            fill="#2a2416", outline="")
+                    canvas.create_rectangle(x1 + 2, y - px * 0.55, x1 + 5, y + px * 0.55, fill=GOLD, outline="")
+                prix = "–" if r["prix"] is None else str(r["prix"])
+                canvas.create_text(c1r, y, text=prix, anchor="e", font=fb if r["meilleur"] else f,
+                                   fill=GOLD if r["meilleur"] else (PLAT if r["prix"] is not None else MUTED))
+                canvas.create_text(c2r, y, text=str(r["ducats"]) if r["ducats"] else "–", anchor="e", font=f,
+                                   fill=TEXT if r["ducats"] else MUTED)
 
         def tick():
             try:

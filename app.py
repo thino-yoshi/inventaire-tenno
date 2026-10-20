@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.6.0"
+VERSION = "1.7.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
@@ -1076,7 +1076,7 @@ def history_add(entry):
 # ================================================================ mises a jour (GitHub Releases)
 # Seuls ces fichiers peuvent etre remplaces : jamais les donnees de l'utilisateur
 # (inventaire, session WFM, souhaits, ventes, caches...).
-UPDATABLE = {"app.py", "index.html", "prime_inventory.py", "reliques_overlay.py", "Lancer.bat",
+UPDATABLE = {"app.py", "index.html", "prime_inventory.py", "reliques_overlay.py", "chat_jeu.py", "Lancer.bat",
              "LISEZMOI.txt"}
 
 
@@ -1177,6 +1177,21 @@ def start_overlay():
         OVERLAY.start(RES / "assets", BASE)  # BASE : overlay.log + derniere capture lue
     except Exception as e:
         print("overlay des reliques :", e)
+
+
+CHAT = None      # chat du jeu recopie et traduit
+
+
+def start_chat():
+    global CHAT
+    if not pi.IS_WINDOWS:
+        return
+    try:
+        import chat_jeu
+        CHAT = chat_jeu.ChatReader(sys.modules[__name__])
+        CHAT.start()
+    except Exception as e:
+        print("chat du jeu :", e)
 
 
 def open_overlay_log(icon=None, item=None):
@@ -1283,6 +1298,12 @@ class Handler(BaseHTTPRequestHandler):
                                 "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
                                             "statut": OVERLAY.status if OVERLAY else "indisponible"}})
+            elif u.path == "/api/chat":  # messages du chat du jeu (avec traduction)
+                if not CHAT:
+                    return self.send(200, {"actif": False, "statut": "indisponible", "messages": []})
+                msgs = CHAT.depuis(int(q.get("depuis") or 0), float(q.get("maj") or 0))
+                self.send(200, {"actif": CHAT.enabled, "statut": CHAT.statut, "messages": msgs,
+                                "maintenant": time.time()})
             elif u.path == "/api/maj":  # aussi le petit bouton "rechercher les mises a jour"
                 info = check_update()
                 UPDATE_INFO.clear()
@@ -1355,6 +1376,10 @@ class Handler(BaseHTTPRequestHandler):
                     raise RuntimeError("pas_de_fenetre")
                 show_window()
                 self.send(200, {"ok": True})
+            elif u.path == "/api/chat":
+                if CHAT:
+                    CHAT.enabled = bool(body.get("actif"))
+                self.send(200, {"actif": bool(CHAT and CHAT.enabled)})
             elif u.path == "/api/overlay":
                 if OVERLAY:
                     OVERLAY.enabled = bool(body.get("actif"))
@@ -1438,6 +1463,7 @@ def main():
     threading.Thread(target=presence_loop, daemon=True).start()
     threading.Thread(target=update_loop, daemon=True).start()
     start_overlay()
+    start_chat()
     print(f"App prete : {url}")
     threading.Thread(target=srv.serve_forever, daemon=True).start()
     with_tray = not args.sans_icone

@@ -28,7 +28,7 @@ $zip = "$tmp\inventaire-tenno-src.zip"
 py -I -c @"
 import zipfile, pathlib, sys
 root = pathlib.Path(sys.argv[1])
-files = ['app.py', 'index.html', 'prime_inventory.py', 'reliques_overlay.py', 'Lancer.bat', 'LISEZMOI.txt']
+files = ['app.py', 'index.html', 'prime_inventory.py', 'reliques_overlay.py', 'chat_jeu.py', 'Lancer.bat', 'LISEZMOI.txt']
 files += ['assets/' + p.name for p in sorted((root / 'assets').iterdir()) if p.is_file()]
 with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as z:
     for f in files:
@@ -41,7 +41,7 @@ $assets = @($zip)
 if ($Exe) {
     py -m PyInstaller --onefile --noconsole --name LotusDesk --icon "$Root\assets\lotus.ico" `
         --add-data "$Root\index.html;." --add-data "$Root\assets;assets" `
-        --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import tkinter --collect-all webview `
+        --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import chat_jeu --hidden-import tkinter --collect-all webview `
         --distpath "$tmp\dist" --workpath "$tmp\work" --specpath $tmp --noconfirm --log-level WARN app.py
     # LotusDesk.exe pour les nouveaux telechargements ; la meme sous l'ancien nom, que les
     # versions installees cherchent pour se mettre a jour (ne pas le supprimer)
