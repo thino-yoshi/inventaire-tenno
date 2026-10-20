@@ -293,6 +293,33 @@
                      50% { opacity: 1; filter: drop-shadow(0 0 18px color-mix(in srgb, var(--gold) 67%, transparent)); transform: scale(1.03); } }
   @media (prefers-reduced-motion: reduce) { #splash img, .gcase { animation: none; transition: none; } }
 
+
+  /* ================= disposition en onglets (brouillon de Thigrou) ================= */
+  header { align-items: flex-end; padding-bottom: 0; }
+  .marque { display: flex; flex-direction: column; gap: 6px; padding-bottom: 10px; }
+  .marque .baro { margin: 0; padding: 3px 10px; font-size: 11.5px; gap: 8px; clip-path: none; }
+  .marque .baro b { letter-spacing: 1.5px; }
+  .marque .baro button { padding: 2px 8px; font-size: 11px; margin-left: 6px; }
+  header .stats { padding-bottom: 12px; }
+  .pages { display: flex; gap: 4px; margin-left: auto; align-self: flex-end; }
+  .pages button { clip-path: polygon(9px 0, 100% 0, 100% 100%, 0 100%, 0 9px); border-bottom: none;
+                  padding: 9px 20px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
+                  background: var(--panel); border-color: var(--line); }
+  .pages button.on { background: var(--gold); color: var(--on-gold); }
+  .barre { padding-top: 8px; padding-bottom: 8px; }
+  .gauche { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 10px; align-self: start; }
+  .gauche .onglets { position: static; }
+  .gauche #colsBox { flex-wrap: wrap; }
+  .page { padding: 0 20px 20px; }
+  .page[hidden], main[hidden] { display: none !important; }  /* main est en grille : il faut forcer */
+  #pageMarket { display: grid; gap: 16px; }
+  #pageMarket[hidden] { display: none; }
+  .reglages { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 16px; align-items: start; }
+  .reglages[hidden] { display: none; }
+  .reglages .carte h2 { margin-bottom: 10px; }
+  .ligne-r { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 6px 0; }
+  .ligne-r select { min-width: 160px; }
+  @media (max-width: 860px) { .pages { margin-left: 0; width: 100%; } .pages button { flex: 1; padding: 8px 6px; } .gauche { position: static; } }
   @media (max-width: 860px) {
     main, main.ventes { grid-template-columns: minmax(0, 1fr); padding: 0 16px 16px; }
     .onglets { flex-direction: row; overflow-x: auto; position: static; }
@@ -312,24 +339,21 @@
 <div id="splash"><img src="/assets/lotus.png" alt=""><div data-t="chargementArsenal"></div>
   <small id="splashMsg"></small><small id="splashVersion"></small></div>
 <header>
-  <h1><img src="/assets/lotus.png" alt="">Lotus <span>Desk</span>
-    <button id="btnCheck" class="check" type="button">⟳</button><small id="checkMsg" class="checkmsg"></small></h1>
+  <div class="marque">
+    <h1><img src="/assets/lotus.png" alt="">Lotus <span>Desk</span></h1>
+    <div class="baro" id="baro" hidden></div>
+  </div>
   <div class="stats">
     <div class="stat"><b id="tMin">–</b><small data-t="totMin"></small></div>
     <div class="stat"><b id="tDuc">–</b><small data-t="totDuc"></small></div>
-    <div class="stat"><b id="tNb">–</b><small data-t="nbItems"></small></div>
+    <span id="tNb" hidden></span>
   </div>
-  <div class="actions">
-    <button id="btnMaj" class="maj" hidden></button>
-    <input type="search" id="filtre">
-    <select id="seuil"></select>
-    <select id="langue"></select>
-    <label class="auto"><input type="checkbox" id="auto"> <span data-t="auto"></span></label>
-    <button id="btnJeu" data-t="lire"></button>
-    <button id="btnPrix" data-t="rafraichir"></button>
-    <button id="btnCompte"></button>
-    <button id="btnParam" title="Paramètres">⚙</button>
-  </div>
+  <nav class="pages" id="pages">
+    <button data-p="inventaire" data-t="pInventaire"></button>
+    <button data-p="market" data-t="pMarket"></button>
+    <button data-p="info" data-t="pInfo"></button>
+    <button data-p="parametres" data-t="pParam"></button>
+  </nav>
 </header>
 <dialog id="dlgParam" class="param">
   <h2 data-t="parametres"></h2>
@@ -377,35 +401,24 @@
   </form>
 </dialog>
 <div class="barre">
-  <div class="mode" id="modeVue">
-    <button data-mode="liste" data-t="modeListe"></button>
-    <button data-mode="grille" data-t="modeImages"></button>
-  </div>
-  <label id="colsBox" hidden><span data-t="parLigne"></span>
-    <input type="range" id="cols" min="2" max="10" step="1"><b id="colsN"></b></label>
   <span class="jeu muted" id="jeu"></span>
   <span class="jeu muted" id="presence" hidden></span>
   <label class="auto" id="overlayBox" hidden><input type="checkbox" id="ovActif"> <span data-t="overlayLbl"></span></label>
   <label class="auto" id="presenceAuto" hidden><input type="checkbox" id="presAuto"> <span data-t="presAuto"></span></label>
-  <span id="etat"></span>
 </div>
-<div class="baro" id="baro" hidden></div>
-<main>
-  <nav class="onglets" id="onglets"></nav>
-  <div class="table" id="vueVentes" hidden>
-    <div class="outils">
-      <input type="text" id="pseudoAcheteur" autocomplete="off">
-      <span class="muted" id="ventesMsg"></span>
+<!-- ============ onglet Inventaire (brouillon) ============ -->
+<main id="pageInventaire">
+  <aside class="gauche">
+    <div class="mode" id="modeVue">
+      <button data-mode="liste" data-t="modeListe"></button>
+      <button data-mode="grille" data-t="modeImages"></button>
     </div>
-    <table>
-      <thead><tr>
-        <th data-t="colItem"></th><th class="num" data-t="colQte"></th><th class="num" data-t="monPrix"></th>
-        <th class="num" data-t="marche"></th><th data-t="actions"></th>
-      </tr></thead>
-      <tbody id="lignesVentes"></tbody>
-    </table>
-  </div>
+    <label id="colsBox" hidden><span data-t="parLigne"></span>
+      <input type="range" id="cols" min="2" max="10" step="1"><b id="colsN"></b></label>
+    <nav class="onglets" id="onglets"></nav>
+  </aside>
   <div class="table" id="vueInventaire">
+    <input type="search" id="filtre" hidden>
     <form class="outils" id="ajoutSouhait" hidden>
       <input type="text" id="sItem" list="catalogue" autocomplete="off">
       <datalist id="catalogue"></datalist>
@@ -437,11 +450,49 @@
     <button id="plus" hidden></button>
   </div>
   <div class="side">
-    <section class="carte" id="alertes"></section>
     <section class="carte" id="panneau"></section>
     <section class="carte" id="histo"></section>
   </div>
 </main>
+<!-- ============ onglet Market : mes ventes + alertes ============ -->
+<section class="page" id="pageMarket" hidden>
+  <section class="carte" id="alertes"></section>
+  <div class="table" id="vueVentes">
+    <div class="outils">
+      <input type="text" id="pseudoAcheteur" autocomplete="off">
+      <span class="muted" id="ventesMsg"></span>
+    </div>
+    <table>
+      <thead><tr>
+        <th data-t="colItem"></th><th class="num" data-t="colQte"></th><th class="num" data-t="monPrix"></th>
+        <th class="num" data-t="marche"></th><th data-t="actions"></th>
+      </tr></thead>
+      <tbody id="lignesVentes"></tbody>
+    </table>
+  </div>
+</section>
+<!-- ============ onglet Info / aide : a dessiner ============ -->
+<section class="page" id="pageInfo" hidden>
+  <div class="carte"><h2 data-t="pInfo"></h2><div class="sub" data-t="aVenir"></div></div>
+</section>
+<!-- ============ onglet Profils : connexion, reglages, mises a jour ============ -->
+<section class="page reglages" id="pageParametres" hidden>
+  <div class="carte"><h2 data-t="sCompte"></h2>
+    <div class="ligne-r"><button id="btnCompte"></button></div></div>
+  <div class="carte"><h2 data-t="sJeu"></h2>
+    <div class="ligne-r"><label class="auto"><input type="checkbox" id="auto"> <span data-t="auto"></span></label>
+      <button id="btnJeu" data-t="lire"></button></div>
+    <div class="ligne-r"><button id="btnPrix" data-t="rafraichir"></button><span id="etat"></span></div>
+    <div class="ligne-r"><span data-t="seuilLbl"></span><select id="seuil"></select></div></div>
+  <div class="carte"><h2 data-t="sLangue"></h2>
+    <div class="ligne-r"><select id="langue"></select></div></div>
+  <div class="carte"><h2 data-t="sApparence"></h2>
+    <div class="ligne-r"><button id="btnParam" data-t="btnCouleurs"></button></div></div>
+  <div class="carte"><h2 data-t="sMaj"></h2>
+    <div class="ligne-r"><span id="versionTxt" class="muted"></span></div>
+    <div class="ligne-r"><button id="btnCheck" type="button" data-t="checkTip"></button><small id="checkMsg" class="checkmsg"></small>
+      <button id="btnMaj" class="maj" hidden></button></div></div>
+</section>
 <script>
 // ---------------------------------------------------------------- textes de l'interface
 const LANG_NAMES = { fr: "Français", en: "English", de: "Deutsch", es: "Español", it: "Italiano",
@@ -753,7 +804,10 @@ const T3 = {
     valeurMoy: p => `valeur moyenne : ${p}p`, recompenses: "Récompenses", relValeurs: "Valeur moyenne d'ouverture",
     rar_RARE: "Rare", rar_UNCOMMON: "Peu commune", rar_COMMON: "Commune",
     q_intact: "Intacte", q_exceptional: "Exceptionnelle", q_flawless: "Impeccable", q_radiant: "Éclatante",
-    relCalc: "Calcul de la valeur des reliques…", checkTip: "Rechercher des mises à jour",
+    relCalc: "Calcul de la valeur des reliques…", pInventaire: "Inventaire", pMarket: "Market", pInfo: "Info / aide",
+    pParam: "Profils", aVenir: "À venir.", sCompte: "Compte Warframe Market", sJeu: "Lecture du jeu et prix",
+    sLangue: "Langue", sApparence: "Apparence", btnCouleurs: "Couleurs du thème…", sMaj: "Mises à jour",
+    seuilLbl: "Masquer les mods, arcanes et reliques moins chers que", versionTxt: v => `Version installée : v${v}`, checkTip: "Rechercher des mises à jour",
     checkAJour: v => `à jour (v${v})`, checkNouvelle: v => `v${v} disponible`, checkErreur: "GitHub injoignable", parametres: "Paramètres", themes: "Thèmes",
     couleursPerso: "Couleurs personnalisées", apercu: "Aperçu", reinitialiser: "Thème par défaut", enregistrer: "Enregistrer",
     cAccent: "Accent (titres, boutons)", cPlat: "Platine (prix)", cBg: "Fond", cPanel: "Panneaux", cText: "Texte", majBouton: v => `⟳ Mettre à jour (v${v})`,
@@ -791,7 +845,10 @@ const T3 = {
     valeurMoy: p => `average value: ${p}p`, recompenses: "Rewards", relValeurs: "Average opening value",
     rar_RARE: "Rare", rar_UNCOMMON: "Uncommon", rar_COMMON: "Common",
     q_intact: "Intact", q_exceptional: "Exceptional", q_flawless: "Flawless", q_radiant: "Radiant",
-    relCalc: "Computing relic values…", checkTip: "Check for updates",
+    relCalc: "Computing relic values…", pInventaire: "Inventory", pMarket: "Market", pInfo: "Info / help",
+    pParam: "Profile", aVenir: "Coming soon.", sCompte: "Warframe Market account", sJeu: "Game reading and prices",
+    sLangue: "Language", sApparence: "Appearance", btnCouleurs: "Theme colors…", sMaj: "Updates",
+    seuilLbl: "Hide mods, arcanes and relics cheaper than", versionTxt: v => `Installed version: v${v}`, checkTip: "Check for updates",
     checkAJour: v => `up to date (v${v})`, checkNouvelle: v => `v${v} available`, checkErreur: "GitHub unreachable", parametres: "Settings", themes: "Themes",
     couleursPerso: "Custom colors", apercu: "Preview", reinitialiser: "Default theme", enregistrer: "Save",
     cAccent: "Accent (titles, buttons)", cPlat: "Platinum (prices)", cBg: "Background", cPanel: "Panels", cText: "Text", majBouton: v => `⟳ Update (v${v})`,
@@ -837,7 +894,7 @@ function appliquerTheme(th, cible = document.documentElement) {
 let theme = { ...THEMES.orokin };
 try { const s = JSON.parse(localStorage.getItem("theme") || "null"); if (s) theme = { ...theme, ...s }; } catch (e) {}
 appliquerTheme(theme);
-const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "offre", "souhait"];
+const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "souhait"];  // « En vente » : onglet Market
 const NON_ECHANGE = ["objet", "ressource"];  // pour savoir ce qu'on possède : hors « Tout » et hors totaux
 const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5, objet: 6, ressource: 7 };
 let souhaits = [], alertes = [], presence = {}, coches = new Set(), relVals = {}, volumes = {}, catalogue = null;
@@ -1070,10 +1127,7 @@ $("#lignesVentes").addEventListener("click", async e => {
 });
 
 function rendu() {
-  $("#vueVentes").hidden = onglet !== "offre";
-  $("#vueInventaire").hidden = onglet === "offre";
-  document.querySelector("main").classList.toggle("ventes", onglet === "offre");  // pleine largeur
-  if (onglet === "offre" && !$("#lignesVentes").contains(document.activeElement)) renduVentes();
+  if (page === "market" && !$("#lignesVentes").contains(document.activeElement)) renduVentes();
   $("#thCoche").hidden = !compte.connecte || ["offre", "souhait"].includes(onglet);
   $("#ajoutSouhait").hidden = onglet !== "souhait";
   $("#lot").hidden = !coches.size;
@@ -1459,6 +1513,7 @@ async function surveiller() {
     $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
     $("#presAuto").checked = !!presence.auto;
     // bouton « Mettre à jour » : le serveur vérifie GitHub toutes les 30 min
+    $("#versionTxt").textContent = t("versionTxt", e.version_app || "?");
     const maj = e.maj || {};
     $("#btnMaj").hidden = !maj.nouvelle;
     if (maj.nouvelle) { $("#btnMaj").textContent = t("majBouton", maj.derniere); $("#btnMaj").title = t("majBoutonTip"); }
@@ -1626,6 +1681,25 @@ $("#pOk").addEventListener("click", () => {
   try { localStorage.setItem("theme", JSON.stringify(theme)); } catch (e) {}
   $("#dlgParam").close();
   graphique();  // le graphique reprend la nouvelle couleur d'accent
+});
+
+
+// ---------------------------------------------------------------- onglets du haut
+// Inventaire | Market (mes ventes, alertes) | Info / aide | Profils (connexion, réglages, mises à jour)
+let page = "inventaire";
+try { page = localStorage.getItem("page") || "inventaire"; } catch (e) {}
+const PAGES = { inventaire: "#pageInventaire", market: "#pageMarket", info: "#pageInfo", parametres: "#pageParametres" };
+function montrerPage(p) {
+  if (!PAGES[p]) p = "inventaire";
+  page = p;
+  for (const [k, sel] of Object.entries(PAGES)) $(sel).hidden = k !== p;
+  document.querySelectorAll("#pages button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
+  try { localStorage.setItem("page", p); } catch (e) {}
+  if (p === "market") { renduVentes(); rendreAlertes(); }
+}
+$("#pages").addEventListener("click", e => {
+  const b = e.target.closest("button[data-p]");
+  if (b) montrerPage(b.dataset.p);
 });
 
 // ---------------------------------------------------------------- écran de démarrage
@@ -1872,6 +1946,7 @@ $("#langue").addEventListener("change", e => {
   graphique(); panneau();
   surveiller();
   setInterval(surveiller, 5000);
+  montrerPage(page);
   chargerCompte(true);
   chargerSouhaits();
   chargerBaro();

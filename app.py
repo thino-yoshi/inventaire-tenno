@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.3.2"
+VERSION = "1.4.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
@@ -832,14 +832,41 @@ def relic_value(path, lang):
 _baro = {"t": 0, "data": None}
 
 
+WORLDSTATE_URL = "https://api.warframe.com/cdn/worldState.php"  # source officielle de DE
+
+
+def baro_officiel(lang):
+    """Visite de Baro lue dans le worldState officiel du jeu ; lieu traduit avec les fichiers du jeu."""
+    import datetime
+    w = requests.get(WORLDSTATE_URL, timeout=20).json()
+    v = (w.get("VoidTraders") or [None])[0]
+    if not v:
+        return None
+    iso = lambda d: datetime.datetime.fromtimestamp(int(d["$date"]["$numberLong"]) / 1000,
+                                                    datetime.timezone.utc).isoformat()
+    g = game()
+    reg = (load_json(fetch_data_file("ExportRegions.json")) or {}).get(v.get("Node"), {})
+    tr = g.tr(lang)
+    lieu = tr.get(reg.get("name"), v.get("Node"))
+    if reg.get("systemName"):
+        lieu = f"{lieu} ({tr.get(reg['systemName'], '')})"
+    return {"debut": iso(v["Activation"]), "fin": iso(v["Expiry"]), "lieu": lieu}
+
+
 def baro():
-    """Prochaine (ou actuelle) visite de Baro Ki'Teer, via l'API publique warframestat.us."""
+    """Prochaine (ou actuelle) visite de Baro Ki'Teer : source officielle, warframestat.us en secours."""
     if time.time() - _baro["t"] > 1800 or not _baro["data"]:
-        r = requests.get("https://api.warframestat.us/pc/voidTrader?language=fr", timeout=20)
-        r.raise_for_status()
-        d = r.json()
-        _baro.update(t=time.time(), data={"debut": d.get("activation"), "fin": d.get("expiry"),
-                                          "lieu": d.get("location")})
+        try:
+            data = baro_officiel(CURRENT_LANG[0])
+        except Exception as e:
+            print("Baro (source officielle) :", e)
+            data = None
+        if not data:
+            r = requests.get("https://api.warframestat.us/pc/voidTrader?language=fr", timeout=20)
+            r.raise_for_status()
+            d = r.json()
+            data = {"debut": d.get("activation"), "fin": d.get("expiry"), "lieu": d.get("location")}
+        _baro.update(t=time.time(), data=data)
     return _baro["data"]
 
 
