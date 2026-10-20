@@ -300,7 +300,8 @@
   .marque .baro { margin: 0; padding: 3px 10px; font-size: 11.5px; gap: 8px; clip-path: none; }
   .marque .baro b { letter-spacing: 1.5px; }
   .marque .baro button { padding: 2px 8px; font-size: 11px; margin-left: 6px; }
-  header .stats { padding-bottom: 12px; }
+  .titre-ligne { display: flex; align-items: center; gap: 22px; flex-wrap: wrap; }  /* nom + monnaies */
+  .titre-ligne .stats { gap: 18px; }
   .pages { display: flex; gap: 4px; margin-left: auto; align-self: flex-end; }
   .pages button { clip-path: polygon(9px 0, 100% 0, 100% 100%, 0 100%, 0 9px); border-bottom: none;
                   padding: 9px 20px; letter-spacing: 2px; text-transform: uppercase; color: var(--muted);
@@ -340,13 +341,15 @@
   <small id="splashMsg"></small><small id="splashVersion"></small></div>
 <header>
   <div class="marque">
-    <h1><img src="/assets/lotus.png" alt="">Lotus <span>Desk</span></h1>
+    <div class="titre-ligne">
+      <h1><img src="/assets/lotus.png" alt="">Lotus <span>Desk</span></h1>
+      <div class="stats">
+        <div class="stat"><b id="tMin">–</b><small data-t="totMin"></small></div>
+        <div class="stat"><b id="tDuc">–</b><small data-t="totDuc"></small></div>
+        <span id="tNb" hidden></span>
+      </div>
+    </div>
     <div class="baro" id="baro" hidden></div>
-  </div>
-  <div class="stats">
-    <div class="stat"><b id="tMin">–</b><small data-t="totMin"></small></div>
-    <div class="stat"><b id="tDuc">–</b><small data-t="totDuc"></small></div>
-    <span id="tNb" hidden></span>
   </div>
   <nav class="pages" id="pages">
     <button data-p="inventaire" data-t="pInventaire"></button>
@@ -1753,9 +1756,12 @@ function rendreBaro() {
   box.hidden = false;
 }
 $("#baro").addEventListener("click", e => {
-  if (e.target.id !== "baroVoir") return;
+  if (!e.target.closest("#baroVoir")) return;
+  // le bandeau est visible depuis tous les onglets : on revient sur l'Inventaire, pièces Prime par ducats
+  montrerPage("inventaire");
   onglet = "prime"; tri = { k: "ducats", asc: false }; limite = PAGE;
   rendu();
+  $("#vueInventaire").scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
 // ---------------------------------------------------------------- reliques (valeur moyenne)
