@@ -13,12 +13,9 @@ Outil Windows pour Warframe : lit ton inventaire (en lecture seule) et l'estime 
 
 ## Installation
 
-1. Installer [Python](https://www.python.org/downloads/) en cochant « Add python.exe to PATH ».
-2. Télécharger `inventaire-tenno-src.zip` depuis la dernière
-   [release](https://github.com/thino-yoshi/inventaire-tenno/releases/latest) et le dézipper.
-3. Double-cliquer sur `Lancer.bat`. La première fois, il installe les dépendances.
-
-Ou plus simple : télécharger `LotusDesk.exe` dans la dernière release (pas besoin de Python).
+Télécharger `LotusDesk.exe` dans la dernière
+[release](https://github.com/thino-yoshi/inventaire-tenno/releases/latest) et le lancer
+(pas besoin de Python). Il se met ensuite à jour tout seul.
 
 L'app s'ouvre dans sa propre fenêtre. Fermer la fenêtre la range près de l'horloge (icône Lotus) ;
 clic droit sur l'icône puis « Quitter » pour l'arrêter.
@@ -29,8 +26,8 @@ clic droit sur l'icône puis « Quitter » pour l'arrêter.
 .\tools\release.ps1 1.0.1 "Ce qui change"
 ```
 
-Le script met le numéro de version dans `app.py`, prépare le zip, crée le commit, le tag et la
-release GitHub. Les apps déjà installées se mettent à jour au démarrage suivant.
+Le script met le numéro de version dans `app.py`, construit `LotusDesk.exe`, crée le commit, le
+tag et la release GitHub. Les apps déjà installées se mettent à jour au démarrage suivant.
 
 ## Avertissement
 

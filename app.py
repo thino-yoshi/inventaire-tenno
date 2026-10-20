@@ -48,10 +48,11 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.9.0"
+VERSION = "1.9.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
-EXE_ASSET = "InventaireWarframe.exe"  # nom garde : les anciennes versions le cherchent
+EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
+OLD_EXE_ASSET = "InventaireWarframe.exe"  # ancien nom, encore publie le temps que tout le monde passe en 1.9.1+
 
 FROZEN = getattr(sys, "frozen", False)
 BASE = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
@@ -1092,6 +1093,40 @@ class State:
                 self.game_running = bool(pi.find_pid())
             time.sleep(self.interval)
 
+    def follow_game_log(self, log=None):
+        """Le jeu ne garde la copie de l'inventaire en memoire que peu de temps apres l'avoir
+        recue (connexion, retour de mission, relais...). Son journal l'annonce
+        (« OnInventoryResults » puis « Inventory sync done ») : on lit tout de suite a ce moment-la,
+        au lieu d'attendre jusqu'a 60 s et de risquer de la manquer."""
+        log = log or Path(os.environ.get("LOCALAPPDATA", "")) / "Warframe" / "EE.log"
+        pos, buf = (log.stat().st_size if log.exists() else 0), b""
+        while True:
+            time.sleep(0.5)
+            try:
+                size = log.stat().st_size if log.exists() else 0
+                if size < pos:  # le jeu a redemarre : nouveau journal
+                    pos, buf = 0, b""
+                if size <= pos:
+                    continue
+                with open(log, "rb") as f:
+                    f.seek(pos)
+                    buf += f.read(size - pos)
+                pos = size
+                *lines, buf = buf.split(b"\n")
+                if self.auto and any(b"OnInventoryResults, body size" in ln for ln in lines):
+                    threading.Thread(target=self.scan_after_sync, daemon=True).start()
+            except OSError:
+                pass
+
+    def scan_after_sync(self):
+        for delay in (0.5, 2, 4):  # la copie apparait juste apres ; deux essais de plus au besoin
+            time.sleep(delay)
+            try:
+                self.scan()
+                return
+            except Exception as e:
+                self.error = str(e)
+
 
 STATE = State()
 
@@ -1130,8 +1165,9 @@ def check_update():
     r.raise_for_status()
     rel = r.json()
     latest = rel.get("tag_name", "").lstrip("v")
-    want = EXE_ASSET if FROZEN else SRC_ASSET
-    asset = next((a for a in rel.get("assets", []) if a["name"] == want), None)
+    wants = [EXE_ASSET, OLD_EXE_ASSET] if FROZEN else [SRC_ASSET]
+    assets = {a["name"]: a for a in rel.get("assets", [])}
+    asset = next((assets[w] for w in wants if w in assets), None)
     return {**info, "derniere": latest, "notes": rel.get("body") or "",
             "nouvelle": bool(asset) and version_tuple(latest) > version_tuple(VERSION),
             "url": asset["browser_download_url"] if asset else None}
@@ -1534,6 +1570,7 @@ def main():
     game().tr("fr")
     catalog()
     threading.Thread(target=STATE.loop, daemon=True).start()
+    threading.Thread(target=STATE.follow_game_log, daemon=True).start()  # lecture des la synchro du jeu
     # "localhost" essaie d'abord IPv6 : sans ecoute sur ::1, chaque requete perd ~250 ms
     try:
         srv6 = Server6(("::1", args.port), Handler)

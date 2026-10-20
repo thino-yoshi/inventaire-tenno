@@ -1,11 +1,11 @@
 # Publie une nouvelle version de Lotus Desk sur GitHub.
 #   .\tools\release.ps1 1.0.1 "Ce qui change"
-#   .\tools\release.ps1 1.0.1 "Ce qui change" -Exe     (ajoute aussi le .exe a la release)
-# Les apps installees voient la release au demarrage et se mettent a jour toutes seules.
+# La release ne contient que l'exe (LotusDesk.exe) : les apps installees le voient au demarrage
+# et se mettent a jour toutes seules.
 param(
     [Parameter(Mandatory = $true)][string]$Version,
     [string]$Notes = "",
-    [switch]$Exe
+    [switch]$Exe   # accepte pour compatibilite : l'exe est toujours construit
 )
 $ErrorActionPreference = "Stop"
 $Repo = "thino-yoshi/inventaire-tenno"
@@ -19,43 +19,29 @@ $app = [IO.File]::ReadAllText("$Root\app.py")
 $app = [regex]::Replace($app, 'VERSION = "[^"]*"', "VERSION = `"$Version`"", 1)
 [IO.File]::WriteAllText("$Root\app.py", $app, (New-Object Text.UTF8Encoding $false))
 
-# 2) zip du code (jamais les donnees personnelles). Fait avec Python : Compress-Archive de
-#    PowerShell 5 ecrit des chemins "assets\x.png" que la mise a jour ne reconnaitrait pas.
 $tmp = Join-Path $env:TEMP "inventaire-tenno-release"
 Remove-Item $tmp -Recurse -Force -ErrorAction SilentlyContinue
 New-Item -ItemType Directory $tmp | Out-Null
-$zip = "$tmp\inventaire-tenno-src.zip"
-py -I -c @"
-import zipfile, pathlib, sys
-root = pathlib.Path(sys.argv[1])
-files = ['app.py', 'index.html', 'prime_inventory.py', 'reliques_overlay.py', 'chat_jeu.py', 'Lancer.bat', 'LISEZMOI.txt']
-files += ['assets/' + p.name for p in sorted((root / 'assets').iterdir()) if p.is_file()]
-with zipfile.ZipFile(sys.argv[2], 'w', zipfile.ZIP_DEFLATED) as z:
-    for f in files:
-        z.write(root / f, f)
-"@ $Root $zip
-if ($LASTEXITCODE -ne 0) { throw "zip impossible" }
-$assets = @($zip)
 
-# 3) .exe (optionnel)
-if ($Exe) {
-    py -m PyInstaller --onefile --noconsole --name LotusDesk --icon "$Root\assets\lotus.ico" `
-        --add-data "$Root\index.html;." --add-data "$Root\assets;assets" `
-        --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import chat_jeu --hidden-import tkinter --collect-all webview `
-        --distpath "$tmp\dist" --workpath "$tmp\work" --specpath $tmp --noconfirm --log-level WARN app.py
-    # LotusDesk.exe pour les nouveaux telechargements ; la meme sous l'ancien nom, que les
-    # versions installees cherchent pour se mettre a jour (ne pas le supprimer)
-    Copy-Item "$tmp\dist\LotusDesk.exe" "$tmp\dist\InventaireWarframe.exe"
-    $assets += "$tmp\dist\LotusDesk.exe", "$tmp\dist\InventaireWarframe.exe"
-}
+# 2) l'exe
+py -m PyInstaller --onefile --noconsole --name LotusDesk --icon "$Root\assets\lotus.ico" `
+    --add-data "$Root\index.html;." --add-data "$Root\assets;assets" `
+    --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import chat_jeu --hidden-import tkinter --collect-all webview `
+    --distpath "$tmp\dist" --workpath "$tmp\work" --specpath $tmp --noconfirm --log-level WARN app.py
+if (-not (Test-Path "$tmp\dist\LotusDesk.exe")) { throw "construction de l'exe impossible" }
+$assets = @("$tmp\dist\LotusDesk.exe")
+# TRANSITION : les versions <= 1.9.0 cherchent encore l'ancien nom pour se mettre a jour.
+# A retirer quand toutes les installations sont en 1.9.1 ou plus.
+Copy-Item "$tmp\dist\LotusDesk.exe" "$tmp\dist\InventaireWarframe.exe"
+$assets += "$tmp\dist\InventaireWarframe.exe"
 
-# 4) depot GitHub (cree au premier lancement, public pour que les mises a jour soient visibles)
+# 3) depot GitHub (cree au premier lancement, public pour que les mises a jour soient visibles)
 gh repo view $Repo *> $null
 if ($LASTEXITCODE -ne 0) {
     gh repo create $Repo --public --description "Lotus Desk : inventaire Warframe + prix Warframe Market" --source . --remote origin
 }
 
-# 5) commit, tag, push, release
+# 4) commit, tag, push, release
 git add -A
 git commit -m "Version $Version" | Out-Null
 git tag "v$Version"
