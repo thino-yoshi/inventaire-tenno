@@ -105,6 +105,9 @@
   .badge-m { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #12261c; border: 1px solid #2f6b4d; padding: 2px 6px; color: var(--text); }
   .badge-c { font-size: 11px; color: #e3d2ff; background: #241a38; border: 1px solid #5a4590; padding: 2px 6px; }
   .ccase small { color: var(--muted); font-size: 11px; }
+  .pieces .craft { color: #f2c94c; }
+  .en-fonderie { display: inline-flex; align-items: center; gap: 3px; color: #f2c94c; font-weight: 700; margin-right: 6px; }
+  .en-fonderie img { width: 15px; height: 15px; }
   .set-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .segment.petit-seg button { padding: 4px 10px; font-size: 11px; letter-spacing: 1.5px; }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px;
@@ -744,6 +747,7 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primaires", secondaire: "Secondaires", melee: "Mêlée", archwing: "Archwing", compagnon: "Compagnons" },
     collStatuts: { tous: "Tous", maitrise: "Maîtrisés", construit: "Construits", manquant: "Manquants" },
     collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
+    fonderieTip: n => `${n} en fabrication à la Fonderie`, fonderiePret: (n, p) => `${n} à la Fonderie, dont ${p} prête(s) à récupérer`,
     svSchemas: "Schémas", svCraft: "Craftées", pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
     histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
     lecture: "Lecture de la mémoire du jeu (environ 15 s)…", prixN: (a, b) => `Prix Warframe Market : ${a}/${b}…`,
@@ -771,6 +775,7 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primary", secondaire: "Secondary", melee: "Melee", archwing: "Archwing", compagnon: "Companions" },
     collStatuts: { tous: "All", maitrise: "Mastered", construit: "Built", manquant: "Missing" },
     collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
+    fonderieTip: n => `${n} being built in the Foundry`, fonderiePret: (n, p) => `${n} in the Foundry, ${p} ready to claim`,
     svSchemas: "Blueprints", svCraft: "Crafted", pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
     histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
     lecture: "Reading game memory (about 15 s)…", prixN: (a, b) => `Warframe Market prices: ${a}/${b}…`,
@@ -1571,7 +1576,11 @@ function panneau() {
       <ul class="pieces">${it.pieces.map(pc => {
         const n = fab ? (pc.fabrique ?? pc.possede) : pc.possede, ok = n >= pc.requis;
         const nom = fab ? (pc.nom_fabrique || pc.nom) : pc.nom;
-        return `<li><span class="${ok ? "ok" : "ko"}">${ok ? "✓" : "✗"} ${esc(nom)}</span><span class="muted"><button class="copierNom" data-nom="${esc(pc.nom)}" title="${esc(t("copierNomTip"))}">⧉</button> ${n}/${pc.requis}</span></li>`;
+        // en cours à la Fonderie : icône + nombre en jaune (le schéma a été consommé, donc pas de croix rouge)
+        const enCours = pc.en_cours || 0, craft = !ok && enCours;
+        const fonderie = enCours ? `<span class="en-fonderie" title="${esc(t(pc.prets ? "fonderiePret" : "fonderieTip", enCours, pc.prets))}">
+            <img src="/assets/fonderie.png" alt="">${enCours}</span>` : "";
+        return `<li><span class="${ok ? "ok" : craft ? "craft" : "ko"}">${ok ? "✓" : craft ? "⧗" : "✗"} ${esc(nom)}</span><span class="muted">${fonderie}<button class="copierNom" data-nom="${esc(pc.nom)}" title="${esc(t("copierNomTip"))}">⧉</button> ${n}/${pc.requis}</span></li>`;
       }).join("")}</ul>`;
   }
   html += blocVente(it, p);

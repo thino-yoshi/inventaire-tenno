@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.11.0"
+VERSION = "1.11.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1011,12 +1011,22 @@ def build_sets(items, lang):
     g, cat = game(), catalog()
     types = owned_types(STATE.inv)
     recipes = g.ex["recipes"]
+    # file de la Fonderie : schema en cours -> (nombre, dont termines et a recuperer)
+    pending, now_ms = {}, time.time() * 1000
+    for e in (STATE.inv or {}).get("PendingRecipes", []) or []:
+        if isinstance(e, dict) and e.get("ItemType"):
+            d = e.get("CompletionDate") or {}
+            fin = d.get("$date", {}).get("$numberLong") if isinstance(d.get("$date"), dict) else d.get("$date")
+            n, prets = pending.get(e["ItemType"], (0, 0))
+            pending[e["ItemType"]] = (n + 1, prets + (1 if fin and int(fin) <= now_ms else 0))
 
     def crafted(ref):
         res = (recipes.get(ref) or {}).get("resultType")
         if not res:
             return {}  # pas un schema (ex. canon d'arme) : rien a fabriquer
-        return {"fabrique": types.get(res, 0), "nom_fabrique": g.name(res, lang)}
+        n, prets = pending.get(ref, (0, 0))
+        return {"fabrique": types.get(res, 0), "nom_fabrique": g.name(res, lang),
+                "en_cours": n, "prets": prets}
     owned = {}
     for i in items:
         if i["cat"] == "prime" and i["slug"]:
