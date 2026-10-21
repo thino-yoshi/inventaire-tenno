@@ -68,6 +68,8 @@
   .tag.baro { color: var(--blue); border-color: #6ab0e055; }
   .tag.ok { color: var(--green); border-color: #5cc98a55; }
   #plus { display: block; margin: 10px auto; }
+  #plus[hidden] { display: none; }  /* sans ca, le bouton restait visible avec un vieux nombre */
+  .vide-recherche { padding: 28px 12px; text-align: center; color: var(--muted); grid-column: 1 / -1; }
   .side { position: sticky; top: 16px; display: flex; flex-direction: column; gap: 16px; }
   .carte { background: var(--panel); border: 1px solid var(--line); border-radius: 8px; padding: 14px; }
   .carte h2 { font-size: 14px; margin: 0 0 2px; }
@@ -785,6 +787,8 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primaires", secondaire: "Secondaires", melee: "Mêlée", archwing: "Archwing", compagnon: "Compagnons" },
     collStatuts: { tous: "Tous", maitrise: "Maîtrisés", construit: "Construits", manquant: "Manquants" },
     collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
+    rechVide: (q, cat) => `Aucun item de ton inventaire ne contient « ${q} » dans « ${cat} ». La recherche ne porte que sur ce que tu possèdes : pour chercher n'importe quel item, va dans Market › Achats.`,
+    listeVide: "Rien à afficher ici avec ces filtres.",
     colObtenu: "Obtenu (plus récent)", attenteTag: "En attente de synchro", attenteTip: "Ajouté à la fin de la vague de relique ; le jeu l'enverra à la fin de la mission",
     attenteNb: n => `${n} récompense(s) en attente de synchro`, trTitre: n => `Récompense de relique · vague ${n}`,
     trAjout: nom => `Ajouté : <b>${nom}</b>`, trSiens: "La récompense de ta relique, lue dans le journal du jeu (sûre à 100 %).",
@@ -820,6 +824,8 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primary", secondaire: "Secondary", melee: "Melee", archwing: "Archwing", compagnon: "Companions" },
     collStatuts: { tous: "All", maitrise: "Mastered", construit: "Built", manquant: "Missing" },
     collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
+    rechVide: (q, cat) => `No item in your inventory contains “${q}” in “${cat}”. Search only covers what you own: to look up any item, go to Market › Buy.`,
+    listeVide: "Nothing to show here with these filters.",
     colObtenu: "Obtained (newest)", attenteTag: "Waiting for sync", attenteTip: "Added at the end of the relic wave; the game sends it at the end of the mission",
     attenteNb: n => `${n} reward(s) waiting for sync`, trTitre: n => `Relic reward · wave ${n}`,
     trAjout: nom => `Added: <b>${nom}</b>`, trSiens: "Your relic's reward, read from the game log (100% sure).",
@@ -1400,7 +1406,9 @@ function assezCher(it) {
 
 function visibles(tab, texte) {
   const f = (texte || "").trim().toLowerCase();
-  const source = tab === "tous" ? items.filter(i => !NON_ECHANGE.includes(i.cat)) : tab === "set" ? sets : tab === "offre" ? lignesOffres()
+  // « Tout » laisse de côté objets et ressources (non vendables)… sauf pendant une recherche :
+  // on cherche alors partout (ex. pièces de Narin, rangées dans Objets)
+  const source = tab === "tous" ? (f ? items : items.filter(i => !NON_ECHANGE.includes(i.cat))) : tab === "set" ? sets : tab === "offre" ? lignesOffres()
                : tab === "souhait" ? lignesSouhaits() : items.filter(i => i.cat === tab);
   return source.filter(i => assezCher(i) &&
     (!filtreRarete || i.rarete === filtreRarete) && (!$("#doublons").checked || i.qte > 1) &&
@@ -1551,8 +1559,11 @@ function rendu() {
   const grille = modeVue === "grille";
   $("#lignes").closest("table").hidden = grille;
   $("#grille").hidden = !grille;
-  if (grille) $("#grille").innerHTML = rendus.map(r => r.cas).join("");
-  else $("#lignes").innerHTML = rendus.map(r => r.ligne).join("");
+  // rien trouve : on le dit (la recherche ne porte que sur l'inventaire, dans la categorie choisie)
+  const filtreTxt = ($("#filtre").value || "").trim();
+  const vide = !rendus.length ? `<div class="vide-recherche">${esc(filtreTxt ? t("rechVide", filtreTxt, t(onglet)) : t("listeVide"))}</div>` : "";
+  if (grille) $("#grille").innerHTML = vide || rendus.map(r => r.cas).join("");
+  else $("#lignes").innerHTML = vide ? `<tr><td colspan="9">${vide}</td></tr>` : rendus.map(r => r.ligne).join("");
   document.querySelectorAll("#modeVue button").forEach(b => b.classList.toggle("on", b.dataset.mode === modeVue));
   $("#colsBox").hidden = !grille || onglet === "offre";
   $("#grille").style.setProperty("--cols", colonnes);
