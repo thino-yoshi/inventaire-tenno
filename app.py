@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.11.1"
+VERSION = "1.12.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1200,6 +1200,7 @@ class State:
                 self.inv = inv
                 self.version += 1
                 self.source = "jeu"
+                REWARDS.clear()  # le vrai inventaire contient maintenant les recompenses ajoutees en attendant
                 self.when = time.time()
                 save_json(DUMP, inv)
             self.error = ""
@@ -1358,6 +1359,46 @@ def update_loop():
 
 
 OVERLAY = None   # overlay des recompenses de reliques
+# Recompenses de reliques ajoutees tout de suite a l'inventaire affiche, en attendant la vraie
+# synchro du jeu (qui n'arrive qu'en fin de mission) : [{id, t, vague, cartes, choix}]
+REWARDS = []
+_reward_id = [0]
+
+
+def relic_reward_done(info):
+    """Appele par l'overlay a la fermeture de l'ecran de recompenses. Par defaut on ajoute TA
+    recompense (lue dans le journal du jeu, exacte) ; l'interface permet d'en choisir une autre."""
+    cartes = info["cartes"]
+    choix = next((i for i, c in enumerate(cartes) if c.get("a_moi")), 0)
+    _reward_id[0] += 1
+    REWARDS.append({"id": _reward_id[0], "t": time.time(), "vague": len(REWARDS) + 1,
+                    "cartes": cartes, "choix": choix})
+    STATE.version += 1  # l'interface recharge l'inventaire
+
+
+def inventory_with_rewards(inv):
+    """Copie de l'inventaire avec les recompenses en attente ajoutees ; et leur nombre par chemin."""
+    if not REWARDS or not inv:
+        return inv, {}
+    recipes = game().ex["recipes"]
+    inv = dict(inv)
+    ajout = {}
+    for r in REWARDS:
+        c = r["cartes"][r["choix"]] if r["choix"] < len(r["cartes"]) else None
+        path = c and c.get("chemin")
+        if not path:
+            continue
+        ajout[path] = ajout.get(path, 0) + 1
+    for path, n in ajout.items():
+        key = "Recipes" if path in recipes else "MiscItems"
+        lst = [dict(e) for e in inv.get(key, [])]
+        e = next((e for e in lst if e.get("ItemType") == path), None)
+        if e:
+            e["ItemCount"] = int(e.get("ItemCount") or 1) + n
+        else:
+            lst.append({"ItemType": path, "ItemCount": n})
+        inv[key] = lst
+    return inv, ajout
 
 
 def start_overlay():
@@ -1367,6 +1408,7 @@ def start_overlay():
     try:
         import reliques_overlay
         OVERLAY = reliques_overlay.RewardOverlay(sys.modules[__name__])
+        OVERLAY.on_reward = relic_reward_done   # fin de chaque vague : ajout provisoire a l'inventaire
         OVERLAY.start(RES / "assets", BASE)  # BASE : overlay.log + derniere capture lue
     except Exception as e:
         print("overlay des reliques :", e)
@@ -1490,7 +1532,8 @@ class Handler(BaseHTTPRequestHandler):
                                 "nb_alertes": len(_alerts), "version_app": VERSION,
                                 "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
-                                            "statut": OVERLAY.status if OVERLAY else "indisponible"}})
+                                            "statut": OVERLAY.status if OVERLAY else "indisponible"},
+                                "recompense": REWARDS[-1] if REWARDS else None, "attente": len(REWARDS)})
             elif u.path == "/api/chat":  # messages du chat du jeu (avec traduction)
                 if not CHAT:
                     return self.send(200, {"actif": False, "statut": "indisponible", "messages": []})
@@ -1534,7 +1577,11 @@ class Handler(BaseHTTPRequestHandler):
                     STATE.scan()
                 if not STATE.inv:
                     raise RuntimeError("aucune_copie")
-                items = build_items(STATE.inv, lang)
+                inv, ajout = inventory_with_rewards(STATE.inv)
+                items = build_items(inv, lang)
+                for it in items:  # etiquette « en attente de synchro »
+                    if it.get("chemin") in ajout:
+                        it["attente"] = ajout[it["chemin"]]
                 self.send(200, {"items": items, "sets": build_sets(items, lang),
                                 "version": STATE.version, "source": STATE.source,
                                 "quand": STATE.when})
@@ -1580,6 +1627,13 @@ class Handler(BaseHTTPRequestHandler):
                 if CHAT:
                     CHAT.enabled = bool(body.get("actif"))
                 self.send(200, {"actif": bool(CHAT and CHAT.enabled)})
+            elif u.path == "/api/recompense/choisir":  # « ce n'est pas celle-la » : autre carte prise
+                r = next((x for x in REWARDS if x["id"] == int(body.get("id") or 0)), None)
+                if not r or not 0 <= int(body.get("choix", -1)) < len(r["cartes"]):
+                    raise ValueError("recompense inconnue")
+                r["choix"] = int(body["choix"])
+                STATE.version += 1
+                self.send(200, r)
             elif u.path == "/api/overlay":
                 if OVERLAY:
                     OVERLAY.enabled = bool(body.get("actif"))

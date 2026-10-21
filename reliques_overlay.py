@@ -28,8 +28,12 @@ from pathlib import Path
 
 LOG = Path(os.environ.get("LOCALAPPDATA", "")) / "Warframe" / "EE.log"
 RELIC_RE = re.compile(r"ResourceLoader .*\((/Lotus/Types/Game/Projections/[^)\s]+)\) Found")
-GETS_RE = re.compile(r"VoidProjections: \S+ gets reward (/Lotus/\S+)")
+GETS_RE = re.compile(r"VoidProjections: (\S+) gets reward (/Lotus/\S+)")   # TA recompense (exacte)
+INFO_RE = re.compile(r"VoidProjections: Client got reward info from (\S+)")   # un joueur de l'escouade
+ALL_MARK = "VoidProjections: Client has reward info for all players now"
 OPEN_MARK = "ProjectionRewardChoice.lua: Relic rewards initialized"
+CLOSE_MARK = "ProjectionRewardChoice.lua: Relic reward screen shut down"
+SURE, DOUTE = 0.8, 0.62    # score de lecture : sur / douteux (carte « ? ») / pas une carte
 SHOW_SECONDS = 16          # le choix dure 15 s
 FICHE_SECONDS = 8          # prix affiches sur une fiche de relique (touche Alt + A)
 HOTKEY = (0x0001 | 0x4000, 0x41)  # MOD_ALT | MOD_NOREPEAT, touche A
@@ -265,6 +269,9 @@ class RewardOverlay:
         self.ecran = 0            # numero de l'ecran de recompenses en cours (annule les anciens)
         self.index = {}           # langue -> [(chemin, noms normalises)] de TOUTES les recompenses
         self.rect_cache = (0, None)
+        self.players = set()      # joueurs de l'ecran en cours (solo = 1)
+        self.journal_only = 0     # ecran affiche depuis le journal seul (solo) : pas d'OCR
+        self.on_reward = None     # appele a la fermeture de l'ecran : ajout a l'inventaire de l'app
 
     def log(self, msg):
         """Journal de diagnostic (overlay.log) : pourquoi l'overlay s'est affiche ou non."""
@@ -315,7 +322,21 @@ class RewardOverlay:
             return
         m = GETS_RE.search(line)
         if m:
-            self.known.append(m.group(1).replace("/StoreItems/", "/", 1))
+            self.known.append(m.group(2).replace("/StoreItems/", "/", 1))
+            self.players.add(m.group(1))
+            return
+        m = INFO_RE.search(line)
+        if m:
+            self.players.add(m.group(1))
+            return
+        if ALL_MARK in line:
+            # seul dans la mission : une seule carte, la tienne, connue par le journal -> instantane
+            if self.enabled and len(self.players) <= 1 and self.known:
+                self.journal_only = self.ecran
+                threading.Thread(target=self.show_solo, args=(self.ecran,), daemon=True).start()
+            return
+        if CLOSE_MARK in line:
+            self.finish(self.ecran)
             return
         if OPEN_MARK in line:
             if not self.enabled:
@@ -324,6 +345,8 @@ class RewardOverlay:
             squad = [p.rsplit("/", 1)[-1] for p, t in self.relics.items() if time.time() - t < RELIC_MEMORY]
             self.log(f"ecran de recompenses detecte ; reliques de l'escouade vues : {squad or 'aucune'}")
             self.known = []
+            self.players = set()
+            self.last = None
             self.ecran += 1
             threading.Thread(target=self.scan, args=(self.ecran,), daemon=True).start()
 
@@ -411,6 +434,9 @@ class RewardOverlay:
         self.status = "lecture de l'ecran"
         shown, extra, n, band = 0, 0, 0, None
         while self.ecran == ecran and time.time() - t0 < 5:
+            if self.journal_only == ecran:
+                self.log("  solo : affiche depuis le journal, sans lire l'ecran")
+                return
             n += 1
             try:
                 lines, W, H, lang, band = self.grab(n)
@@ -441,9 +467,41 @@ class RewardOverlay:
             except Exception:
                 pass
 
+    def show_solo(self, ecran):
+        """Seul dans la mission : la carte est la tienne, connue exactement par le journal."""
+        lang = self.app.CURRENT_LANG[0]
+        own = self.known[0]
+        r = {"chemin": own, "x": 0, "y": 0, "score": 1.0, "a_moi": True, **self.value(own, lang)}
+        r["meilleur"] = bool(r["prix"])
+        self.last = {"t": time.time(), "recompenses": [r], "escouade": 1}
+        self.status = f"dernier ecran ({time.strftime('%H:%M')}) : solo, recompense lue dans le journal"
+        self.log(f"  solo : {own.rsplit('/', 1)[-1]} (journal, sans OCR)")
+        try:
+            self.rect = self.game_rect()
+        except Exception:
+            pass
+        if self.window and self.enabled:
+            self.window.show([r], SHOW_SECONDS, getattr(self, "rect", None))
+        threading.Thread(target=self.fill_images, args=([r], ecran, time.time()), daemon=True).start()
+
+    def finish(self, ecran):
+        """Ecran de recompenses ferme : on passe le resultat a l'app (ajout provisoire a l'inventaire)."""
+        own = self.known[0] if self.known else None
+        if not own or not self.on_reward:
+            return
+        cartes = sorted((self.last or {}).get("recompenses") or [], key=lambda r: r["x"])
+        if not any(r.get("chemin") == own for r in cartes):  # ecran non lu : au moins ta carte
+            cartes = [{"chemin": own, "a_moi": True, "x": 0, **self.value(own, self.app.CURRENT_LANG[0])}] + cartes
+        try:
+            self.on_reward({"propre": own, "cartes": [{"chemin": r.get("chemin"), "nom": r.get("nom"),
+                                                       "prix": r.get("prix"), "a_moi": r.get("chemin") == own}
+                                                      for r in cartes]})
+        except Exception as e:
+            self.log(f"ajout a l'inventaire impossible : {e}")
+
     def fill_images(self, rewards, ecran, t0):
         """Images manquantes telechargees apres coup, puis l'overlay est redessine avec."""
-        missing = [r for r in rewards if r.get("image") is None and r["_key"] not in self._images]
+        missing = [r for r in rewards if r.get("image") is None and r.get("_key") and r["_key"] not in self._images]
         if not missing:
             return
         for r in missing:
@@ -554,6 +612,8 @@ class RewardOverlay:
     def show_rewards(self, lines, W, H, lang, quiet=False):
         cands, likely, squad = self.candidates(lang)
         rewards = []
+        own = self.known[0] if self.known else None
+        own_names = {norm(self.app.game().name(own, l)) for l in {lang, "en"} if own and self.app.game().name(own, l)}
         for col in columns(lines, W):
             # le meilleur morceau de texte de la carte (le nom), sans le pseudo du joueur en dessous
             path, score, used = None, 0, None
@@ -564,14 +624,34 @@ class RewardOverlay:
             texte = " ".join(ln["t"] for ln in used) if used else " ".join(ln["t"] for ln in col)
             if not quiet:
                 self.log(f"  carte '{texte}' -> {path.rsplit('/', 1)[-1] if path else 'rien'} (score {score:.2f})")
-            if path and score >= 0.72:
+            if path and score >= DOUTE:
                 x = min(ln["x"] for ln in used) + max(ln["x"] + ln["w"] for ln in used)
-                rewards.append({"chemin": path, "x": x / 2, "y": min(ln["y"] for ln in used),
-                                "score": round(score, 2), **self.value(path, lang)})
+                # ressemblance avec TA recompense (connue par le journal)
+                # (ligne par ligne : le pseudo du joueur sous le nom ne doit pas compter)
+                own_score = max((difflib.SequenceMatcher(None, norm(" ".join(l["t"] for l in grp)), n).ratio()
+                                 for grp in text_groups(col) for n in own_names), default=0)
+                r = {"x": x / 2, "y": min(ln["y"] for ln in used), "score": round(score, 2), "own_score": own_score}
+                if score >= SURE:
+                    r.update({"chemin": path, **self.value(path, lang)})
+                else:  # lecture douteuse : on prefere « ? » a un mauvais item
+                    r.update({"chemin": None, "nom": "?", "prix": None, "ducats": None, "image": None,
+                              "_slug": None, "_key": None, "douteux": True})
+                rewards.append(r)
+        if own:  # une des cartes est forcement la tienne : on la corrige avec le vrai nom
+            if not any(r["chemin"] == own for r in rewards) and rewards:
+                # de preference une carte douteuse qui lui ressemble ; une carte sure seulement si
+                # elle lui ressemble vraiment (sinon on remplacerait la carte juste d'un autre joueur)
+                douteuses = [r for r in rewards if r.get("douteux")]
+                cible = max(douteuses or rewards, key=lambda r: r["own_score"])
+                if (cible.get("douteux") and cible["own_score"] >= 0.45) or cible["own_score"] >= 0.75:
+                    cible.update({"chemin": own, "douteux": False, **self.value(own, lang)})
+            for r in rewards:
+                r["a_moi"] = r["chemin"] == own
         best = max((r["prix"] or 0 for r in rewards), default=0)
         for r in rewards:
             r["meilleur"] = best > 0 and r["prix"] == best
-        self.last = {"t": time.time(), "recompenses": rewards, "escouade": len(squad)}
+        if rewards or not self.last:
+            self.last = {"t": time.time(), "recompenses": rewards, "escouade": len(squad)}
         heure = time.strftime("%H:%M")
         self.status = (f"dernier ecran ({heure}) : {len(rewards)} recompense(s) reconnue(s)" if rewards else
                        f"dernier ecran ({heure}) : aucune recompense reconnue, voir overlay.log")
@@ -740,7 +820,7 @@ class OverlayWindow:
                 if r["ducats"]:
                     parts.append(("ducat", str(r["ducats"]), GOLD, int(21 * s)))
                 if not parts:
-                    parts.append((None, "non vendable", MUTED, int(15 * s)))
+                    parts.append((None, "nom illisible" if r.get("douteux") else "non vendable", MUTED, int(15 * s)))
                 ids, x = [], 0
                 for ic, txt, color, size in parts:
                     if ic and self.assets:

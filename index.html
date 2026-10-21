@@ -105,6 +105,24 @@
   .badge-m { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #12261c; border: 1px solid #2f6b4d; padding: 2px 6px; color: var(--text); }
   .badge-c { font-size: 11px; color: #e3d2ff; background: #241a38; border: 1px solid #5a4590; padding: 2px 6px; }
   .ccase small { color: var(--muted); font-size: 11px; }
+  .tag.attente { color: #120f1b; background: #f2c94c; border-color: #f2c94c; font-weight: 700; }
+  .toast-relique { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: min(470px, calc(100vw - 32px));
+                   background: var(--panel); border: 1px solid var(--line); border-top: 2px solid #f2c94c; box-shadow: 0 16px 50px #000c; }
+  .toast-relique[hidden] { display: none; }
+  .tr-tete { padding: 14px 16px 10px; display: flex; flex-direction: column; gap: 4px; }
+  .tr-tete b { font-size: 11px; letter-spacing: 2px; color: #f2c94c; text-transform: uppercase; }
+  .tr-tete small { color: var(--muted); }
+  .tr-cartes { padding: 0 16px 12px; display: grid; grid-template-columns: repeat(auto-fit, minmax(90px, 1fr)); gap: 8px; }
+  .tr-cartes button { background: var(--bg); border: 1px solid var(--line); color: var(--text); padding: 8px 6px; display: flex;
+                      flex-direction: column; align-items: center; gap: 4px; font-size: 11px; text-align: center; border-radius: 0; }
+  .tr-cartes button.on { background: #2a2410; border-color: #f2c94c; }
+  .tr-cartes button:disabled { opacity: .5; cursor: default; }
+  .tr-cartes .trimg { width: 44px; height: 44px; object-fit: contain; }
+  .tr-cartes .ico { width: 14px; height: 14px; }
+  .tr-cartes em { font-style: normal; font-size: 10px; letter-spacing: 1px; color: var(--muted); }
+  .tr-cartes button.on em { color: #f2c94c; }
+  .tr-pied { padding: 10px 16px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+  .tr-pied small { color: var(--muted); }
   .pieces .craft { color: #f2c94c; }
   .en-fonderie { display: inline-flex; align-items: center; gap: 3px; color: #f2c94c; font-weight: 700; margin-right: 6px; }
   .en-fonderie img { width: 15px; height: 15px; }
@@ -573,6 +591,12 @@
     <label class="auto"><input type="checkbox" id="doublons"> <span data-t="doublons"></span></label>
   </div>
 </div>
+<!-- fin de vague de relique : recompense ajoutee en attendant la synchro du jeu -->
+<section class="toast-relique" id="toastRelique" role="status" aria-live="polite" hidden>
+  <div class="tr-tete"><b id="trTitre"></b><div id="trAjout"></div><small id="trSous"></small></div>
+  <div class="tr-cartes" id="trCartes"></div>
+  <div class="tr-pied"><small data-t="trAide"></small><button type="button" id="trOk">OK</button></div>
+</section>
 <!-- tant que l'inventaire n'a jamais ete lu : il faut lire le jeu -->
 <div class="sync-alerte" id="syncAlerte" role="alert" hidden>
   <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 3l10 18H2z"></path><path d="M12 10v5"></path><path d="M12 18v.5"></path></svg>
@@ -747,6 +771,11 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primaires", secondaire: "Secondaires", melee: "Mêlée", archwing: "Archwing", compagnon: "Compagnons" },
     collStatuts: { tous: "Tous", maitrise: "Maîtrisés", construit: "Construits", manquant: "Manquants" },
     collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
+    attenteTag: "En attente de synchro", attenteTip: "Ajouté à la fin de la vague de relique ; le jeu l'enverra à la fin de la mission",
+    attenteNb: n => `${n} récompense(s) en attente de synchro`, trTitre: n => `Récompense de relique · vague ${n}`,
+    trAjout: nom => `Ajouté : <b>${nom}</b>`, trSiens: "La récompense de ta relique, lue dans le journal du jeu (sûre à 100 %).",
+    trAutre: "Corrigé : tu as pris la carte d'un autre joueur (nom lu à l'écran).", trAMoi: "Ta relique", trAjoute: "Ajouté",
+    trAide: "Clique sur la carte que tu as prise si ce n'est pas la tienne.",
     fonderieTip: n => `${n} en fabrication à la Fonderie`, fonderiePret: (n, p) => `${n} à la Fonderie, dont ${p} prête(s) à récupérer`,
     svSchemas: "Schémas", svCraft: "Craftées", pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
     histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
@@ -775,6 +804,11 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primary", secondaire: "Secondary", melee: "Melee", archwing: "Archwing", compagnon: "Companions" },
     collStatuts: { tous: "All", maitrise: "Mastered", construit: "Built", manquant: "Missing" },
     collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
+    attenteTag: "Waiting for sync", attenteTip: "Added at the end of the relic wave; the game sends it at the end of the mission",
+    attenteNb: n => `${n} reward(s) waiting for sync`, trTitre: n => `Relic reward · wave ${n}`,
+    trAjout: nom => `Added: <b>${nom}</b>`, trSiens: "Your relic's reward, read from the game log (100% sure).",
+    trAutre: "Fixed: you took another player's card (name read on screen).", trAMoi: "Your relic", trAjoute: "Added",
+    trAide: "Click the card you took if it isn't yours.",
     fonderieTip: n => `${n} being built in the Foundry`, fonderiePret: (n, p) => `${n} in the Foundry, ${p} ready to claim`,
     svSchemas: "Blueprints", svCraft: "Crafted", pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
     histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
@@ -1462,7 +1496,8 @@ function rendu() {
                : rv ? `<small>${t("valeurMoy", rv.valeurs[it.sous_type] ?? rv.valeurs.intact)}</small>` : "";
     const enVente = !["offre", "souhait"].includes(it.cat) ? mesOffres(it) : [];
     const dep = depasse(it), trop = enTrop(it), best = it.cat === "souhait" && autreMin(p, it.rang), bas = tropBas(it);
-    const tags = (it.cat === "set" && it.qte > 0 ? `<span class="tag ok">${t("complet")}</span>` : "") +
+    const tags = (it.attente ? `<span class="tag attente" title="${esc(t("attenteTip"))}">${t("attenteTag")}</span>` : "") +
+                 (it.cat === "set" && it.qte > 0 ? `<span class="tag ok">${t("complet")}</span>` : "") +
                  (baro(it) ? `<span class="tag baro" title="${esc(t("baroTip"))}">${t("baro")}</span>` : "") +
                  (enVente.length ? `<span class="tag vente">${t("enVente", enVente[0].prix)}</span>` : "") +
                  (dep != null ? `<span class="tag alerte">${t("depasse", dep)}</span>` : "") +
@@ -1840,7 +1875,9 @@ async function surveiller() {
     $("#auto").checked = e.auto;
     const illisible = e.jeu && e.auto && e.erreur === "inventaire_absent";  // la lecture auto échoue
     $("#jeu").innerHTML = `<span class="dot ${e.jeu ? "ingame" : ""}"></span>${e.jeu ? t("jeuOn") : t("jeuOff")}${e.scan ? " · " + t("scan") : ""}` +
-      (illisible ? ` · <span style="color:#e0a86c">${t("jeuIllisible")}</span>` : "");
+      (e.attente ? ` · <span style="color:#f2c94c">${t("attenteNb", e.attente)}</span>` :
+       illisible ? ` · <span style="color:#e0a86c">${t("jeuIllisible")}</span>` : "");
+    toastRelique(e.recompense);
     if (e.version !== version && version !== -1 && e.version > 0) chargerInventaire(false);
     presence = e.presence || {};
     $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
@@ -2113,6 +2150,36 @@ $("#vueCollection").addEventListener("click", e => {
   else return;
   rendreCollection();
 });
+
+// ---------------------------------------------------------------- recompense de relique (fin de vague)
+var toastRel = { id: 0, choix: -1, cache: 0 };
+function toastRelique(r) {
+  const box = $("#toastRelique");
+  if (!r) { box.hidden = true; toastRel.id = 0; return; }
+  const nouveau = r.id !== toastRel.id;
+  if (!nouveau && r.choix === toastRel.choix) return;
+  if (nouveau && Date.now() / 1000 - r.t > 600) return;  // vieille vague (app relancee) : pas de fenetre
+  toastRel.id = r.id; toastRel.choix = r.choix;
+  const c = r.cartes[r.choix] || {};
+  $("#trTitre").textContent = t("trTitre", r.vague);
+  $("#trAjout").innerHTML = t("trAjout", esc(c.nom || "?"));
+  $("#trSous").textContent = c.a_moi ? t("trSiens") : t("trAutre");
+  $("#trCartes").innerHTML = r.cartes.map((k, i) => {
+    const it = items.find(x => x.chemin === k.chemin);
+    return `<button type="button" data-tr="${i}" class="${i === r.choix ? "on" : ""}" ${k.chemin ? "" : "disabled"}>
+      ${image(it?.vignette, "trimg")}<span>${esc(k.nom || "?")}</span>${k.prix != null ? pl(k.prix) : ""}
+      <em>${i === r.choix ? esc(t("trAjoute")) : k.a_moi ? esc(t("trAMoi")) : ""}</em></button>`;
+  }).join("");
+  box.hidden = false;
+  clearTimeout(toastRel.cache);
+  toastRel.cache = setTimeout(() => { if (!box.matches(":hover")) box.hidden = true; }, 30000);
+}
+$("#trCartes").addEventListener("click", async e => {
+  const b = e.target.closest("button[data-tr]");
+  if (!b || b.disabled) return;
+  try { toastRelique(await api("/api/recompense/choisir", { id: toastRel.id, choix: +b.dataset.tr })); } catch (err) {}
+});
+$("#trOk").addEventListener("click", () => $("#toastRelique").hidden = true);
 
 // ---------------------------------------------------------------- premier lancement
 let bienvenueFaite = false;
