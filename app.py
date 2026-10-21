@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.12.3"
+VERSION = "1.12.4"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -66,7 +66,7 @@ CATALOG_CACHE = BASE / "cache_wfm_items.json"
 
 PRICE_TTL = 30 * 60          # prix gardes 30 min
 CATALOG_TTL = 24 * 3600      # liste des items WFM gardee 1 jour
-DATA_TTL = 7 * 24 * 3600     # fichiers du jeu re-telecharges au bout de 7 jours
+DATA_TTL = 24 * 3600         # fichiers du jeu re-telecharges chaque jour (nouveautes du jeu)
 TOP_N = 10
 WFM_SPACING = 0.35           # ~3 requetes/s maximum
 LANGS = ["fr", "en", "de", "es", "it", "pt", "pl", "ru", "uk", "tr", "ja", "ko", "zh", "tc", "th"]
@@ -966,6 +966,27 @@ def owned_entries(inv, g):
     return found
 
 
+PART_NAMES = {"fr": {"Helmet": "Neuroptiques", "Chassis": "Châssis", "Systems": "Systèmes", "bp": " (Schéma)"},
+              "en": {"Helmet": "Neuroptics", "Chassis": "Chassis", "Systems": "Systems", "bp": " Blueprint"}}
+
+
+def norm_name(s):
+    return re.sub(r"[^a-z0-9]+", "", (s or "").lower())
+
+
+def provisional_name(path, lang):
+    """Nom lisible tire du code interne, pour un item trop recent pour la base de donnees
+    (ex. NarinChassisComponent -> « Narin - Chassis »)."""
+    words = PART_NAMES.get(lang, PART_NAMES["en"])
+    last = path.rsplit("/", 1)[-1]
+    bp = last.endswith("Blueprint")
+    core = re.sub(r"(Blueprint|Component)$", "", last)
+    split = lambda x: re.sub(r"(?<=[a-z0-9])(?=[A-Z])", " ", x).strip()
+    m = re.match(r"(.+?)(Helmet|Chassis|Systems)$", core)
+    name = f"{split(m.group(1))} - {words[m.group(2)]}" if m else split(core)
+    return name + (words["bp"] if bp else "")
+
+
 def build_items(inv, lang):
     g, cat = game(), catalog()
     items = []
@@ -973,8 +994,12 @@ def build_items(inv, lang):
         kind = classify(path, g)
         en = g.name(path, "en")
         name = g.name(path, lang) or en
-        if not name:
-            continue
+        inconnu = not name
+        if inconnu:  # trop recent pour la base de donnees : on le montre quand meme
+            # (connu de la base mais sans nom = equipement sans interet : cache comme avant)
+            if kind not in ("objet", "ressource") or path in g.ex["recipes"] or path in g.ex["resources"]:
+                continue
+            name, en = provisional_name(path, lang), provisional_name(path, "en")
         sub = sub_label = None
         lookup = path
         if kind == "relique":
@@ -990,7 +1015,7 @@ def build_items(inv, lang):
         if kind == "relique" and sub_label:
             name = f"{name} ({sub_label})"
         items.append({
-            "id": f"{path}|{rank}", "chemin": path, "cat": kind, "nom": name,
+            "id": f"{path}|{rank}", "chemin": path, "cat": kind, "nom": name, "inconnu": inconnu,
             "nom_en": cat.en(slug) if slug else en, "qte": qty,
             "rang": rank if meta.get("maxRank") else None, "rang_max": meta.get("maxRank"),
             "sous_type": sub, "slug": slug, "ducats": meta.get("ducats"),
@@ -1128,6 +1153,32 @@ def collection_view(lang):
             out.append({"chemin": path, "nom": nom, "type": onglet, "icone": g.icon_url(path),
                         "construit": built, "maitrise": rang >= cap, "rang": rang, "rang_max": cap,
                         "schemas": schemas})
+    # trop recent pour la base de donnees : ce qu'on possede quand meme (nom tire du code interne)
+    known = {c["chemin"] for c in out}
+    for lst, onglet in COLLECTION_TYPES.items():
+        for e in inv.get(lst, []) or []:
+            path = e.get("ItemType") if isinstance(e, dict) else None
+            if not path or path in known or g.name(path, lang):
+                continue
+            known.add(path)
+            x = xp.get(path, 0)
+            rang = min(30, int((x / (1000 if lst in FRAME_LIKE else 500)) ** 0.5)) if x else 0
+            out.append({"chemin": path, "nom": provisional_name(path, lang), "type": onglet, "icone": None,
+                        "construit": types.get(path, 0), "maitrise": rang >= 30, "rang": rang, "rang_max": 30,
+                        "schemas": None, "inconnu": True})
+    # Warframe inconnue dont on n'a que des pieces (ex. Narin - Chassis) : carte « Pieces n/4 »
+    noms = {norm_name(c["nom"]) for c in out if c["type"] == "warframe"}
+    pieces = {}
+    for path in types:
+        m = re.match(r".*/WarframeRecipes/(\w+?)(Helmet|Chassis|Systems)?(Blueprint|Component)$", path)
+        if m and not g.name(path, lang) and "Prime" not in m.group(1):
+            pieces.setdefault(m.group(1), set()).add(m.group(2) or "main")
+    for base, parts in pieces.items():
+        nom = provisional_name(base, lang)
+        if norm_name(nom) not in noms:
+            out.append({"chemin": "inconnu:" + base, "nom": nom, "type": "warframe", "icone": None,
+                        "construit": 0, "maitrise": False, "rang": 0, "rang_max": 30,
+                        "schemas": f"{len(parts)}/4", "inconnu": True})
     out.sort(key=lambda c: c["nom"])
     _collection_cache.clear()
     _collection_cache[key] = out

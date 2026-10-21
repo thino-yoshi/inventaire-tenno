@@ -110,6 +110,7 @@
   .badge-m { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #12261c; border: 1px solid #2f6b4d; padding: 2px 6px; color: var(--text); }
   .badge-c { font-size: 11px; color: #e3d2ff; background: #241a38; border: 1px solid #5a4590; padding: 2px 6px; }
   .ccase small { color: var(--muted); font-size: 11px; }
+  .tag.nouveau { color: #7fd4e6; border-color: #7fd4e666; }
   .tag.attente { color: #120f1b; background: #f2c94c; border-color: #f2c94c; font-weight: 700; }
   .toast-relique { position: fixed; right: 20px; bottom: 20px; z-index: 60; width: min(470px, calc(100vw - 32px));
                    background: var(--panel); border: 1px solid var(--line); border-top: 2px solid #f2c94c; box-shadow: 0 16px 50px #000c; }
@@ -789,6 +790,7 @@ const T = {
     collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
     rechVide: (q, cat) => `Aucun item de ton inventaire ne contient « ${q} » dans « ${cat} ». La recherche ne porte que sur ce que tu possèdes : pour chercher n'importe quel item, va dans Market › Achats.`,
     listeVide: "Rien à afficher ici avec ces filtres.",
+    inconnuTag: "Nouveau", inconnuTip: "Trop récent pour la base de données des items : nom provisoire, sans image ni prix. Il se mettra à jour tout seul.",
     colObtenu: "Obtenu (plus récent)", attenteTag: "En attente de synchro", attenteTip: "Ajouté à la fin de la vague de relique ; le jeu l'enverra à la fin de la mission",
     attenteNb: n => `${n} récompense(s) en attente de synchro`, trTitre: n => `Récompense de relique · vague ${n}`,
     trAjout: nom => `Ajouté : <b>${nom}</b>`, trSiens: "La récompense de ta relique, lue dans le journal du jeu (sûre à 100 %).",
@@ -826,6 +828,7 @@ const T = {
     collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
     rechVide: (q, cat) => `No item in your inventory contains “${q}” in “${cat}”. Search only covers what you own: to look up any item, go to Market › Buy.`,
     listeVide: "Nothing to show here with these filters.",
+    inconnuTag: "New", inconnuTip: "Too recent for the item database: provisional name, no image or price. It will update by itself.",
     colObtenu: "Obtained (newest)", attenteTag: "Waiting for sync", attenteTip: "Added at the end of the relic wave; the game sends it at the end of the mission",
     attenteNb: n => `${n} reward(s) waiting for sync`, trTitre: n => `Relic reward · wave ${n}`,
     trAjout: nom => `Added: <b>${nom}</b>`, trSiens: "Your relic's reward, read from the game log (100% sure).",
@@ -1523,7 +1526,8 @@ function rendu() {
                : rv ? `<small>${t("valeurMoy", rv.valeurs[it.sous_type] ?? rv.valeurs.intact)}</small>` : "";
     const enVente = !["offre", "souhait"].includes(it.cat) ? mesOffres(it) : [];
     const dep = depasse(it), trop = enTrop(it), best = it.cat === "souhait" && autreMin(p, it.rang), bas = tropBas(it);
-    const tags = (it.attente ? `<span class="tag attente" title="${esc(t("attenteTip"))}">${t("attenteTag")}</span>` : "") +
+    const tags = (it.inconnu ? `<span class="tag nouveau" title="${esc(t("inconnuTip"))}">${t("inconnuTag")}</span>` : "") +
+                 (it.attente ? `<span class="tag attente" title="${esc(t("attenteTip"))}">${t("attenteTag")}</span>` : "") +
                  (it.cat === "set" && it.qte > 0 ? `<span class="tag ok">${t("complet")}</span>` : "") +
                  (baro(it) ? `<span class="tag baro" title="${esc(t("baroTip"))}">${t("baro")}</span>` : "") +
                  (enVente.length ? `<span class="tag vente">${t("enVente", enVente[0].prix)}</span>` : "") +
@@ -2171,6 +2175,7 @@ function rendreCollection() {
         ${c.maitrise ? `<span class="badge-m">${LAURIER}${esc(t("collMaitrise"))}</span>` : ""}
         ${c.construit ? `<span class="badge-c">${esc(t("collConstruit"))}${c.construit > 1 ? " ×" + c.construit : ""}</span>` : ""}
         ${manque ? `<small>${esc(c.schemas ? t("collPieces", c.schemas) : t("collManquant"))}</small>` : ""}
+        ${c.inconnu ? `<span class="tag nouveau" title="${esc(t("inconnuTip"))}">${t("inconnuTag")}</span>` : ""}
         ${!c.maitrise && c.construit && c.rang ? `<small>${esc(t("collRang", c.rang, c.rang_max))}</small>` : ""}</div></div>`;
     }).join("");
 }
