@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.12.4"
+VERSION = "1.12.5"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1462,6 +1462,52 @@ def relic_reward_done(info):
     REWARDS.append({"id": _reward_id[0], "t": time.time(), "vague": len(REWARDS) + 1,
                     "cartes": cartes, "choix": choix})
     STATE.version += 1  # l'interface recharge l'inventaire
+
+
+_overlay_sets = {}
+
+
+def overlay_set_info(path, lang):
+    """Pour une carte de l'overlay : combien on a de cet item, et ou en est son set
+    ({possede, pieces: [{nom court, possede, requis, ici}]}). Garde en cache par lecture."""
+    cle = (STATE.version, lang, tuple((r["id"], r["choix"]) for r in REWARDS))
+    if _overlay_sets.get("cle") != cle:
+        inv = inventory_with_rewards(STATE.inv)[0]
+        items = build_items(inv, lang) if inv else []
+        _overlay_sets.clear()
+        _overlay_sets.update({"cle": cle, "items": items, "sets": build_sets(items, lang) if items else []})
+    items, sets = _overlay_sets["items"], _overlay_sets["sets"]
+    possede = sum(i["qte"] for i in items if i.get("chemin") == path)
+    cat = catalog()
+    slug = cat.find(path, game().name(path, "en"))
+    st = next((s for s in sets if slug and any(p["slug"] == slug for p in s["pieces"])), None)
+    if st:
+        base, pieces = st["nom"], st["pieces"]
+    else:  # aucun morceau de ce set pour l'instant : on le construit quand meme (ex. Lame d'Orthos)
+        k = (slug or "").find("_prime")
+        set_slug = slug[:k + 6] + "_set" if k != -1 else None
+        if not set_slug or set_slug not in cat.by_slug:
+            return {"possede": possede, "pieces": None}
+        try:
+            parts = set_parts(set_slug)
+        except Exception:
+            return {"possede": possede, "pieces": None}
+        root = cat.by_slug[set_slug].get("gameRef")
+        base = (game().name(root, lang) if root else None) or cat.en(set_slug)
+        owned = {}
+        for i in items:
+            if i.get("slug"):
+                owned[i["slug"]] = owned.get(i["slug"], 0) + i["qte"]
+        pieces = [{"slug": p["slug"], "requis": p["qte"], "possede": owned.get(p["slug"], 0),
+                   "nom": (game().name(p["ref"], lang) if p["ref"] else None) or cat.en(p["slug"])} for p in parts]
+
+    def court(n):  # « Orthos Prime - Lame » -> « Lame », « Orthos Prime (Schéma) » -> « Schéma »
+        n = re.sub(r"^\s*-\s*", "", n[len(base):]) if n.startswith(base) else n
+        n = n.replace("(", "").replace(")", "").strip()
+        return re.sub(r"\s*(Schéma|Blueprint)$", "", n) or n
+    return {"possede": possede, "pieces": [
+        {"nom": court(p["nom"]), "possede": p["possede"], "requis": p["requis"], "ici": p["slug"] == slug}
+        for p in pieces]}
 
 
 def inventory_with_rewards(inv):

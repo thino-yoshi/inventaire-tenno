@@ -673,8 +673,13 @@ class RewardOverlay:
                 pass
         ducats = cat.by_slug.get(slug, {}).get("ducats") if slug else None
         key = slug or path
+        try:  # combien on en a, et ou en est son set (pieces ✓ / ✗)
+            info = app.overlay_set_info(path, lang)
+        except Exception:
+            info = {"possede": None, "pieces": None}
         return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
-                "image": self._images.get(key), "_slug": slug, "_key": key}
+                "image": self._images.get(key), "_slug": slug, "_key": key,
+                "possede": info.get("possede"), "pieces": info.get("pieces")}
 
     _images = {}
 
@@ -757,6 +762,7 @@ class OverlayWindow:
                                                 style | 0x80000 | 0x20 | 0x80 | 0x8000000)
 
         GOLD, PLAT, TEXT, MUTED, PANEL, BORDER = "#c9a96e", "#7fd4e6", "#ece6d6", "#8d8878", "#0e131e", "#3a3a40"
+        GREEN, RED = "#5cc98a", "#e06c6c"
         keep = []  # references des images (sinon tkinter les efface)
 
         def icon(name, size):
@@ -786,10 +792,11 @@ class OverlayWindow:
             n = max(1, len(rewards))
             gap = int(GW * 0.012)
             cw = int(min(GW * 0.19, (GW * 0.82 - gap * (n - 1)) / n))   # largeur d'une case
-            ch = int(GH * 0.30)                                           # hauteur d'une case
+            avec_set = any(r.get("pieces") for r in rewards)
+            ch = int(GH * (0.37 if avec_set else 0.30))                   # hauteur d'une case
             total = n * cw + (n - 1) * gap
             x0, y0 = (GW - total) / 2, GH - ch - GH * 0.05
-            s = ch / 320  # echelle des textes (320 px de haut = taille de reference)
+            s = int(GH * 0.30) / 320  # echelle des textes (320 px de haut = taille de reference)
             for i, r in enumerate(sorted(rewards, key=lambda r: r["x"])):  # meme ordre qu'a l'ecran
                 x1, y1 = x0 + i * (cw + gap), y0
                 x2, y2 = x1 + cw, y1 + ch
@@ -803,15 +810,44 @@ class OverlayWindow:
                     canvas.create_text(cx, y1 + 17 * s, text="MEILLEUR CHOIX", fill=PANEL,
                                        font=("Segoe UI Semibold", int(12 * s)))
                     top = y1 + 38 * s
-                img_size = int(ch * 0.42)
+                img_size = int(GH * 0.30 * 0.42)
                 if r.get("image"):
                     try:
                         canvas.create_image(cx, top + img_size / 2, image=item_image(r["image"], img_size))
                     except Exception:
                         pass
                 name_y = top + img_size + 8 * s
-                canvas.create_text(cx, name_y, text=r["nom"], fill=TEXT, anchor="n", justify="center",
-                                   width=cw - 24, font=("Segoe UI Semibold", int(22 * s)))
+                nid = canvas.create_text(cx, name_y, text=r["nom"], fill=TEXT, anchor="n", justify="center",
+                                         width=cw - 24, font=("Segoe UI Semibold", int(22 * s)))
+                # combien on en a + pieces du set : ✓ possedee, ✗ manquante, ★ celle de la carte
+                yy = canvas.bbox(nid)[3] + 6 * s
+                if r.get("possede") is not None and not r.get("douteux"):
+                    canvas.create_text(cx, yy, text=f"Tu en as : {r['possede']}", anchor="n",
+                                       fill=GREEN if r["possede"] else MUTED, font=("Segoe UI Semibold", int(14 * s)))
+                    yy += 22 * s
+                if r.get("pieces"):
+                    f = ("Segoe UI Semibold", int(13 * s))
+                    ligne, lignes = [], []
+                    for pc in r["pieces"]:
+                        ok = pc["possede"] >= pc["requis"]
+                        mot = ("★ " if pc["ici"] else "✓ " if ok else "✗ ") + pc["nom"]
+                        couleur = GOLD if pc["ici"] else GREEN if ok else RED
+                        ligne.append((mot, couleur))
+                        if len(ligne) == 2:
+                            lignes.append(ligne)
+                            ligne = []
+                    if ligne:
+                        lignes.append(ligne)
+                    for lg in lignes:  # deux pieces par ligne, centrees
+                        ids, x = [], 0
+                        for mot, couleur in lg:
+                            t = canvas.create_text(x, yy, text=mot, fill=couleur, anchor="nw", font=f)
+                            ids.append(t)
+                            x = canvas.bbox(t)[2] + 12 * s
+                        bx1, _, bx2, _ = canvas.bbox(*ids)
+                        for it in ids:
+                            canvas.move(it, cx - (bx1 + bx2) / 2, 0)
+                        yy += 19 * s
                 # ligne du bas : platine en grand, ducats a droite
                 by = y2 - 30 * s
                 parts = []
