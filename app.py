@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.9.1"
+VERSION = "1.10.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1005,8 +1005,18 @@ def build_items(inv, lang):
 
 
 def build_sets(items, lang):
-    """Sets Prime dont on possede au moins une piece."""
+    """Sets Prime dont on possede au moins une piece (+ Warframes normales, voir plus bas).
+    Chaque piece donne aussi « fabrique » : combien on en a deja construit (piece de Warframe
+    sortie de la Fonderie, ou la Warframe / l'arme pour le schema principal)."""
     g, cat = game(), catalog()
+    types = owned_types(STATE.inv)
+    recipes = g.ex["recipes"]
+
+    def crafted(ref):
+        res = (recipes.get(ref) or {}).get("resultType")
+        if not res:
+            return {}  # pas un schema (ex. canon d'arme) : rien a fabriquer
+        return {"fabrique": types.get(res, 0), "nom_fabrique": g.name(res, lang)}
     owned = {}
     for i in items:
         if i["cat"] == "prime" and i["slug"]:
@@ -1029,7 +1039,7 @@ def build_sets(items, lang):
         for p in parts:
             pname = (g.name(p["ref"], lang) if p["ref"] else None) or cat.en(p["slug"])
             pieces.append({"slug": p["slug"], "nom": pname, "requis": p["qte"],
-                           "possede": owned.get(p["slug"], 0)})
+                           "possede": owned.get(p["slug"], 0), **crafted(p["ref"])})
         complets = min((p["possede"] // p["requis"] for p in pieces), default=0)
         sets.append({
             "id": "set:" + s, "cat": "set", "slug": s, "nom": base or cat.en(s),
@@ -1039,8 +1049,52 @@ def build_sets(items, lang):
             "nb_possedees": sum(1 for p in pieces if p["possede"] >= p["requis"]),
             "nb_total": len(pieces),
         })
+    sets += normal_warframe_sets(lang, types, crafted)
     sets.sort(key=lambda s: (s["nb_total"] - s["nb_possedees"], s["nom"]))
     return sets
+
+
+def owned_types(inv):
+    """Nombre possede de chaque objet du jeu (schemas, pieces fabriquees, Warframes, armes...)."""
+    out = {}
+    for v in (inv or {}).values():
+        if isinstance(v, list):
+            for e in v:
+                if isinstance(e, dict) and e.get("ItemType"):
+                    out[e["ItemType"]] = out.get(e["ItemType"], 0) + int(e.get("ItemCount") or 1)
+    return out
+
+
+def normal_warframe_sets(lang, types, crafted):
+    """Sets des Warframes non Prime (absentes de Warframe Market) : schema principal +
+    neuroptiques, chassis, systemes, d'apres les recettes du jeu. Seulement si on a une piece."""
+    g = game()
+    recipes = g.ex["recipes"]
+    by_result = {r.get("resultType"): p for p, r in recipes.items() if r.get("resultType")}
+    out = []
+    for path, r in recipes.items():
+        res = r.get("resultType") or ""
+        if "/WarframeRecipes/" not in path or not res.startswith("/Lotus/Powersuits/") or "Prime" in res:
+            continue
+        comps = [i["ItemType"] for i in r.get("ingredients", []) if i.get("ItemType", "").endswith("Component")]
+        if len(comps) != 3:
+            continue
+        refs = [path] + [by_result[c] for c in comps if c in by_result]
+        pieces = []
+        for ref in refs:
+            pieces.append({"slug": None, "nom": g.name(ref, lang) or ref.rsplit("/", 1)[-1], "requis": 1,
+                           "possede": types.get(ref, 0), **crafted(ref)})
+        if not any(p["possede"] or p.get("fabrique") for p in pieces[1:]) and not pieces[0]["possede"]:
+            continue  # aucune piece : on ne montre pas le set
+        icon = g.icon_url(res)
+        out.append({
+            "id": "set:" + path, "cat": "set", "slug": None, "nom": g.name(res, lang) or res.rsplit("/", 1)[-1],
+            "nom_en": g.name(res, "en"), "qte": min(p["possede"] for p in pieces), "rang": None,
+            "sous_type": None, "ducats": None, "pieces": pieces, "vignette": icon, "image": icon,
+            "rarete": "common", "normal": True,
+            "nb_possedees": sum(1 for p in pieces if p["possede"] >= p["requis"]), "nb_total": len(pieces),
+        })
+    return out
 
 
 # ================================================================ etat + lecture auto

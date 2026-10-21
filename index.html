@@ -82,6 +82,8 @@
   .pieces .ok { color: var(--green); } .pieces .ko { color: var(--red); }
   .copierNom { padding: 0 6px; font-size: 12px; line-height: 18px; margin-right: 6px; color: var(--muted); background: transparent; }
   .copierNom:hover { color: var(--gold); }
+  .set-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .segment.petit-seg button { padding: 4px 10px; font-size: 11px; letter-spacing: 1.5px; }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px;
          background: var(--muted); }
   .dot.ingame { background: var(--green); } .dot.online { background: var(--blue); }
@@ -703,7 +705,7 @@ const T = {
     offline: "hors ligne", dispo: n => `${n} dispo`, rep: n => `réputation ${n}`, rang: n => `rang ${n}`,
     copier: "Copier le message pour acheter", copie: "Copié !", annonce: "Copier mon annonce de vente",
     baro: "Baro", baroTip: "Mieux vaut le donner à Baro Ki'Teer (10 ducats ou plus par platine)",
-    pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
+    svSchemas: "Schémas", svCraft: "Craftées", pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
     histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
     lecture: "Lecture de la mémoire du jeu (environ 15 s)…", prixN: (a, b) => `Prix Warframe Market : ${a}/${b}…`,
     aJour: h => `prix à jour à ${h}`, srcJeu: d => `Lu dans le jeu le ${d}`, srcCopie: d => `Copie du ${d}`,
@@ -725,7 +727,7 @@ const T = {
     offline: "offline", dispo: n => `${n} available`, rep: n => `reputation ${n}`, rang: n => `rank ${n}`,
     copier: "Copy buy message", copie: "Copied!", annonce: "Copy my sell listing",
     baro: "Baro", baroTip: "Better to give it to Baro Ki'Teer (10+ ducats per platinum)",
-    pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
+    svSchemas: "Blueprints", svCraft: "Crafted", pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
     histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
     lecture: "Reading game memory (about 15 s)…", prixN: (a, b) => `Warframe Market prices: ${a}/${b}…`,
     aJour: h => `prices updated at ${h}`, srcJeu: d => `Read from game on ${d}`, srcCopie: d => `Copy from ${d}`,
@@ -1148,6 +1150,8 @@ let lang = "fr", items = [], sets = [], prix = {}, sel = null, onglet = "tous",
     compte = { connecte: false, compte: null, offres: [] }, venteMsg = null;
 
 let filtreRarete = "";
+var vueSet = "schemas";  // pièces d'un set : "schemas" ou "craft"
+try { vueSet = localStorage.getItem("vueSet") || "schemas"; } catch (e) {}
 let seuil = 10;  // sous 10p, les mods communs gonflent le total sans vraiment se vendre
 let modeVue = "liste";  // "liste" (tableau) ou "grille" (grosses cases avec images)
 let colonnes = 5;       // nombre de cases par ligne en mode grille
@@ -1503,8 +1507,17 @@ function panneau() {
   }
   if (it.cat === "relique") html += blocRelique(it);
   if (it.cat === "set") {
-    html += `<div class="sub">${t("pieces")}</div><ul class="pieces">${it.pieces.map(pc =>
-      `<li><span class="${pc.possede >= pc.requis ? "ok" : "ko"}">${pc.possede >= pc.requis ? "✓" : "✗"} ${esc(pc.nom)}</span><span class="muted"><button class="copierNom" data-nom="${esc(pc.nom)}" title="${esc(t("copierNomTip"))}">⧉</button> ${pc.possede}/${pc.requis}</span></li>`).join("")}</ul>`;
+    // Schémas : les schémas qu'on a ; Craftées : ce qui est déjà sorti de la Fonderie
+    // (les pièces sans schéma, comme un canon d'arme, sont les mêmes dans les deux vues)
+    const fab = vueSet === "craft";
+    html += `<div class="set-tete"><div class="sub">${t("pieces")}</div><div class="segment petit-seg">
+        <button type="button" data-sv="schemas" class="${fab ? "" : "on"}">${t("svSchemas")}</button>
+        <button type="button" data-sv="craft" class="${fab ? "on" : ""}">${t("svCraft")}</button></div></div>
+      <ul class="pieces">${it.pieces.map(pc => {
+        const n = fab ? (pc.fabrique ?? pc.possede) : pc.possede, ok = n >= pc.requis;
+        const nom = fab ? (pc.nom_fabrique || pc.nom) : pc.nom;
+        return `<li><span class="${ok ? "ok" : "ko"}">${ok ? "✓" : "✗"} ${esc(nom)}</span><span class="muted"><button class="copierNom" data-nom="${esc(pc.nom)}" title="${esc(t("copierNomTip"))}">⧉</button> ${n}/${pc.requis}</span></li>`;
+      }).join("")}</ul>`;
   }
   html += blocVente(it, p);
   html += `<h2 style="margin-top:14px">${t("top")}</h2>`;
@@ -1836,6 +1849,12 @@ $("#panneau").addEventListener("input", e => {
 $("#panneau").addEventListener("click", async e => {
   const da = e.target.closest("button[data-a]");
   if (da) return actionVente(da.dataset.a, da);
+  const sv = e.target.closest("button[data-sv]");  // pièces du set : schémas ou craftées
+  if (sv) {
+    vueSet = sv.dataset.sv;
+    try { localStorage.setItem("vueSet", vueSet); } catch (err) {}
+    return panneau();
+  }
   const cn = e.target.closest("button.copierNom");  // nom exact d'une pièce, pour le filtre des reliques du jeu
   if (cn) {
     try { await navigator.clipboard.writeText(cn.dataset.nom); cn.textContent = "✓"; setTimeout(() => cn.textContent = "⧉", 1200); }
