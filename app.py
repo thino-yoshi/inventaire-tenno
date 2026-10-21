@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.12.1"
+VERSION = "1.12.2"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1197,6 +1197,7 @@ class State:
             changed = not self.inv or pi.sync_key(inv) != pi.sync_key(self.inv) \
                 or self.source != "jeu"
             if changed:
+                note_acquired(self.inv, inv)
                 self.inv = inv
                 self.version += 1
                 self.source = "jeu"
@@ -1253,6 +1254,24 @@ class State:
 
 
 STATE = State()
+
+# Date d'obtention : le jeu ne la donne pas. On la note nous-memes : a chaque lecture, ce qui est
+# nouveau ou en plus grand nombre recoit la date du moment. {chemin: horodatage}
+ACQUIRED_FILE = BASE / "obtenus.json"
+ACQUIRED = load_json(ACQUIRED_FILE, {}) or {}
+
+
+def note_acquired(old_inv, new_inv):
+    if not old_inv:
+        return  # premiere lecture : on ne sait pas depuis quand on a tout ca
+    before, now = owned_types(old_inv), time.time()
+    changed = False
+    for path, n in owned_types(new_inv).items():
+        if n > before.get(path, 0):
+            ACQUIRED[path] = now
+            changed = True
+    if changed:
+        save_json(ACQUIRED_FILE, ACQUIRED)
 
 
 def history_add(entry):
@@ -1597,9 +1616,15 @@ class Handler(BaseHTTPRequestHandler):
                     raise RuntimeError("aucune_copie")
                 inv, ajout = inventory_with_rewards(STATE.inv)
                 items = build_items(inv, lang)
-                for it in items:  # etiquette « en attente de synchro »
+                recus = {}  # recompenses de relique en attente : obtenues a la fin de leur vague
+                for r in REWARDS:
+                    c = r["cartes"][r["choix"]] if 0 <= r["choix"] < len(r["cartes"]) else None
+                    if c and c.get("chemin"):
+                        recus[c["chemin"]] = max(recus.get(c["chemin"], 0), r["t"])
+                for it in items:  # etiquette « en attente de synchro » + date d'obtention (tri)
                     if it.get("chemin") in ajout:
                         it["attente"] = ajout[it["chemin"]]
+                    it["obtenu"] = max(ACQUIRED.get(it.get("chemin"), 0), recus.get(it.get("chemin"), 0))
                 self.send(200, {"items": items, "sets": build_sets(items, lang),
                                 "version": STATE.version, "source": STATE.source,
                                 "quand": STATE.when})

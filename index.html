@@ -26,7 +26,10 @@
   .actions { margin-left: auto; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
   button, select { background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 33%, transparent);
            padding: 7px 12px; border-radius: 6px; cursor: pointer; font: inherit; }
-  select { background: var(--bg); }
+  select { background: var(--bg); color: var(--text); color-scheme: dark; }
+  /* menu ouvert : texte clair sur fond sombre (avant, gris clair sur blanc, illisible) */
+  select option { background: var(--panel); color: var(--text); }
+  select option:checked { background: var(--gold); color: var(--on-gold); }
   button:hover { background: color-mix(in srgb, var(--gold) 20%, transparent); }
   button:disabled { opacity: .5; cursor: wait; }
   input[type=search] { background: var(--bg); color: var(--text); border: 1px solid var(--line);
@@ -782,7 +785,7 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primaires", secondaire: "Secondaires", melee: "Mêlée", archwing: "Archwing", compagnon: "Compagnons" },
     collStatuts: { tous: "Tous", maitrise: "Maîtrisés", construit: "Construits", manquant: "Manquants" },
     collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
-    attenteTag: "En attente de synchro", attenteTip: "Ajouté à la fin de la vague de relique ; le jeu l'enverra à la fin de la mission",
+    colObtenu: "Obtenu (plus récent)", attenteTag: "En attente de synchro", attenteTip: "Ajouté à la fin de la vague de relique ; le jeu l'enverra à la fin de la mission",
     attenteNb: n => `${n} récompense(s) en attente de synchro`, trTitre: n => `Récompense de relique · vague ${n}`,
     trAjout: nom => `Ajouté : <b>${nom}</b>`, trSiens: "La récompense de ta relique, lue dans le journal du jeu (sûre à 100 %).",
     trAutre: "Corrigé : tu as pris la carte d'un autre joueur (nom lu à l'écran).", trAMoi: "Ta relique", trAjoute: "Ajouté",
@@ -817,7 +820,7 @@ const T = {
     collTypes: { warframe: "Warframes", primaire: "Primary", secondaire: "Secondary", melee: "Melee", archwing: "Archwing", compagnon: "Companions" },
     collStatuts: { tous: "All", maitrise: "Mastered", construit: "Built", manquant: "Missing" },
     collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
-    attenteTag: "Waiting for sync", attenteTip: "Added at the end of the relic wave; the game sends it at the end of the mission",
+    colObtenu: "Obtained (newest)", attenteTag: "Waiting for sync", attenteTip: "Added at the end of the relic wave; the game sends it at the end of the mission",
     attenteNb: n => `${n} reward(s) waiting for sync`, trTitre: n => `Relic reward · wave ${n}`,
     trAjout: nom => `Added: <b>${nom}</b>`, trSiens: "Your relic's reward, read from the game log (100% sure).",
     trAutre: "Fixed: you took another player's card (name read on screen).", trAMoi: "Your relic", trAjoute: "Added",
@@ -1366,6 +1369,7 @@ function valeur(it, k) {
   const p = prixDe(it);
   if (k === "nom") return it.nom.toLowerCase();
   if (k === "qte") return it.qte;
+  if (k === "obtenu") return it.obtenu || 0;  // date notee par l'app (0 = deja la avant)
   if (k === "rang") return it.rang ?? -1;
   if (k === "ducats") return it.ducats ?? -1;
   if (k === "progression") return it.nb_total ? it.nb_possedees / it.nb_total + (p?.min ?? 0) / 1e6 : 0;
@@ -1564,6 +1568,7 @@ function rendu() {
   // menu « Trier par » de la barre du haut (mêmes clés que les colonnes)
   const cles = [...document.querySelectorAll("thead th[data-k]")].map(th => [th.dataset.k, th.dataset.t]);
   if (onglet === "set") cles.push(["progression", "colProg"]);
+  else cles.push(["obtenu", "colObtenu"]);
   $("#triSel").innerHTML = cles.map(([k, l]) => `<option value="${k}" ${k === tri.k ? "selected" : ""}>${esc(t(l))}</option>`).join("");
   $("#triOrdre").textContent = t(tri.asc ? "ordreAsc" : "ordreDesc");
   const tot = totaux(liste);
