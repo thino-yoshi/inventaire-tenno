@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.10.0"
+VERSION = "1.11.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1057,11 +1057,70 @@ def build_sets(items, lang):
 def owned_types(inv):
     """Nombre possede de chaque objet du jeu (schemas, pieces fabriquees, Warframes, armes...)."""
     out = {}
-    for v in (inv or {}).values():
-        if isinstance(v, list):
+    for k, v in (inv or {}).items():
+        # XPInfo = experience gagnee (meme pour un item supprime), PendingRecipes = en Fonderie :
+        # ce ne sont pas des objets possedes
+        if isinstance(v, list) and k not in ("XPInfo", "PendingRecipes"):
             for e in v:
                 if isinstance(e, dict) and e.get("ItemType"):
                     out[e["ItemType"]] = out.get(e["ItemType"], 0) + int(e.get("ItemCount") or 1)
+    return out
+
+
+COLLECTION_TYPES = {  # categorie du jeu -> onglet de la collection
+    "Suits": "warframe", "LongGuns": "primaire", "Pistols": "secondaire", "Melee": "melee",
+    "SpaceSuits": "archwing", "SpaceGuns": "archwing", "SpaceMelee": "archwing", "MechSuits": "archwing",
+    "Sentinels": "compagnon", "KubrowPets": "compagnon", "SentinelWeapons": "compagnon",
+}
+FRAME_LIKE = {"Suits", "SpaceSuits", "MechSuits", "Sentinels", "KubrowPets"}  # 1000 XP x rang^2 (armes : 500)
+_collection_cache = {}
+
+
+def collection_view(lang):
+    """Toutes les Warframes, armes, Archwings et compagnons du jeu, comme le Codex :
+    construit (dans l'inventaire), maitrise (XP au rang max, garde meme si on l'a supprime),
+    et pour ce qui manque, combien de pieces on a deja (schemas ou pieces)."""
+    inv = STATE.inv or {}
+    key = (lang, STATE.version)
+    if key in _collection_cache:
+        return _collection_cache[key]
+    g = game()
+    types = owned_types(inv)
+    xp = {e.get("ItemType"): e.get("XP", 0) for e in inv.get("XPInfo", []) if isinstance(e, dict)}
+    recipes = g.ex["recipes"]
+    by_result = {r.get("resultType"): p for p, r in recipes.items() if r.get("resultType")}
+    out = []
+    for sect in ("warframes", "weapons", "sentinels"):
+        for path, v in (g.ex.get(sect) or {}).items():
+            cat = v.get("productCategory")
+            onglet = COLLECTION_TYPES.get(cat)
+            if not onglet or v.get("partType") or ("/Pets/" in path and cat == "Pistols"):
+                continue  # pieces d'armes modulaires, griffes de compagnon...
+            built, x = types.get(path, 0), xp.get(path, 0)
+            if v.get("codexSecret") and not built and not x:
+                continue  # secret du Codex tant qu'on ne l'a pas
+            nom = g.name(path, lang)
+            if not nom:
+                continue
+            cap = v.get("maxLevelCap") or 30
+            par = 1000 if cat in FRAME_LIKE else 500
+            rang = min(cap, int((x / par) ** 0.5)) if x else 0
+            # pieces deja obtenues pour ce qui n'est pas construit (schema principal + pieces)
+            schemas = None
+            rec = by_result.get(path)
+            if rec and not built:
+                parts = [i["ItemType"] for i in recipes[rec].get("ingredients", [])
+                         if i.get("ItemType") and not i["ItemType"].startswith("/Lotus/Types/Items/")]
+                got = (1 if types.get(rec) else 0) + sum(
+                    1 for p in parts if types.get(p) or types.get(by_result.get(p, "")))
+                if got:
+                    schemas = f"{got}/{len(parts) + 1}"
+            out.append({"chemin": path, "nom": nom, "type": onglet, "icone": g.icon_url(path),
+                        "construit": built, "maitrise": rang >= cap, "rang": rang, "rang_max": cap,
+                        "schemas": schemas})
+    out.sort(key=lambda c: c["nom"])
+    _collection_cache.clear()
+    _collection_cache[key] = out
     return out
 
 
@@ -1448,6 +1507,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, price_history(q["slug"], rank))
             elif u.path == "/api/mes-ventes":  # ventes marquees « Vendu » (onglet Market > Stats)
                 self.send(200, load_json(SALES_LOG, []) or [])
+            elif u.path == "/api/collection":  # Warframes et armes du jeu : construit / maitrise
+                self.send(200, collection_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
             elif u.path == "/api/volume":
                 rank = int(q["rang"]) if q.get("rang", "") not in ("", "null") else None
                 self.send(200, volume(q["slug"], rank))

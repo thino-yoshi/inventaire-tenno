@@ -82,6 +82,29 @@
   .pieces .ok { color: var(--green); } .pieces .ko { color: var(--red); }
   .copierNom { padding: 0 6px; font-size: 12px; line-height: 18px; margin-right: 6px; color: var(--muted); background: transparent; }
   .copierNom:hover { color: var(--gold); }
+  .v-coll { padding: 12px; display: flex; flex-direction: column; gap: 12px; }
+  .v-coll[hidden] { display: none; }
+  .coll-tete { display: flex; flex-direction: column; gap: 7px; }
+  .coll-titre { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; flex-wrap: wrap; }
+  .coll-titre b { letter-spacing: 1.5px; text-transform: uppercase; }
+  .coll-titre span { color: var(--muted); }
+  .coll-titre em { font-style: normal; font-weight: 700; }
+  .coll-barre { height: 8px; background: var(--line); display: flex; }
+  .coll-barre i { display: block; height: 100%; }
+  #collBarreM { background: #6fd39a; } #collBarreC { background: #9b7ad8; }
+  .coll-filtres { display: flex; gap: 10px; flex-wrap: wrap; }
+  .coll-filtres .segment button { padding: 6px 12px; font-size: 12px; letter-spacing: 1.5px; }
+  .coll-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .ccase { background: var(--bg); border: 1px solid var(--line); padding: 10px; display: flex; flex-direction: column;
+           align-items: center; gap: 6px; text-align: center; }
+  .ccase.m { border-color: #2f6b4d; } .ccase.c:not(.m) { border-color: #5a4590; }
+  .ccase.manque { opacity: .55; }
+  .ccase img, .ccase .cimg { width: 84px; height: 84px; object-fit: contain; }
+  .ccase .cnom { font-size: 12px; min-height: 32px; }
+  .ccase .cbadges { display: flex; gap: 5px; flex-wrap: wrap; justify-content: center; min-height: 20px; align-items: center; }
+  .badge-m { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; background: #12261c; border: 1px solid #2f6b4d; padding: 2px 6px; color: var(--text); }
+  .badge-c { font-size: 11px; color: #e3d2ff; background: #241a38; border: 1px solid #5a4590; padding: 2px 6px; }
+  .ccase small { color: var(--muted); font-size: 11px; }
   .set-tete { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
   .segment.petit-seg button { padding: 4px 10px; font-size: 11px; letter-spacing: 1.5px; }
   .dot { display: inline-block; width: 7px; height: 7px; border-radius: 50%; margin-right: 5px;
@@ -565,6 +588,17 @@
     <nav class="onglets" id="onglets"></nav>
   </aside>
   <div class="table" id="vueInventaire">
+    <div class="v-coll" id="vueCollection" hidden>
+      <div class="coll-tete">
+        <div class="coll-titre"><b data-t="collection"></b><span id="collResume"></span></div>
+        <div class="coll-barre" aria-hidden="true"><i id="collBarreM"></i><i id="collBarreC"></i></div>
+      </div>
+      <div class="coll-filtres">
+        <div class="segment" id="collType"></div>
+        <div class="segment" id="collStatut"></div>
+      </div>
+      <div class="coll-grille" id="collGrille"></div>
+    </div>
     <form class="outils" id="ajoutSouhait" hidden>
       <input type="text" id="sItem" list="catalogue" autocomplete="off">
       <datalist id="catalogue"></datalist>
@@ -705,6 +739,11 @@ const T = {
     offline: "hors ligne", dispo: n => `${n} dispo`, rep: n => `réputation ${n}`, rang: n => `rang ${n}`,
     copier: "Copier le message pour acheter", copie: "Copié !", annonce: "Copier mon annonce de vente",
     baro: "Baro", baroTip: "Mieux vaut le donner à Baro Ki'Teer (10 ducats ou plus par platine)",
+    collection: "Collection", collMaitrise: "Maîtrisé", collConstruit: "Construit", collManquant: "Manquant",
+    collResume: (m, c, n) => `<em style="color:#8fe0b0">${m}</em> maîtrisés · <em style="color:#c9a8ff">${c}</em> construits · ${n} au total`,
+    collTypes: { warframe: "Warframes", primaire: "Primaires", secondaire: "Secondaires", melee: "Mêlée", archwing: "Archwing", compagnon: "Compagnons" },
+    collStatuts: { tous: "Tous", maitrise: "Maîtrisés", construit: "Construits", manquant: "Manquants" },
+    collPieces: x => `Pièces ${x}`, collRang: (r, m) => `Rang ${r}/${m}`, collVide: "Rien ici avec ces filtres.",
     svSchemas: "Schémas", svCraft: "Craftées", pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
     histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
     lecture: "Lecture de la mémoire du jeu (environ 15 s)…", prixN: (a, b) => `Prix Warframe Market : ${a}/${b}…`,
@@ -727,6 +766,11 @@ const T = {
     offline: "offline", dispo: n => `${n} available`, rep: n => `reputation ${n}`, rang: n => `rank ${n}`,
     copier: "Copy buy message", copie: "Copied!", annonce: "Copy my sell listing",
     baro: "Baro", baroTip: "Better to give it to Baro Ki'Teer (10+ ducats per platinum)",
+    collection: "Collection", collMaitrise: "Mastered", collConstruit: "Built", collManquant: "Missing",
+    collResume: (m, c, n) => `<em style="color:#8fe0b0">${m}</em> mastered · <em style="color:#c9a8ff">${c}</em> built · ${n} in total`,
+    collTypes: { warframe: "Warframes", primaire: "Primary", secondaire: "Secondary", melee: "Melee", archwing: "Archwing", compagnon: "Companions" },
+    collStatuts: { tous: "All", maitrise: "Mastered", construit: "Built", manquant: "Missing" },
+    collPieces: x => `Parts ${x}`, collRang: (r, m) => `Rank ${r}/${m}`, collVide: "Nothing here with these filters.",
     svSchemas: "Blueprints", svCraft: "Crafted", pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
     histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
     lecture: "Reading game memory (about 15 s)…", prixN: (a, b) => `Warframe Market prices: ${a}/${b}…`,
@@ -1140,7 +1184,7 @@ function appliquerTheme(th, cible = document.documentElement) {
 let theme = { ...THEMES.orokin };
 try { const s = JSON.parse(localStorage.getItem("theme") || "null"); if (s) theme = { ...theme, ...s }; } catch (e) {}
 appliquerTheme(theme);
-const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "souhait"];  // « En vente » : onglet Market
+const CATS = ["tous", "prime", "set", "arcane", "relique", "mod", "objet", "ressource", "souhait", "collection"];  // « En vente » : onglet Market
 const NON_ECHANGE = ["objet", "ressource"];  // pour savoir ce qu'on possède : hors « Tout » et hors totaux
 const PRIO = { prime: 0, souhait: 0, arcane: 1, set: 2, relique: 3, mod: 4, offre: 5, objet: 6, ressource: 7 };
 let souhaits = [], alertes = [], presence = {}, coches = new Set(), relVals = {}, volumes = {}, catalogue = null;
@@ -1284,6 +1328,8 @@ function baro(it) {
 function onglets() {
   const n = {};
   for (const c of CATS) n[c] = visibles(c).length;
+  const cl = window.coll && window.coll.liste;  // var declaree plus bas : peut ne pas exister encore
+  n.collection = cl ? `${cl.filter(c => c.maitrise).length}/${cl.length}` : "";
   $("#onglets").innerHTML = CATS.filter(c => c !== "offre" || compte.connecte).map(c => `<button data-c="${c}" class="${c === onglet ? "on" : ""}">${t(c)}<small>${n[c] || 0}</small></button>`).join("");
 }
 
@@ -1386,6 +1432,15 @@ function rendu() {
   $("#ajoutSouhait").hidden = onglet !== "souhait";
   $("#lot").hidden = !coches.size;
   $("#lotN").textContent = t("lotN", coches.size);
+  const enColl = onglet === "collection";
+  $("#vueCollection").hidden = !enColl;
+  if (enColl) {
+    $("#lignes").closest("table").hidden = $("#grille").hidden = $("#plus").hidden = true;
+    $("#lot").hidden = $("#ajoutSouhait").hidden = $("#colsBox").hidden = true;
+    rendreCollection();
+    onglets();
+    return;
+  }
   const liste = visibles(onglet, $("#filtre").value);
   liste.sort((a, b) => {
     const x = valeur(a, tri.k), y = valeur(b, tri.k);
@@ -2000,6 +2055,56 @@ function finSplash() {
   $("#splash").classList.add("fin");
   bienvenue();
 }
+// ---------------------------------------------------------------- Collection (comme le Codex)
+var coll = { liste: null, cle: "", type: "warframe", statut: "tous", charge: false };
+try { coll.type = localStorage.getItem("collType") || "warframe"; coll.statut = localStorage.getItem("collStatut") || "tous"; } catch (e) {}
+async function chargerCollection() {
+  const cle = `${lang}|${version}`;
+  if (coll.cle === cle || coll.charge) return;
+  coll.charge = true;
+  try { coll.liste = await api(`/api/collection?lang=${lang}`); coll.cle = cle; }
+  catch (e) { coll.liste = coll.liste || []; }
+  finally { coll.charge = false; }
+  if (onglet === "collection") rendu(); else onglets();
+}
+const LAURIER = `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="#7fe0a8" stroke-width="2" aria-hidden="true"><path d="M6 4c-2 4-2 10 2 14"></path><path d="M18 4c2 4 2 10-2 14"></path><path d="M8 18c2 2 6 2 8 0"></path></svg>`;
+function rendreCollection() {
+  if (coll.cle !== `${lang}|${version}`) chargerCollection();
+  const L = coll.liste || [];
+  const m = L.filter(c => c.maitrise).length, b = L.filter(c => c.construit).length;
+  $("#collResume").innerHTML = coll.liste ? t("collResume", m, b, L.length) : "…";
+  $("#collBarreM").style.width = (L.length ? m / L.length * 100 : 0) + "%";
+  $("#collBarreC").style.width = (L.length ? L.filter(c => c.construit && !c.maitrise).length / L.length * 100 : 0) + "%";
+  const types = t("collTypes"), statuts = t("collStatuts");
+  $("#collType").innerHTML = Object.entries(types).map(([k, v]) => {
+    const n = L.filter(c => c.type === k), nm = n.filter(c => c.maitrise).length;
+    return `<button type="button" data-ct="${k}" class="${k === coll.type ? "on" : ""}">${esc(v)} <small>${nm}/${n.length}</small></button>`;
+  }).join("");
+  $("#collStatut").innerHTML = Object.entries(statuts).map(([k, v]) =>
+    `<button type="button" data-cs="${k}" class="${k === coll.statut ? "on" : ""}">${esc(v)}</button>`).join("");
+  const f = ($("#filtre").value || "").trim().toLowerCase();
+  const vis = L.filter(c => c.type === coll.type && (!f || c.nom.toLowerCase().includes(f)) &&
+    (coll.statut === "tous" || (coll.statut === "maitrise" && c.maitrise) || (coll.statut === "construit" && c.construit)
+     || (coll.statut === "manquant" && !c.maitrise && !c.construit)));
+  $("#collGrille").innerHTML = !coll.liste ? `<div class="muted">…</div>` : !vis.length ? `<div class="muted">${esc(t("collVide"))}</div>`
+    : vis.map(c => {
+      const manque = !c.maitrise && !c.construit;
+      return `<div class="ccase ${c.maitrise ? "m" : ""} ${c.construit ? "c" : ""} ${manque ? "manque" : ""}" title="${esc(t("collRang", c.rang, c.rang_max))}">
+        ${image(c.icone, "cimg")}<div class="cnom">${esc(c.nom)}</div><div class="cbadges">
+        ${c.maitrise ? `<span class="badge-m">${LAURIER}${esc(t("collMaitrise"))}</span>` : ""}
+        ${c.construit ? `<span class="badge-c">${esc(t("collConstruit"))}${c.construit > 1 ? " ×" + c.construit : ""}</span>` : ""}
+        ${manque ? `<small>${esc(c.schemas ? t("collPieces", c.schemas) : t("collManquant"))}</small>` : ""}
+        ${!c.maitrise && c.construit && c.rang ? `<small>${esc(t("collRang", c.rang, c.rang_max))}</small>` : ""}</div></div>`;
+    }).join("");
+}
+$("#vueCollection").addEventListener("click", e => {
+  const a = e.target.closest("button[data-ct]"), b = e.target.closest("button[data-cs]");
+  if (a) { coll.type = a.dataset.ct; try { localStorage.setItem("collType", coll.type); } catch (err) {} }
+  else if (b) { coll.statut = b.dataset.cs; try { localStorage.setItem("collStatut", coll.statut); } catch (err) {} }
+  else return;
+  rendreCollection();
+});
+
 // ---------------------------------------------------------------- premier lancement
 let bienvenueFaite = false;
 function bienvenue() {
