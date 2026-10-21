@@ -123,6 +123,12 @@
   .tr-cartes button.on em { color: #f2c94c; }
   .tr-pied { padding: 10px 16px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 10px; }
   .tr-pied small { color: var(--muted); }
+  .tr-boutons { display: flex; gap: 6px; flex: none; }
+  #trAucune { background: transparent; color: var(--muted); border: 1px solid var(--line); }
+  #trAucune:hover { color: var(--text); }
+  .tr-recherche { padding: 0 16px 12px; }
+  .tr-recherche[hidden] { display: none; }
+  .tr-recherche input { width: 100%; box-sizing: border-box; background: var(--bg); color: var(--text); border: 1px solid #f2c94c; padding: 8px 10px; font: inherit; }
   .pieces .craft { color: #f2c94c; }
   .en-fonderie { display: inline-flex; align-items: center; gap: 3px; color: #f2c94c; font-weight: 700; margin-right: 6px; }
   .en-fonderie img { width: 15px; height: 15px; }
@@ -595,7 +601,12 @@
 <section class="toast-relique" id="toastRelique" role="status" aria-live="polite" hidden>
   <div class="tr-tete"><b id="trTitre"></b><div id="trAjout"></div><small id="trSous"></small></div>
   <div class="tr-cartes" id="trCartes"></div>
-  <div class="tr-pied"><small data-t="trAide"></small><button type="button" id="trOk">OK</button></div>
+  <div class="tr-recherche" id="trRecherche" hidden>
+    <input type="text" id="trItem" list="trListe" autocomplete="off">
+    <datalist id="trListe"></datalist>
+  </div>
+  <div class="tr-pied"><small data-t="trAide"></small>
+    <div class="tr-boutons"><button type="button" id="trAucune" data-t="trAucune"></button><button type="button" id="trOk">OK</button></div></div>
 </section>
 <!-- tant que l'inventaire n'a jamais ete lu : il faut lire le jeu -->
 <div class="sync-alerte" id="syncAlerte" role="alert" hidden>
@@ -776,6 +787,8 @@ const T = {
     trAjout: nom => `Ajouté : <b>${nom}</b>`, trSiens: "La récompense de ta relique, lue dans le journal du jeu (sûre à 100 %).",
     trAutre: "Corrigé : tu as pris la carte d'un autre joueur (nom lu à l'écran).", trAMoi: "Ta relique", trAjoute: "Ajouté",
     trAide: "Clique sur la carte que tu as prise si ce n'est pas la tienne.",
+    trAucune: "Aucune n'est bonne", trRien: "Rien ajouté", trRienSous: "Tape le nom de l'item que tu as eu ci-dessous, ou laisse vide.",
+    trChercher: "Nom de l'item obtenu…", trManuel: "Choisi à la main", trManuelSous: "Item choisi à la main.",
     fonderieTip: n => `${n} en fabrication à la Fonderie`, fonderiePret: (n, p) => `${n} à la Fonderie, dont ${p} prête(s) à récupérer`,
     svSchemas: "Schémas", svCraft: "Craftées", pieces: "Pièces du set", piecesNb: (a, b) => `${a}/${b} pièces`, complet: "complet",
     histo: "Historique", histoVide: "Le graphique se remplit à chaque lecture (un point par heure max).",
@@ -809,6 +822,8 @@ const T = {
     trAjout: nom => `Added: <b>${nom}</b>`, trSiens: "Your relic's reward, read from the game log (100% sure).",
     trAutre: "Fixed: you took another player's card (name read on screen).", trAMoi: "Your relic", trAjoute: "Added",
     trAide: "Click the card you took if it isn't yours.",
+    trAucune: "None is right", trRien: "Nothing added", trRienSous: "Type the item you got below, or leave it empty.",
+    trChercher: "Item you got…", trManuel: "Picked by hand", trManuelSous: "Item picked by hand.",
     fonderieTip: n => `${n} being built in the Foundry`, fonderiePret: (n, p) => `${n} in the Foundry, ${p} ready to claim`,
     svSchemas: "Blueprints", svCraft: "Crafted", pieces: "Set parts", piecesNb: (a, b) => `${a}/${b} parts`, complet: "complete",
     histo: "History", histoVide: "The chart fills up with each read (one point per hour max).",
@@ -2156,19 +2171,20 @@ var toastRel = { id: 0, choix: -1, cache: 0 };
 function toastRelique(r) {
   const box = $("#toastRelique");
   if (!r) { box.hidden = true; toastRel.id = 0; return; }
-  const nouveau = r.id !== toastRel.id;
-  if (!nouveau && r.choix === toastRel.choix) return;
+  const nouveau = r.id !== toastRel.id, sig = JSON.stringify([r.choix, r.cartes]);
+  if (!nouveau && sig === toastRel.choix) return;
   if (nouveau && Date.now() / 1000 - r.t > 600) return;  // vieille vague (app relancee) : pas de fenetre
-  toastRel.id = r.id; toastRel.choix = r.choix;
+  toastRel.id = r.id; toastRel.choix = sig;
   const c = r.cartes[r.choix] || {};
   $("#trTitre").textContent = t("trTitre", r.vague);
-  $("#trAjout").innerHTML = t("trAjout", esc(c.nom || "?"));
-  $("#trSous").textContent = c.a_moi ? t("trSiens") : t("trAutre");
+  $("#trAjout").innerHTML = r.choix < 0 ? `<b>${esc(t("trRien"))}</b>` : t("trAjout", esc(c.nom || "?"));
+  $("#trSous").textContent = r.choix < 0 ? t("trRienSous") : c.manuel ? t("trManuelSous") : c.a_moi ? t("trSiens") : t("trAutre");
+  if (nouveau) $("#trRecherche").hidden = true;
   $("#trCartes").innerHTML = r.cartes.map((k, i) => {
     const it = items.find(x => x.chemin === k.chemin);
     return `<button type="button" data-tr="${i}" class="${i === r.choix ? "on" : ""}" ${k.chemin ? "" : "disabled"}>
       ${image(it?.vignette, "trimg")}<span>${esc(k.nom || "?")}</span>${k.prix != null ? pl(k.prix) : ""}
-      <em>${i === r.choix ? esc(t("trAjoute")) : k.a_moi ? esc(t("trAMoi")) : ""}</em></button>`;
+      <em>${i === r.choix ? esc(t("trAjoute")) : k.a_moi ? esc(t("trAMoi")) : k.manuel ? esc(t("trManuel")) : ""}</em></button>`;
   }).join("");
   box.hidden = false;
   clearTimeout(toastRel.cache);
@@ -2180,6 +2196,25 @@ $("#trCartes").addEventListener("click", async e => {
   try { toastRelique(await api("/api/recompense/choisir", { id: toastRel.id, choix: +b.dataset.tr })); } catch (err) {}
 });
 $("#trOk").addEventListener("click", () => $("#toastRelique").hidden = true);
+// aucune carte n'est la bonne : on retire l'ajout, puis on peut taper le bon item
+let trNoms = null;
+$("#trAucune").addEventListener("click", async () => {
+  try { toastRelique(await api("/api/recompense/choisir", { id: toastRel.id, choix: -1 })); } catch (err) {}
+  $("#trRecherche").hidden = false;
+  $("#trItem").placeholder = t("trChercher");
+  $("#trItem").value = "";
+  $("#trItem").focus();
+  if (!trNoms) {
+    try { trNoms = await api("/api/recompenses-possibles", { lang }); } catch (err) { trNoms = []; }
+    $("#trListe").innerHTML = trNoms.map(x => `<option value="${esc(x.nom)}"></option>`).join("");
+  }
+});
+$("#trItem").addEventListener("change", async e => {
+  const x = (trNoms || []).find(n => n.nom === e.target.value);
+  if (!x) return;
+  try { toastRelique(await api("/api/recompense/choisir", { id: toastRel.id, chemin: x.chemin })); } catch (err) {}
+  $("#trRecherche").hidden = true;
+});
 
 // ---------------------------------------------------------------- premier lancement
 let bienvenueFaite = false;

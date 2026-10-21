@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.12.0"
+VERSION = "1.12.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1365,6 +1365,24 @@ REWARDS = []
 _reward_id = [0]
 
 
+_relic_names = {}
+
+
+def relic_reward_names(lang):
+    """{chemin: nom} de toutes les recompenses de reliques (pour corriger a la main)."""
+    if lang not in _relic_names:
+        g = game()
+        out = {}
+        for rel in g.ex["relics"].values():
+            for r in (g.rewards().get(rel.get("rewardManifest")) or [[]])[0]:
+                path = r["type"].replace("/StoreItems/", "/", 1)
+                if path not in out:
+                    nom = g.name(path, lang) or path.rsplit("/", 1)[-1]
+                    out[path] = re.sub(r"<[^>]*>\s*", "", nom)  # ex. « <ARCHWING> Odonata Prime »
+        _relic_names[lang] = out
+    return _relic_names[lang]
+
+
 def relic_reward_done(info):
     """Appele par l'overlay a la fermeture de l'ecran de recompenses. Par defaut on ajoute TA
     recompense (lue dans le journal du jeu, exacte) ; l'interface permet d'en choisir une autre."""
@@ -1384,7 +1402,7 @@ def inventory_with_rewards(inv):
     inv = dict(inv)
     ajout = {}
     for r in REWARDS:
-        c = r["cartes"][r["choix"]] if r["choix"] < len(r["cartes"]) else None
+        c = r["cartes"][r["choix"]] if 0 <= r["choix"] < len(r["cartes"]) else None  # -1 = aucune
         path = c and c.get("chemin")
         if not path:
             continue
@@ -1629,11 +1647,27 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, {"actif": bool(CHAT and CHAT.enabled)})
             elif u.path == "/api/recompense/choisir":  # « ce n'est pas celle-la » : autre carte prise
                 r = next((x for x in REWARDS if x["id"] == int(body.get("id") or 0)), None)
-                if not r or not 0 <= int(body.get("choix", -1)) < len(r["cartes"]):
+                if not r:
                     raise ValueError("recompense inconnue")
-                r["choix"] = int(body["choix"])
+                if body.get("chemin"):  # aucune carte n'etait la bonne : item choisi a la main
+                    path = str(body["chemin"])
+                    if path not in relic_reward_names(CURRENT_LANG[0]):
+                        raise ValueError("item inconnu")
+                    r["cartes"] = [c for c in r["cartes"] if not c.get("manuel")] + [
+                        {"chemin": path, "nom": game().name(path, CURRENT_LANG[0]), "prix": None,
+                         "a_moi": False, "manuel": True}]
+                    r["choix"] = len(r["cartes"]) - 1
+                elif int(body.get("choix", -2)) == -1:  # aucune : on n'ajoute rien
+                    r["choix"] = -1
+                elif 0 <= int(body.get("choix", -2)) < len(r["cartes"]):
+                    r["choix"] = int(body["choix"])
+                else:
+                    raise ValueError("choix inconnu")
                 STATE.version += 1
                 self.send(200, r)
+            elif u.path == "/api/recompenses-possibles":  # pour choisir l'item a la main
+                names = relic_reward_names(body.get("lang") if body.get("lang") in LANGS else "fr")
+                self.send(200, sorted(({"chemin": k, "nom": v} for k, v in names.items()), key=lambda x: x["nom"]))
             elif u.path == "/api/overlay":
                 if OVERLAY:
                     OVERLAY.enabled = bool(body.get("actif"))
