@@ -48,11 +48,14 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.12.5"
+VERSION = "1.12.6"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
 OLD_EXE_ASSET = "InventaireWarframe.exe"  # ancien nom, encore publie le temps que tout le monde passe en 1.9.1+
+# Warframe Market demande que chaque app s'identifie : sans ce nom, Cloudflare bloque toutes les
+# requetes (page « Just a moment... », erreur 403), connexion et prix compris.
+pi.HEADERS["User-Agent"] = f"LotusDesk/{VERSION} (+https://github.com/{UPDATE_REPO})"
 
 FROZEN = getattr(sys, "frozen", False)
 BASE = Path(sys.executable).resolve().parent if FROZEN else Path(__file__).resolve().parent
@@ -486,8 +489,10 @@ class Account:
                           json={"auth_type": "header", "email": email, "password": password,
                                 "device_id": self.device})
         if not r.ok:
-            raise RuntimeError("identifiants_refuses" if r.status_code in (400, 401, 403)
-                               else wfm_error(r))
+            # 403 avec une page HTML = blocage anti-robot de Cloudflare, pas un mauvais mot de passe
+            bloque = r.status_code in (403, 429, 503) and "html" in r.headers.get("Content-Type", "")
+            raise RuntimeError("wfm_bloque" if bloque else
+                               "identifiants_refuses" if r.status_code in (400, 401, 403) else wfm_error(r))
         auth = r.headers.get("Authorization", "")
         if not auth.startswith("JWT "):
             raise RuntimeError("connexion_impossible")
@@ -636,7 +641,7 @@ class Presence:
     def _open(self, token):
         import websocket  # websocket-client
         ws = websocket.WebSocketApp(
-            WS_URL, subprotocols=["wfm"], header={"User-Agent": "lotus-desk"},
+            WS_URL, subprotocols=["wfm"], header={"User-Agent": pi.HEADERS["User-Agent"]},
             # le statut n'est accepte qu'une fois l'authentification confirmee (signIn:ok)
             on_open=lambda w: self._send("@wfm|cmd/auth/signIn", {"token": token}),
             on_message=self._on_message,
