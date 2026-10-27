@@ -1425,7 +1425,7 @@ def version_tuple(v):
 # Boite aux lettres de l'equipe (Cloudflare Worker, dossier serveur/) : signalements des utilisateurs,
 # erreurs automatiques anonymes, et onglet Modo (lecture seulement avec une cle modo, jamais dans le code).
 # Vide = signalement, erreurs auto et mode modo desactives.
-MODO_URL = ""
+MODO_URL = "https://lotusdesk-modo.gobinthib99.workers.dev"
 AIDE_FILE = BASE / "reglages_aide.json"      # {"erreurs_auto": bool}
 INSTALL_FILE = BASE / "identifiant.txt"      # identifiant anonyme au hasard (compter les utilisateurs touches)
 MODO_FILE = BASE / "modo.dat"                # cle modo chiffree (DPAPI) sur ce PC
