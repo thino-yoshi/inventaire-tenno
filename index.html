@@ -469,6 +469,32 @@
   .info-bientot { text-align: center; padding: 48px 20px; color: var(--muted); max-width: 640px; margin: 0 auto; }
   .info-bientot b { display: block; color: var(--gold); font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
   .info-form { max-width: 680px; }
+  .info-version b { cursor: default; user-select: none; }
+  /* onglet Modo */
+  .pages .btn-modo { position: relative; }
+  #modoNb { position: absolute; top: 3px; right: 5px; min-width: 16px; padding: 0 4px; border-radius: 8px;
+            background: var(--red); color: #fff; font-size: 10px; font-style: normal; line-height: 16px; }
+  #modoNb[hidden] { display: none; }
+  .modo-tete { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; padding: 16px 0 12px; }
+  .modo-titre { color: var(--muted); font-weight: 400; font-size: 13px; }
+  .modo-grille { display: grid; grid-template-columns: 340px 1fr; gap: 14px; align-items: start; }
+  .modo-liste { display: flex; flex-direction: column; gap: 6px; max-height: 70vh; overflow: auto; }
+  .modo-item { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; background: var(--panel);
+               border: 1px solid var(--line); cursor: pointer; text-align: left; color: var(--text); clip-path: none; }
+  .modo-item.on { border-color: var(--gold); background: color-mix(in srgb, var(--gold) 10%, var(--panel)); }
+  .modo-item b { display: block; font-size: 13px; font-weight: 600; letter-spacing: 0; }
+  .modo-item small { color: var(--muted); font-size: 11px; font-weight: 400; letter-spacing: 0; }
+  .modo-pt { width: 9px; height: 9px; border-radius: 50%; margin-top: 5px; flex: none; background: var(--muted); }
+  .modo-pt.nouveau { background: var(--red); } .modo-pt.en_cours { background: var(--gold); }
+  .modo-vide { color: var(--muted); padding: 24px 8px; text-align: center; }
+  .modo-meta { font-size: 12px; margin: 4px 0 12px; color: var(--muted); }
+  .modo-msg { background: var(--bg); border: 1px solid var(--line); padding: 12px; line-height: 1.5; margin-bottom: 12px; white-space: pre-wrap; }
+  .modo-logs { margin-bottom: 8px; } .modo-logs summary { cursor: pointer; color: var(--gold); font-size: 13px; }
+  .modo-logs pre { background: var(--bg); border: 1px solid var(--line); padding: 10px; font-size: 11px; white-space: pre-wrap;
+                   margin: 6px 0 0; color: var(--muted); max-height: 320px; overflow: auto; }
+  .modo-actions { margin-top: 12px; gap: 10px; flex-wrap: wrap; }
+  .modo-actions input { flex: 1; min-width: 200px; background: var(--bg); color: var(--text); border: 1px solid var(--line); padding: 7px 10px; font: inherit; }
+  @media (max-width: 800px) { .modo-grille { grid-template-columns: 1fr; } }
   a.bouton { background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 33%, transparent);
              padding: 7px 12px; text-decoration: none; clip-path: var(--cut); letter-spacing: 1px; font-weight: 600; font-size: 14px; }
   a.bouton:hover { background: color-mix(in srgb, var(--gold) 20%, transparent); }
@@ -565,6 +591,7 @@
     <button data-p="market" data-t="pMarket"></button>
     <button data-p="info" data-t="pInfo"></button>
     <button data-p="parametres" data-t="pParam"></button>
+    <button data-p="modo" id="btnModo" class="btn-modo" hidden>Modo<i id="modoNb" hidden></i></button>
     <button type="button" id="btnChat" class="btn-chat"><span data-t="chat"></span><i id="chatNb" hidden></i></button>
   </nav>
 </header>
@@ -632,6 +659,19 @@
     <div class="boutons">
       <button type="button" id="coAnnuler" data-t="annuler"></button>
       <button type="submit" id="coBtn" data-t="coBtn"></button>
+    </div>
+  </form>
+</dialog>
+<dialog id="dlgModo">
+  <form id="formModo" method="dialog">
+    <h2 data-t="modoTitre"></h2>
+    <p class="note" id="modoEtat"></p>
+    <label class="champ" id="modoChamp"><span data-t="modoCle"></span><input type="password" id="modoCle" autocomplete="off"></label>
+    <div class="msg err" id="modoMsg"></div>
+    <div class="boutons">
+      <button type="button" id="modoAnnuler" data-t="annuler"></button>
+      <button type="button" id="modoOff" data-t="modoOff" hidden></button>
+      <button type="submit" id="modoOn" data-t="modoOn"></button>
     </div>
   </form>
 </dialog>
@@ -821,6 +861,21 @@
       <p class="info-mention" data-t="sigInfo"></p></div>
   </div>
 </section>
+<!-- ============ onglet Modo : seulement pour l'equipe (cle modo verifiee par le serveur) ============ -->
+<section class="page" id="pageModo" hidden>
+  <nav class="sous-pages" id="sousModo">
+    <button type="button" data-m="signalements"></button>
+    <button type="button" data-m="erreurs"></button>
+  </nav>
+  <div class="modo-tete">
+    <div><b class="modo-titre" id="modoQui"></b></div>
+    <div class="segment petit-seg" id="modoFiltre"></div>
+  </div>
+  <div class="modo-grille">
+    <div class="modo-liste" id="modoListe"></div>
+    <div class="carte modo-detail" id="modoDetail"></div>
+  </div>
+</section>
 <!-- ============ onglet Profils : connexion, reglages, mises a jour ============ -->
 <section class="page reglages" id="pageParametres" hidden>
   <div class="carte"><h2 data-t="sCompte"></h2>
@@ -830,6 +885,9 @@
       <button id="btnJeu" data-t="lire"></button></div>
     <div class="ligne-r"><button id="btnPrix" data-t="rafraichir"></button><span id="etat"></span></div>
     <div class="ligne-r"><span data-t="seuilLbl"></span><select id="seuil"></select></div></div>
+  <div class="carte"><h2 data-t="aideTitre"></h2>
+    <div class="ligne-r"><label class="auto"><input type="checkbox" id="erreursAuto" checked> <span data-t="aideErreurs"></span></label></div>
+    <div class="ligne-r"><small class="muted" data-t="aideExplique"></small></div></div>
   <div class="carte"><h2 data-t="sLangue"></h2>
     <div class="ligne-r"><select id="langue"></select></div></div>
   <div class="carte"><h2 data-t="sApparence"></h2>
@@ -1206,9 +1264,23 @@ const T3 = {
     sigSub: "Décris ce qui ne va pas, le plus précisément possible : ce que tu faisais, ce qui s'est passé.",
     sigPlaceholder: "Ex. : l'overlay n'apparaît pas quand j'ouvre une relique Axi en escouade…",
     sigJournaux: "Joindre la version et les journaux de l'appli (aide à trouver le problème)",
-    sigBtn: "Préparer l'e-mail",
-    sigInfo: "Ta messagerie s'ouvre avec le message prêt. Si les journaux sont joints, le dossier s'ouvre aussi avec le fichier sélectionné : glisse-le dans l'e-mail, puis envoie.",
-    sigOk: "C'est prêt : vérifie ta messagerie.", message_vide: "Écris d'abord ton message.", adresse_absente: "Signalement indisponible pour l'instant.",
+    sigBtn: "Envoyer",
+    sigInfo: "Ton message part directement chez l'équipe Lotus Desk (Mavis et Thigrou). Pas besoin d'e-mail ni de compte.",
+    sigOk: "✓ Envoyé, merci ! On regarde ça au plus vite.", message_vide: "Écris d'abord ton message.",
+    signalement_indisponible: "Signalement indisponible pour l'instant.", trop_de_messages: "Trop de messages envoyés : réessaie dans une heure.",
+    envoi_impossible: "Envoi impossible (pas de connexion ?). Réessaie plus tard.",
+    aideTitre: "Aider Lotus Desk", aideErreurs: "Envoyer les erreurs automatiquement (anonyme)",
+    aideExplique: "Quand l'appli rencontre un problème, elle envoie la version, le type d'erreur et quelques lignes du journal, sans pseudo ni nom. Ça nous aide à corriger plus vite.",
+    modoTitre: "Mode modo", modoCle: "Clé modo", modoOn: "Activer", modoOff: "Désactiver sur ce PC",
+    modoActif: q => `Activé sur ce PC pour ${q}.`, modoInfo: "Réservé à l'équipe Lotus Desk.",
+    cle_refusee: "Clé refusée.", modo_inactif: "Mode modo désactivé.",
+    modoSig: n => `Signalements${n ? ` (${n})` : ""}`, modoErr: n => `Erreurs auto${n ? ` (${n})` : ""}`,
+    modoConnecte: q => `Connecté en modo : ${q}`, modoFiltres: { nouveau: "Nouveaux", en_cours: "En cours", regle: "Réglés", tous: "Tous" },
+    modoStatuts: { nouveau: "Nouveau", en_cours: "En cours", regle: "Réglé" }, modoVide: "Rien ici. 🎉",
+    modoChoisir: "Choisis un élément dans la liste.", modoStatut: "Statut :", modoNote: "Note interne (ex. corrigé en 1.13.1)",
+    modoSuppr: "Supprimer", modoSupprOk: "Supprimer définitivement ?", modoPris: q => `pris par ${q}`,
+    modoJournaux: "Journaux joints", modoSansJournaux: "Pas de journaux joints.", modoFois: (f, u) => `${f} fois · ${u} utilisateur(s)`,
+    modoVersions: v => `versions ${v}`, modoPremiere: "première", modoDerniere: "dernière", modoExtrait: "Extrait",
     presTip: "Tant que Warframe tourne, tu apparais « en jeu » sur Warframe Market : tes offres passent devant celles des vendeurs hors ligne.",
     alertes: "Alertes", alDepasse: (n, v, p, m) => `${n} : ${v} vend à ${p}p (toi ${m}p)`, aligner: p => `Aligner à ${p}p`,
     alSouhait: (n, p, v, max) => `${n} à ${p}p chez ${v} (ton max : ${max}p)`, copierAchat: "Copier le message",
@@ -1312,9 +1384,23 @@ const T3 = {
     sigSub: "Describe what's wrong as precisely as you can: what you were doing, what happened.",
     sigPlaceholder: "E.g.: the overlay doesn't show when I open an Axi relic in a squad…",
     sigJournaux: "Attach the app version and logs (helps find the problem)",
-    sigBtn: "Prepare the e-mail",
-    sigInfo: "Your mail app opens with the message ready. If logs are attached, the folder also opens with the file selected: drag it into the e-mail, then send.",
-    sigOk: "Ready: check your mail app.", message_vide: "Write your message first.", adresse_absente: "Reporting is unavailable for now.",
+    sigBtn: "Send",
+    sigInfo: "Your message goes straight to the Lotus Desk team (Mavis and Thigrou). No e-mail or account needed.",
+    sigOk: "✓ Sent, thanks! We'll look into it soon.", message_vide: "Write your message first.",
+    signalement_indisponible: "Reporting is unavailable for now.", trop_de_messages: "Too many messages sent: try again in an hour.",
+    envoi_impossible: "Couldn't send (no connection?). Try again later.",
+    aideTitre: "Help Lotus Desk", aideErreurs: "Send errors automatically (anonymous)",
+    aideExplique: "When the app hits a problem, it sends the version, the error type and a few log lines, with no username or name. It helps us fix things faster.",
+    modoTitre: "Mod mode", modoCle: "Mod key", modoOn: "Activate", modoOff: "Turn off on this PC",
+    modoActif: q => `Active on this PC for ${q}.`, modoInfo: "For the Lotus Desk team only.",
+    cle_refusee: "Key refused.", modo_inactif: "Mod mode is off.",
+    modoSig: n => `Reports${n ? ` (${n})` : ""}`, modoErr: n => `Auto errors${n ? ` (${n})` : ""}`,
+    modoConnecte: q => `Mod: ${q}`, modoFiltres: { nouveau: "New", en_cours: "In progress", regle: "Fixed", tous: "All" },
+    modoStatuts: { nouveau: "New", en_cours: "In progress", regle: "Fixed" }, modoVide: "Nothing here. 🎉",
+    modoChoisir: "Pick an item in the list.", modoStatut: "Status:", modoNote: "Internal note (e.g. fixed in 1.13.1)",
+    modoSuppr: "Delete", modoSupprOk: "Delete for good?", modoPris: q => `taken by ${q}`,
+    modoJournaux: "Attached logs", modoSansJournaux: "No logs attached.", modoFois: (f, u) => `${f} times · ${u} user(s)`,
+    modoVersions: v => `versions ${v}`, modoPremiere: "first", modoDerniere: "last", modoExtrait: "Excerpt",
     presTip: "While Warframe is running you show as “in game” on Warframe Market: your orders rank above offline sellers.",
     alertes: "Alerts", alDepasse: (n, v, p, m) => `${n}: ${v} sells at ${p}p (you ${m}p)`, aligner: p => `Match at ${p}p`,
     alSouhait: (n, p, v, max) => `${n} at ${p}p from ${v} (your max: ${max}p)`, copierAchat: "Copy message",
@@ -2070,6 +2156,7 @@ async function surveiller() {
     toastRelique(e.recompense);
     if (e.version !== version && version !== -1 && e.version > 0) chargerInventaire(false);
     presence = e.presence || {};
+    modoEtat(e.modo || {});
     $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
     for (const b of $("#presenceAuto").querySelectorAll("button"))
       b.classList.toggle("on", (b.dataset.pres === "1") === !!presence.auto);
@@ -2271,9 +2358,9 @@ $("#pOk").addEventListener("click", () => {
 // Inventaire | Market (mes ventes, alertes) | Info / aide | Profils (connexion, réglages, mises à jour)
 let page = "inventaire";
 try { page = localStorage.getItem("page") || "inventaire"; } catch (e) {}
-const PAGES = { inventaire: "#pageInventaire", market: "#pageMarket", info: "#pageInfo", parametres: "#pageParametres" };
+const PAGES = { inventaire: "#pageInventaire", market: "#pageMarket", info: "#pageInfo", parametres: "#pageParametres", modo: "#pageModo" };
 function montrerPage(p) {
-  if (!PAGES[p]) p = "inventaire";
+  if (!PAGES[p] || (p === "modo" && !(window.modo && modo.qui))) p = "inventaire";
   page = p;
   for (const [k, sel] of Object.entries(PAGES)) $(sel).hidden = k !== p;
   $("#recherche").hidden = p !== "inventaire";
@@ -2281,6 +2368,7 @@ function montrerPage(p) {
   try { localStorage.setItem("page", p); } catch (e) {}
   if (p === "market") montrerSous(sousMarket);
   if (p === "info") { rendreInfo(); if (infoNouv === null) chargerInfo(); }
+  if (p === "modo") chargerModo();
 }
 // ---------------------------------------------------------------- onglet Info / aide
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
@@ -2333,6 +2421,7 @@ async function chargerInfo() {
   try {
     const r = await api("/api/nouveautes");
     infoNouv = r.liste || []; infoSupport = !!r.support; window.versionApp = r.version;
+    if (r.aide) $("#erreursAuto").checked = r.aide.erreurs_auto !== false;
   } catch (e) { infoNouv = []; }
   if (page === "info") rendreInfo();
 }
@@ -2353,6 +2442,116 @@ $("#sigBtn").addEventListener("click", async () => {
   } catch (err) { $("#sigEtat").textContent = traduitErreur(err.message); }
   b.disabled = false;
 });
+// ---------------------------------------------------------------- mode modo (équipe seulement)
+var modo = { qui: null, nb: null, type: "signalements", filtre: "nouveau", liste: [], sel: null, clics: [] };
+function modoEtat(m) {
+  const avant = modo.qui;
+  modo.qui = m.qui || null; modo.nb = m.nb || null;
+  $("#btnModo").hidden = !modo.qui;
+  const n = modo.nb ? modo.nb.signalements + modo.nb.erreurs : 0;
+  $("#modoNb").hidden = !n; $("#modoNb").textContent = n > 99 ? "99+" : n;
+  if (avant && !modo.qui && page === "modo") montrerPage("info");
+  if (page === "modo") modoOnglets();
+}
+function modoOnglets() {
+  const nb = modo.nb || {};
+  for (const b of $("#sousModo").querySelectorAll("button")) {
+    b.textContent = b.dataset.m === "erreurs" ? t("modoErr", nb.erreurs) : t("modoSig", nb.signalements);
+    b.classList.toggle("on", b.dataset.m === modo.type);
+  }
+  $("#modoQui").textContent = modo.qui ? t("modoConnecte", modo.qui) : "";
+  $("#modoFiltre").innerHTML = Object.entries(t("modoFiltres")).map(([k, v]) =>
+    `<button type="button" data-f="${k}" class="${k === modo.filtre ? "on" : ""}">${esc(v)}</button>`).join("");
+}
+async function chargerModo() {
+  modoOnglets();
+  try { modo.liste = (await api("/api/modo/liste?type=" + modo.type)).liste || []; }
+  catch (e) { modo.liste = []; $("#modoDetail").innerHTML = `<div class="modo-vide">${esc(traduitErreur(e.message))}</div>`; }
+  rendreModo();
+}
+const quand = s => s ? new Date(s * 1000).toLocaleString(lang === "fr" ? "fr-FR" : "en-GB", { dateStyle: "short", timeStyle: "short" }) : "";
+function rendreModo() {
+  const l = modo.liste.filter(x => modo.filtre === "tous" || x.statut === modo.filtre);
+  const err = modo.type === "erreurs";
+  $("#modoListe").innerHTML = l.length ? l.map(x => {
+    const titre = err ? (x.detail || x.code) : (x.message || "").split("\n")[0].slice(0, 90);
+    const sous = err ? `${t("modoFois", x.fois, x.utilisateurs)} · ${quand(x.derniere)}`
+      : `${quand(x.cree)} · v${x.version || "?"}${x.journaux ? " · " + t("modoJournaux").toLowerCase() : ""}`;
+    return `<button type="button" class="modo-item${x.id === modo.sel ? " on" : ""}" data-id="${x.id}"><span class="modo-pt ${esc(x.statut)}"></span>
+      <span><b>${esc(titre)}</b><small>${esc(sous)}${x.pris_par ? " · " + esc(t("modoPris", x.pris_par)) : ""}</small></span></button>`;
+  }).join("") : `<div class="modo-vide">${esc(t("modoVide"))}</div>`;
+  const x = modo.liste.find(i => i.id === modo.sel);
+  if (!x) { $("#modoDetail").innerHTML = `<div class="modo-vide">${esc(t("modoChoisir"))}</div>`; return; }
+  const statuts = Object.entries(t("modoStatuts")).map(([k, v]) =>
+    `<button type="button" data-s="${k}" class="${k === x.statut ? "on" : ""}">${esc(v)}</button>`).join("");
+  const tete = err ? `<h2>${esc(x.detail || x.code)}</h2>
+      <div class="modo-meta">${esc(x.code)} · ${esc(t("modoFois", x.fois, x.utilisateurs))} · ${esc(t("modoVersions", x.versions))}
+        · ${esc(t("modoPremiere"))} ${esc(quand(x.premiere))} · ${esc(t("modoDerniere"))} ${esc(quand(x.derniere))}${x.pris_par ? " · " + esc(t("modoPris", x.pris_par)) : ""}</div>`
+    : `<h2>${esc((x.message || "").split("\n")[0].slice(0, 90))}</h2>
+      <div class="modo-meta">${esc(quand(x.cree))} · Lotus Desk ${esc(x.version)} · ${esc(x.os)} · ${esc(x.langue)}${x.pris_par ? " · " + esc(t("modoPris", x.pris_par)) : ""}</div>
+      <div class="modo-msg">${esc(x.message)}</div>`;
+  const logs = err ? (x.extrait ? `<details class="modo-logs" open><summary>${esc(t("modoExtrait"))}</summary><pre>${esc(x.extrait)}</pre></details>` : "")
+    : x.journaux ? `<details class="modo-logs"><summary>${esc(t("modoJournaux"))}</summary><pre>${esc(x.journaux)}</pre></details>`
+    : `<p class="muted">${esc(t("modoSansJournaux"))}</p>`;
+  $("#modoDetail").innerHTML = tete + logs + `<div class="ligne-r modo-actions"><span class="muted">${esc(t("modoStatut"))}</span>
+    <div class="segment petit-seg" id="modoStatuts">${statuts}</div>
+    <input type="text" id="modoNote" maxlength="500" placeholder="${esc(t("modoNote"))}" value="${esc(x.note || "")}">
+    <button type="button" id="modoSuppr">${esc(t("modoSuppr"))}</button></div>`;
+}
+async function modoMaj(corps) {
+  try { await api("/api/modo/maj", { type: modo.type, id: modo.sel, ...corps }); } catch (e) { alert(traduitErreur(e.message)); }
+  await chargerModo();
+}
+$("#sousModo").addEventListener("click", e => {
+  const b = e.target.closest("button[data-m]");
+  if (b) { modo.type = b.dataset.m; modo.sel = null; chargerModo(); }
+});
+$("#modoFiltre").addEventListener("click", e => {
+  const b = e.target.closest("button[data-f]");
+  if (b) { modo.filtre = b.dataset.f; modoOnglets(); rendreModo(); }
+});
+$("#modoListe").addEventListener("click", e => {
+  const b = e.target.closest("button[data-id]");
+  if (b) { modo.sel = Number(b.dataset.id); rendreModo(); }
+});
+$("#modoDetail").addEventListener("click", e => {
+  const b = e.target.closest("#modoStatuts button[data-s]");
+  if (b) modoMaj({ statut: b.dataset.s });
+  if (e.target.closest("#modoSuppr") && confirm(t("modoSupprOk"))) { modoMaj({ supprimer: true }); modo.sel = null; }
+});
+$("#modoDetail").addEventListener("change", e => {
+  if (e.target.id === "modoNote") modoMaj({ note: e.target.value });
+});
+// 5 clics rapides sur le numéro de version (Info / aide → À propos) : fenêtre de la clé modo
+$("#infoContenu").addEventListener("click", e => {
+  if (!e.target.closest(".info-version b")) return;
+  const now = Date.now();
+  modo.clics = modo.clics.filter(x => now - x < 3000).concat(now);
+  if (modo.clics.length < 5) return;
+  modo.clics = [];
+  $("#modoMsg").textContent = ""; $("#modoCle").value = "";
+  $("#modoEtat").textContent = modo.qui ? t("modoActif", modo.qui) : t("modoInfo");
+  $("#modoChamp").hidden = $("#modoOn").hidden = !!modo.qui;
+  $("#modoOff").hidden = !modo.qui;
+  $("#dlgModo").showModal();
+});
+$("#modoAnnuler").addEventListener("click", () => $("#dlgModo").close());
+$("#formModo").addEventListener("submit", async e => {
+  e.preventDefault();
+  $("#modoMsg").textContent = "";
+  try {
+    const r = await api("/api/modo/activer", { cle: $("#modoCle").value });
+    $("#modoCle").value = "";
+    modoEtat({ qui: r.qui });
+    $("#dlgModo").close();
+    montrerPage("modo");
+  } catch (err) { $("#modoMsg").textContent = traduitErreur(err.message); }
+});
+$("#modoOff").addEventListener("click", async () => {
+  try { await api("/api/modo/desactiver", {}); } catch (e) {}
+  modoEtat({}); $("#dlgModo").close();
+});
+$("#erreursAuto").addEventListener("change", e => api("/api/aide", { erreurs_auto: e.target.checked }).catch(() => {}));
 $("#pages").addEventListener("click", e => {
   const b = e.target.closest("button[data-p]");
   if (b) montrerPage(b.dataset.p);

@@ -525,6 +525,8 @@ class Account:
         if not r.ok:
             # 403 avec une page HTML = blocage anti-robot de Cloudflare, pas un mauvais mot de passe
             bloque = r.status_code in (403, 429, 503) and "html" in r.headers.get("Content-Type", "")
+            if bloque:
+                report_error("wfm_bloque", f"connexion WFM : HTTP {r.status_code}")
             raise RuntimeError("wfm_bloque" if bloque else
                                "identifiants_refuses" if r.status_code in (400, 401, 403) else wfm_error(r))
         auth = r.headers.get("Authorization", "")
@@ -1420,9 +1422,17 @@ def version_tuple(v):
 
 
 # ================================================================ onglet Info / aide
-# Adresse qui recoit les signalements (visible dans le code public). Vide = sous-onglet cache.
-SUPPORT_EMAIL = ""
+# Boite aux lettres de l'equipe (Cloudflare Worker, dossier serveur/) : signalements des utilisateurs,
+# erreurs automatiques anonymes, et onglet Modo (lecture seulement avec une cle modo, jamais dans le code).
+# Vide = signalement, erreurs auto et mode modo desactives.
+MODO_URL = ""
+AIDE_FILE = BASE / "reglages_aide.json"      # {"erreurs_auto": bool}
+INSTALL_FILE = BASE / "identifiant.txt"      # identifiant anonyme au hasard (compter les utilisateurs touches)
+MODO_FILE = BASE / "modo.dat"                # cle modo chiffree (DPAPI) sur ce PC
 _news = {"t": 0, "liste": []}
+_aide = {"erreurs_auto": bool((load_json(AIDE_FILE, {}) or {}).get("erreurs_auto", True))}
+_err_envoyees = {}                           # (code, detail) -> derniere fois (une fois par 10 min)
+MODO = {"cle": None, "qui": None, "nb": None, "dernier": 0}
 
 
 def nouveautes():
@@ -1450,31 +1460,137 @@ def log_tail(name, n=150):
         return "(absent)"
 
 
+def _os_name():
+    import platform
+    return f"{platform.system()} {platform.release()}"
+
+
+def install_id():
+    try:
+        return INSTALL_FILE.read_text().strip()
+    except Exception:
+        i = __import__("uuid").uuid4().hex
+        try:
+            INSTALL_FILE.write_text(i)
+        except Exception:
+            pass
+        return i
+
+
 def signalement(message, journaux):
-    """Prepare un signalement : fichier texte a joindre + messagerie ouverte avec le message."""
-    if not SUPPORT_EMAIL:
-        raise RuntimeError("adresse_absente")
+    """Envoie un signalement a l'equipe (boite aux lettres), avec la fin des journaux si accepte."""
+    if not MODO_URL:
+        raise RuntimeError("signalement_indisponible")
     message = (message or "").strip()
     if not message:
         raise RuntimeError("message_vide")
-    from urllib.parse import quote
-    dossier = BASE / "signalements"
-    dossier.mkdir(exist_ok=True)
-    fichier = dossier / time.strftime("signalement_%Y-%m-%d_%H-%M.txt")
-    parts = [f"Lotus Desk {VERSION} - {time.strftime('%d/%m/%Y %H:%M')}", "", "MESSAGE", message]
-    if journaux:
-        parts += ["", "=== app.log (fin) ===", log_tail("app.log"), "", "=== overlay.log (fin) ===", log_tail("overlay.log")]
-    fichier.write_text("\n".join(parts), encoding="utf-8")
-    corps = (message[:1500] + f"\n\n-- Lotus Desk {VERSION}"
-             + (f"\nFichier a joindre : {fichier}" if journaux else ""))
-    url = f"mailto:{SUPPORT_EMAIL}?subject={quote(f'Lotus Desk {VERSION} : probleme')}&body={quote(corps)}"
+    logs = ("=== app.log (fin) ===\n" + log_tail("app.log") + "\n\n=== overlay.log (fin) ===\n"
+            + log_tail("overlay.log")) if journaux else ""
+    r = requests.post(f"{MODO_URL}/signalement", timeout=15, headers=pi.HEADERS,
+                      json={"message": message[:5000], "version": VERSION, "langue": CURRENT_LANG[0],
+                            "os": _os_name(), "journaux": logs})
+    if r.status_code == 429:
+        raise RuntimeError("trop_de_messages")
+    if not r.ok:
+        raise RuntimeError("envoi_impossible")
+    return {"ok": True}
+
+
+def report_error(code, detail="", extrait=""):
+    """Erreur automatique ANONYME (version, type d'erreur, quelques lignes) : aide l'equipe a corriger.
+    Desactivable dans Profils. Meme erreur envoyee au plus une fois par 10 min."""
+    if not (MODO_URL and _aide["erreurs_auto"]):
+        return
+    k = (code, detail)
+    if time.time() - _err_envoyees.get(k, 0) < 600:
+        return
+    _err_envoyees[k] = time.time()
+
+    def envoyer():
+        try:
+            requests.post(f"{MODO_URL}/erreur", timeout=10, headers=pi.HEADERS,
+                          json={"code": code, "detail": str(detail)[:300], "extrait": str(extrait)[-3000:],
+                                "version": VERSION, "install": install_id()})
+        except Exception:
+            pass
+    threading.Thread(target=envoyer, daemon=True).start()
+
+
+def set_aide(erreurs_auto):
+    _aide["erreurs_auto"] = bool(erreurs_auto)
+    save_json(AIDE_FILE, _aide)
+    return dict(_aide)
+
+
+# ---------------------------------------------------------------- mode modo
+def _modo_call(method, path, body=None, cle=None):
+    if not MODO_URL:
+        raise RuntimeError("signalement_indisponible")
+    cle = cle or MODO["cle"]
+    if not cle:
+        raise RuntimeError("modo_inactif")
+    r = requests.request(method, f"{MODO_URL}{path}", timeout=15, json=body,
+                         headers={**pi.HEADERS, "X-Modo-Cle": cle})
+    if r.status_code == 403:
+        raise RuntimeError("cle_refusee")
+    if not r.ok:
+        raise RuntimeError("envoi_impossible")
+    return r.json()
+
+
+def modo_load():
+    if not pi.IS_WINDOWS:
+        return
+    try:
+        MODO["cle"] = _dpapi(base64.b64decode(MODO_FILE.read_bytes()), False).decode()
+        MODO["qui"] = _modo_call("GET", "/modo/moi")["qui"]
+    except RuntimeError as e:
+        if str(e) == "cle_refusee":  # cle changee ou retiree : on oublie
+            modo_off()
+    except Exception:
+        pass
+
+
+def modo_on(cle):
+    cle = (cle or "").strip()
+    qui = _modo_call("GET", "/modo/moi", cle=cle)["qui"]
+    MODO.update({"cle": cle, "qui": qui, "nb": None, "dernier": 0})
     if pi.IS_WINDOWS:
-        os.startfile(url)
-        if journaux:  # dossier ouvert, fichier selectionne : il n'y a plus qu'a le glisser dans l'e-mail
-            subprocess.Popen(["explorer", "/select,", str(fichier)])
-    else:
-        webbrowser.open(url)
-    return {"ok": True, "fichier": str(fichier) if journaux else None}
+        MODO_FILE.write_bytes(base64.b64encode(_dpapi(cle.encode(), True)))
+    threading.Thread(target=modo_tick, args=(False,), daemon=True).start()
+    return {"qui": qui}
+
+
+def modo_off():
+    MODO.update({"cle": None, "qui": None, "nb": None, "dernier": 0})
+    MODO_FILE.unlink(missing_ok=True)
+    return {"qui": None}
+
+
+def modo_tick(notifier=True):
+    """Compte les nouveautes ; notification Windows si un signalement ou une erreur vient d'arriver."""
+    if not MODO["qui"]:
+        return
+    nb = _modo_call("GET", "/modo/nb")
+    avant = MODO["dernier"]
+    MODO["nb"] = {"signalements": nb.get("signalements", 0), "erreurs": nb.get("erreurs", 0)}
+    MODO["dernier"] = nb.get("dernier") or 0
+    if notifier and avant and MODO["dernier"] > avant and _notify:
+        try:
+            _notify(f"{MODO['nb']['signalements']} signalement(s) et {MODO['nb']['erreurs']} erreur(s) a regarder",
+                    "Lotus Desk : Modo")
+        except Exception:
+            pass
+
+
+def modo_loop():
+    modo_load()
+    while True:
+        try:
+            modo_tick()
+        except Exception as e:
+            print("modo :", e)
+        time.sleep(120)
 
 
 def check_update():
@@ -1797,7 +1913,8 @@ class Handler(BaseHTTPRequestHandler):
                                 "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
                                             "statut": OVERLAY.status if OVERLAY else "indisponible"},
-                                "recompense": REWARDS[-1] if REWARDS else None, "attente": len(REWARDS)})
+                                "recompense": REWARDS[-1] if REWARDS else None, "attente": len(REWARDS),
+                                "modo": {"qui": MODO["qui"], "nb": MODO["nb"]}})
             elif u.path == "/api/chat":  # messages du chat du jeu (avec traduction)
                 if not CHAT:
                     return self.send(200, {"actif": False, "statut": "indisponible", "messages": []})
@@ -1812,7 +1929,11 @@ class Handler(BaseHTTPRequestHandler):
             elif u.path == "/api/baro":
                 self.send(200, baro())
             elif u.path == "/api/nouveautes":
-                self.send(200, {"version": VERSION, "liste": nouveautes(), "support": bool(SUPPORT_EMAIL)})
+                self.send(200, {"version": VERSION, "liste": nouveautes(), "support": bool(MODO_URL),
+                                "aide": dict(_aide)})
+            elif u.path == "/api/modo/liste":
+                self.send(200, _modo_call("GET", "/modo/liste?type=" + ("erreurs" if q.get("type") == "erreurs"
+                                                                         else "signalements")))
             elif u.path == "/api/alertes":
                 self.send(200, list(_alerts.values()))
             elif u.path == "/api/souhaits":
@@ -1869,6 +1990,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.send(404, {"erreur": "introuvable"})
         except Exception as e:  # l'interface affiche l'erreur
+            if not isinstance(e, RuntimeError):
+                import traceback
+                report_error("serveur_get", f"{u.path} : {type(e).__name__}", traceback.format_exc())
             self.send(500, {"erreur": str(e)})
 
     def do_POST(self):
@@ -1928,6 +2052,20 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, {"actif": bool(OVERLAY and OVERLAY.enabled)})
             elif u.path == "/api/signalement":
                 self.send(200, signalement(str(body.get("message", "")), bool(body.get("journaux"))))
+            elif u.path == "/api/aide":
+                self.send(200, set_aide(body.get("erreurs_auto")))
+            elif u.path == "/api/modo/activer":
+                self.send(200, modo_on(str(body.get("cle", ""))))
+            elif u.path == "/api/modo/desactiver":
+                self.send(200, modo_off())
+            elif u.path == "/api/modo/maj":
+                out = _modo_call("POST", "/modo/maj", {k: body.get(k) for k in ("type", "id", "statut", "note", "supprimer")
+                                                       if k in body})
+                try:
+                    modo_tick(False)
+                except Exception:
+                    pass
+                self.send(200, out)
             elif u.path == "/api/presence":
                 PRESENCE.set_auto(body.get("auto"))
                 self.send(200, {"auto": PRESENCE.auto, "statut": PRESENCE.statut})
@@ -1955,6 +2093,9 @@ class Handler(BaseHTTPRequestHandler):
             else:
                 self.send(404, {"erreur": "introuvable"})
         except Exception as e:
+            if not isinstance(e, RuntimeError):
+                import traceback
+                report_error("serveur_post", f"{u.path} : {type(e).__name__}", traceback.format_exc())
             self.send(500, {"erreur": str(e)})
 
 
@@ -2049,6 +2190,7 @@ def main():
     threading.Thread(target=shared_loop, daemon=True).start()
     threading.Thread(target=watch_loop, daemon=True).start()
     threading.Thread(target=presence_loop, daemon=True).start()
+    threading.Thread(target=modo_loop, daemon=True).start()  # mode modo (equipe) : compteur + notifications
     threading.Thread(target=update_loop, daemon=True).start()
     start_overlay()
     start_chat()

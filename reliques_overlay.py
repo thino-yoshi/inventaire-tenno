@@ -273,6 +273,13 @@ class RewardOverlay:
         self.journal_only = 0     # ecran affiche depuis le journal seul (solo) : pas d'OCR
         self.on_reward = None     # appele a la fermeture de l'ecran : ajout a l'inventaire de l'app
 
+    def report(self, code, detail, extrait=""):
+        """Erreur automatique anonyme vers l'equipe (si l'utilisateur ne l'a pas desactivee)."""
+        try:
+            self.app.report_error(code, detail, extrait)
+        except Exception:
+            pass
+
     def log(self, msg):
         """Journal de diagnostic (overlay.log) : pourquoi l'overlay s'est affiche ou non."""
         print("overlay :", msg)
@@ -450,6 +457,7 @@ class RewardOverlay:
                 import traceback
                 self.status = "erreur de lecture"
                 self.log("ERREUR " + traceback.format_exc().replace("\n", " | "))
+                self.report("overlay_erreur", traceback.format_exc().strip().splitlines()[-1][:200], traceback.format_exc())
                 return
             if len(rewards) > shown:
                 self.log(f"  affiche apres {time.time() - t0:.2f} s (essai {n} ; capture + lecture {t2 - t1:.2f} s, "
@@ -467,6 +475,7 @@ class RewardOverlay:
                 time.sleep(0.2)
         if not shown:
             self.log(f"  rien reconnu en {time.time() - t0:.1f} s ({n} essai(s))")
+            self.report("overlay_rien", "aucune carte reconnue", f"{n} essai(s) ; ocr : {OCR.info}")
         if band is not None and self.log_dir:  # derniere capture lue, pour comprendre un echec
             try:
                 band.save(Path(self.log_dir) / "overlay_derniere_capture.png")
@@ -588,6 +597,7 @@ class RewardOverlay:
         except Exception:
             import traceback
             self.log("ERREUR fiche " + traceback.format_exc().replace("\n", " | "))
+            self.report("fiche_erreur", traceback.format_exc().strip().splitlines()[-1][:200], traceback.format_exc())
 
     def fiche_labels(self, lines, lang, W):
         """Colonne de prix collee au bord droit de la fiche : {x, cote, size, titre_y, rows}.
