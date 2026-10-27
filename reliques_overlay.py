@@ -417,13 +417,15 @@ class RewardOverlay:
         W, H = shot.size
         top, bottom = int(H * 0.22), int(H * 0.62)  # bande des noms des cartes
         band = shot.crop((0, top, W, bottom)).convert("RGB")
-        band = band.resize((band.width * 2, band.height * 2))  # texte plus gros = OCR plus fiable
+        k = 2 if H <= 1440 else 1  # texte agrandi en 1080p/1440p, deja assez gros en 4K (image 4x moins lourde)
+        if k > 1:
+            band = band.resize((band.width * k, band.height * k))  # texte plus gros = OCR plus fiable
         path = Path(tempfile.gettempdir()) / f"inventaire_tenno_recompenses{n % 2}.bmp"
         band.save(path)  # BMP : ~0,01 s au lieu de ~0,5 s en PNG
         lines = ocr(path, "fr-FR" if lang == "fr" else "en-US")
         for ln in lines:  # retour en coordonnees ecran
-            ln["x"], ln["w"] = ln["x"] / 2, ln["w"] / 2
-            ln["y"], ln["h"] = ln["y"] / 2 + top, ln["h"] / 2
+            ln["x"], ln["w"] = ln["x"] / k, ln["w"] / k
+            ln["y"], ln["h"] = ln["y"] / k + top, ln["h"] / k
         return lines, W, H, lang, band
 
     def scan(self, ecran):
@@ -439,19 +441,23 @@ class RewardOverlay:
                 return
             n += 1
             try:
+                t1 = time.time()
                 lines, W, H, lang, band = self.grab(n)
+                t2 = time.time()
                 rewards = self.show_rewards(lines, W, H, lang, quiet=n > 1 and not shown)
+                t3 = time.time()
             except Exception:
                 import traceback
                 self.status = "erreur de lecture"
                 self.log("ERREUR " + traceback.format_exc().replace("\n", " | "))
                 return
             if len(rewards) > shown:
-                self.log(f"  affiche apres {time.time() - t0:.2f} s (essai {n}) : {len(rewards)} recompense(s)")
+                self.log(f"  affiche apres {time.time() - t0:.2f} s (essai {n} ; capture + lecture {t2 - t1:.2f} s, "
+                         f"rapprochement {t3 - t2:.2f} s) : {len(rewards)} recompense(s)")
                 shown = len(rewards)
                 if self.window:
                     self.window.show(rewards, SHOW_SECONDS - (time.time() - t0), getattr(self, "rect", None))
-                threading.Thread(target=self.fill_images, args=(rewards, ecran, t0), daemon=True).start()
+                threading.Thread(target=self.complete, args=(rewards, ecran, t0, lang), daemon=True).start()
             if shown:
                 extra += 1
                 if shown >= 4 or extra > 2:
@@ -471,7 +477,7 @@ class RewardOverlay:
         """Seul dans la mission : la carte est la tienne, connue exactement par le journal."""
         lang = self.app.CURRENT_LANG[0]
         own = self.known[0]
-        r = {"chemin": own, "x": 0, "y": 0, "score": 1.0, "a_moi": True, **self.value(own, lang)}
+        r = {"chemin": own, "x": 0, "y": 0, "score": 1.0, "a_moi": True, **self.value(own, lang, rapide=True)}
         r["meilleur"] = bool(r["prix"])
         self.last = {"t": time.time(), "recompenses": [r], "escouade": 1}
         self.status = f"dernier ecran ({time.strftime('%H:%M')}) : solo, recompense lue dans le journal"
@@ -482,7 +488,7 @@ class RewardOverlay:
             pass
         if self.window and self.enabled:
             self.window.show([r], SHOW_SECONDS, getattr(self, "rect", None))
-        threading.Thread(target=self.fill_images, args=([r], ecran, time.time()), daemon=True).start()
+        threading.Thread(target=self.complete, args=([r], ecran, time.time(), lang), daemon=True).start()
 
     def finish(self, ecran):
         """Ecran de recompenses ferme : on passe le resultat a l'app (ajout provisoire a l'inventaire)."""
@@ -499,15 +505,32 @@ class RewardOverlay:
         except Exception as e:
             self.log(f"ajout a l'inventaire impossible : {e}")
 
-    def fill_images(self, rewards, ecran, t0):
-        """Images manquantes telechargees apres coup, puis l'overlay est redessine avec."""
-        missing = [r for r in rewards if r.get("image") is None and r.get("_key") and r["_key"] not in self._images]
-        if not missing:
-            return
-        for r in missing:
-            self.image_bytes(r["_slug"], r["chemin"])
+    def complete(self, rewards, ecran, t0, lang):
+        """Apres le 1er affichage (prix deja connus seulement) : prix manquants, « Tu en as »,
+        pieces du set et images, calcules en arriere-plan, puis l'overlay est redessine."""
+        t1 = time.time()
+        changed = False
         for r in rewards:
-            r["image"] = self._images.get(r["_key"])
+            if r.get("chemin") and r.pop("_a_completer", False):
+                try:
+                    v = self.value(r["chemin"], lang)
+                except Exception as e:
+                    self.log(f"  details impossibles pour {r['chemin'].rsplit('/', 1)[-1]} : {e}")
+                    continue
+                for k in ("prix", "ducats", "possede", "pieces"):
+                    if v.get(k) is not None and v[k] != r.get(k):
+                        r[k], changed = v[k], True
+            if r.get("image") is None and r.get("_key"):
+                if r["_key"] not in self._images:
+                    self.image_bytes(r.get("_slug"), r["chemin"])
+                if self._images.get(r["_key"]) is not None:
+                    r["image"], changed = self._images[r["_key"]], True
+        if not changed:
+            return
+        best = max((r.get("prix") or 0 for r in rewards), default=0)
+        for r in rewards:
+            r["meilleur"] = best > 0 and r.get("prix") == best
+        self.log(f"  details completes en {time.time() - t1:.2f} s")
         if self.ecran == ecran and self.window and time.time() - t0 < SHOW_SECONDS:
             self.window.show(rewards, SHOW_SECONDS - (time.time() - t0), getattr(self, "rect", None))
 
@@ -632,7 +655,7 @@ class RewardOverlay:
                                  for grp in text_groups(col) for n in own_names), default=0)
                 r = {"x": x / 2, "y": min(ln["y"] for ln in used), "score": round(score, 2), "own_score": own_score}
                 if score >= SURE:
-                    r.update({"chemin": path, **self.value(path, lang)})
+                    r.update({"chemin": path, **self.value(path, lang, rapide=True)})
                 else:  # lecture douteuse : on prefere « ? » a un mauvais item
                     r.update({"chemin": None, "nom": "?", "prix": None, "ducats": None, "image": None,
                               "_slug": None, "_key": None, "douteux": True})
@@ -644,7 +667,7 @@ class RewardOverlay:
                 douteuses = [r for r in rewards if r.get("douteux")]
                 cible = max(douteuses or rewards, key=lambda r: r["own_score"])
                 if (cible.get("douteux") and cible["own_score"] >= 0.45) or cible["own_score"] >= 0.75:
-                    cible.update({"chemin": own, "douteux": False, **self.value(own, lang)})
+                    cible.update({"chemin": own, "douteux": False, **self.value(own, lang, rapide=True)})
             for r in rewards:
                 r["a_moi"] = r["chemin"] == own
         best = max((r["prix"] or 0 for r in rewards), default=0)
@@ -660,26 +683,43 @@ class RewardOverlay:
                      f"{len(likely)} recompenses des reliques vues")
         return rewards
 
-    def value(self, path, lang):
+    def value(self, path, lang, rapide=False):
+        """Nom, prix, ducats, image... d'une recompense.
+        rapide=True : instantane pour le 1er affichage (prix deja connus seulement, sans internet
+        ni calcul de l'inventaire) ; le reste est complete ensuite par complete()."""
         app = self.app
         g, cat = app.game(), app.catalog()
         en = g.name(path, "en")
         slug = cat.find(path, en)
         price = None
-        if slug:
+        if slug and rapide:
+            hit = app._prices.get(f"{slug}|None|None")
+            try:
+                shared = app.shared_prices(slug) if app._shared["items"] else None
+            except Exception:
+                shared = None
+            best = max((x for x in (hit, shared) if x), key=lambda x: x.get("t", 0), default=None)
+            price = best["min"] if best else None
+        elif slug:
             try:
                 price = app.prices(slug, cached_ok=True)["min"]
             except Exception:
                 pass
         ducats = cat.by_slug.get(slug, {}).get("ducats") if slug else None
         key = slug or path
-        try:  # combien on en a, et ou en est son set (pieces ✓ / ✗)
-            info = app.overlay_set_info(path, lang)
-        except Exception:
+        if rapide:
             info = {"possede": None, "pieces": None}
-        return {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
-                "image": self._images.get(key), "_slug": slug, "_key": key,
-                "possede": info.get("possede"), "pieces": info.get("pieces")}
+        else:
+            try:  # combien on en a, et ou en est son set (pieces ✓ / ✗)
+                info = app.overlay_set_info(path, lang)
+            except Exception:
+                info = {"possede": None, "pieces": None}
+        out = {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
+               "image": self._images.get(key), "_slug": slug, "_key": key,
+               "possede": info.get("possede"), "pieces": info.get("pieces")}
+        if rapide:
+            out["_a_completer"] = True
+        return out
 
     _images = {}
 
