@@ -463,6 +463,9 @@
   .segment button { border: none; border-radius: 0; background: transparent; color: var(--muted); padding: 7px 16px;
                     letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
   .segment button.on { background: var(--gold); color: var(--on-gold); }
+  /* bouton Market Connecté / Non connecté : vert quand on vend, gris quand on joue tranquille */
+  .pres-seg button[data-pres="1"].on { background: var(--green); color: #0b1a10; }
+  .pres-seg button[data-pres="0"].on { background: var(--line); color: var(--text); }
   .st-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
   .st-kpis .carte { display: flex; flex-direction: column; gap: 4px; }
   .st-corps { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; }
@@ -593,7 +596,9 @@
   <span class="jeu muted" id="jeu"></span>
   <span class="jeu muted" id="presence" hidden></span>
   <label class="auto" id="overlayBox" hidden><input type="checkbox" id="ovActif"> <span data-t="overlayLbl"></span></label>
-  <label class="auto" id="presenceAuto" hidden><input type="checkbox" id="presAuto"> <span data-t="presAuto"></span></label>
+  <div class="segment petit-seg pres-seg" id="presenceAuto" hidden>
+    <button type="button" data-pres="1" data-t="presCo"></button><button type="button" data-pres="0" data-t="presNonCo"></button>
+  </div>
   <div class="recherche" id="recherche">
     <input type="search" id="filtre">
     <label class="auto"><span data-t="trierPar"></span><select id="triSel"></select></label>
@@ -1095,7 +1100,8 @@ for (const l in T2) Object.assign(T[l], T2[l]);
 // Alertes, lots, souhaits, reliques, volumes (français + anglais ; les autres langues tombent sur l'anglais)
 const T3 = {
   fr: { pres_ingame: "WFM : en jeu", pres_connexion: "WFM : connexion…", pres_hors_ligne: "WFM : hors ligne",
-    pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto",
+    pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presCo: "● Connecté", presNonCo: "Non connecté",
+    presBtnTip: "Connecté : tu apparais « en jeu » sur Warframe Market tant que Warframe tourne (les acheteurs te contactent).\nNon connecté : tu es invisible, tu joues tranquille. Ton choix est gardé même après un redémarrage.",
     presTip: "Tant que Warframe tourne, tu apparais « en jeu » sur Warframe Market : tes offres passent devant celles des vendeurs hors ligne.",
     alertes: "Alertes", alDepasse: (n, v, p, m) => `${n} : ${v} vend à ${p}p (toi ${m}p)`, aligner: p => `Aligner à ${p}p`,
     alSouhait: (n, p, v, max) => `${n} à ${p}p chez ${v} (ton max : ${max}p)`, copierAchat: "Copier le message",
@@ -1162,7 +1168,8 @@ const T3 = {
     pseudoAcheteur: "Pseudo de l'acheteur (optionnel, ajoute /w au message)", venduOk: "Vente enregistrée.",
     aucuneOffre: "Aucune offre en vente. Mets un item en vente depuis l'inventaire.", qteVendue: "Quantité vendue" },
   en: { pres_ingame: "WFM: in game", pres_connexion: "WFM: connecting…", pres_hors_ligne: "WFM: offline",
-    pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status",
+    pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presCo: "● Online", presNonCo: "Offline",
+    presBtnTip: "Online: you show as “in game” on Warframe Market while Warframe is running (buyers can contact you).\nOffline: you are invisible and play in peace. Your choice is kept after a restart.",
     presTip: "While Warframe is running you show as “in game” on Warframe Market: your orders rank above offline sellers.",
     alertes: "Alerts", alDepasse: (n, v, p, m) => `${n}: ${v} sells at ${p}p (you ${m}p)`, aligner: p => `Match at ${p}p`,
     alSouhait: (n, p, v, max) => `${n} at ${p}p from ${v} (your max: ${max}p)`, copierAchat: "Copy message",
@@ -1918,7 +1925,9 @@ async function surveiller() {
     if (e.version !== version && version !== -1 && e.version > 0) chargerInventaire(false);
     presence = e.presence || {};
     $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
-    $("#presAuto").checked = !!presence.auto;
+    for (const b of $("#presenceAuto").querySelectorAll("button"))
+      b.classList.toggle("on", (b.dataset.pres === "1") === !!presence.auto);
+    $("#presenceAuto").title = t("presBtnTip");
     // bouton « Mettre à jour » : le serveur vérifie GitHub toutes les 30 min
     $("#versionTxt").textContent = t("versionTxt", e.version_app || "?");
     const maj = e.maj || {};
@@ -2616,7 +2625,13 @@ $("#alertes").addEventListener("click", async e => {
   }
 });
 
-$("#presAuto").addEventListener("change", e => api("/api/presence", { auto: e.target.checked }).catch(() => {}));
+$("#presenceAuto").addEventListener("click", e => {
+  const b = e.target.closest("button[data-pres]");
+  if (!b) return;
+  const auto = b.dataset.pres === "1";
+  for (const x of $("#presenceAuto").querySelectorAll("button")) x.classList.toggle("on", x === b);
+  api("/api/presence", { auto }).catch(() => {});
+});
 $("#ovActif").addEventListener("change", e => api("/api/overlay", { actif: e.target.checked }).catch(() => {}));
 
 

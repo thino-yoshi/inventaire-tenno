@@ -660,12 +660,32 @@ def account():
 WS_URL = "wss://ws.warframe.market/socket"
 
 
+PRESENCE_FILE = BASE / "presence_wfm.json"
+
+
 class Presence:
+    """Statut sur Warframe Market. Bouton Connecte / Non connecte (retenu entre deux lancements) :
+    - connecte : "en jeu" tant que Warframe tourne ;
+    - non connecte : "invisible", et on le redit a WFM au lancement et a chaque changement
+      (au cas ou un ancien statut "en jeu" serait reste, ex. apres un plantage du PC)."""
+
     def __init__(self):
-        self.auto = True
+        self.auto = bool((load_json(PRESENCE_FILE, {}) or {}).get("connecte", True))
         self.ws = None
         self.statut = "hors_ligne"
+        self.target = "ingame"           # statut a envoyer une fois authentifie
+        self.forcer_invisible = not self.auto
         self.lock = threading.Lock()
+
+    def set_auto(self, value):
+        """Choix de l'utilisateur (bouton) : retenu dans presence_wfm.json."""
+        value = bool(value)
+        if value != self.auto:
+            self.auto = value
+            save_json(PRESENCE_FILE, {"connecte": value})
+            if not value:
+                self.forcer_invisible = True
+        threading.Thread(target=self.tick, daemon=True).start()
 
     def _send(self, route, payload=None):
         msg = {"route": route, "id": uuid.uuid4().hex[:12]}
@@ -680,7 +700,7 @@ class Presence:
             # le statut n'est accepte qu'une fois l'authentification confirmee (signIn:ok)
             on_open=lambda w: self._send("@wfm|cmd/auth/signIn", {"token": token}),
             on_message=self._on_message,
-            on_close=lambda *a: self._closed())
+            on_close=lambda *a: self._closed(ws))
         self.ws = ws
         threading.Thread(target=lambda: ws.run_forever(ping_interval=30, ping_timeout=10),
                          daemon=True).start()
@@ -692,33 +712,45 @@ class Presence:
             return
         route = msg.get("route", "")
         if route.endswith("signIn:ok"):
-            self._send("@wfm|cmd/status/set", {"status": "ingame"})
+            self._send("@wfm|cmd/status/set", {"status": self.target})
         elif route.endswith("status/set") or route.endswith("status/set:ok"):
             self.statut = (msg.get("payload") or {}).get("status", self.statut)
+            if self.target == "invisible":  # simple passage pour se cacher : on referme
+                self.forcer_invisible = False
+                try:
+                    ws.close()
+                except Exception:
+                    pass
         elif route.endswith("signIn:error"):
             self.statut = "erreur"
+            self.forcer_invisible = False
 
-    def _closed(self):
-        self.ws = None
-        if self.statut != "erreur":
+    def _closed(self, ws):
+        if self.ws is ws:
+            self.ws = None
+        if self.statut not in ("erreur", "invisible"):
             self.statut = "hors_ligne"
 
     def tick(self):
-        """Appele regulierement : ouvre ou ferme la connexion selon l'etat du jeu."""
+        """Appele regulierement : ouvre ou ferme la connexion selon le bouton et l'etat du jeu."""
         acc = account()
         want = self.auto and bool(acc.token) and STATE.game_running
         with self.lock:
             if want and self.ws is None:
-                self.statut = "connexion"
+                self.statut, self.target = "connexion", "ingame"
                 self._open(acc.token)
-            elif not want and self.ws is not None:
+            elif not want and self.ws is not None and self.target == "ingame":
                 try:
                     self._send("@wfm|cmd/status/set", {"status": "invisible"})
                     self.ws.close()
+                    self.forcer_invisible = False  # deja dit a WFM a l'instant
                 except Exception:
                     pass
                 self.ws = None
-                self.statut = "hors_ligne"
+                self.statut = "invisible" if not self.auto else "hors_ligne"
+            elif not want and self.ws is None and self.forcer_invisible and acc.token:
+                self.statut, self.target = "connexion", "invisible"
+                self._open(acc.token)
 
 
 PRESENCE = Presence()
@@ -1835,7 +1867,7 @@ class Handler(BaseHTTPRequestHandler):
                     OVERLAY.enabled = bool(body.get("actif"))
                 self.send(200, {"actif": bool(OVERLAY and OVERLAY.enabled)})
             elif u.path == "/api/presence":
-                PRESENCE.auto = bool(body.get("auto"))
+                PRESENCE.set_auto(body.get("auto"))
                 self.send(200, {"auto": PRESENCE.auto, "statut": PRESENCE.statut})
             elif u.path == "/api/deconnexion":
                 acc.logout()
@@ -2038,12 +2070,12 @@ def make_tray(open_fn, quit_fn):
         STATE.auto = not STATE.auto
 
     def toggle_presence(icon, item):
-        PRESENCE.auto = not PRESENCE.auto
+        PRESENCE.set_auto(not PRESENCE.auto)
 
     icon = pystray.Icon("lotus-desk", tray_image(), APP_NAME, menu=pystray.Menu(
         pystray.MenuItem("Ouvrir l'inventaire", lambda i, it: open_fn(), default=True),
         pystray.MenuItem("Lecture auto du jeu", toggle_auto, checked=lambda it: STATE.auto),
-        pystray.MenuItem("Statut « en jeu » sur Warframe Market", toggle_presence,
+        pystray.MenuItem("Connecté à Warframe Market (statut « en jeu »)", toggle_presence,
                          checked=lambda it: PRESENCE.auto),
         pystray.MenuItem("Prix des récompenses de reliques (overlay)", toggle_overlay,
                          checked=lambda it: bool(OVERLAY and OVERLAY.enabled)),
