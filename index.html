@@ -433,6 +433,48 @@
                        padding: 10px 0 8px; color: var(--muted); letter-spacing: 2.5px; text-transform: uppercase; font-weight: 600; }
   .sous-pages button:hover { background: none; color: var(--text); }
   .sous-pages button.on { color: var(--gold); border-bottom-color: var(--gold); }
+  .sous-pages[hidden] { display: none; }
+  /* onglet Info / aide */
+  .info-choix { display: flex; gap: 12px; margin: 14px 0 6px; flex-wrap: wrap; }
+  .info-choix button { display: flex; gap: 12px; align-items: center; text-align: left; padding: 12px 18px; min-width: 300px;
+                       background: var(--panel); border: 1px solid var(--line); color: var(--muted); }
+  .info-choix button.on { border-color: var(--gold); color: var(--text); background: color-mix(in srgb, var(--gold) 12%, var(--panel)); }
+  .info-choix .ic { font-size: 22px; color: var(--gold); }
+  .info-choix b { display: block; font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .info-choix small { display: block; font-size: 12px; color: var(--muted); }
+  .info-bloc { padding-top: 16px; }
+  .info-bloc[hidden] { display: none; }
+  .info-intro { color: var(--muted); margin: 0 0 14px; max-width: 760px; }
+  .info-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 14px; }
+  .info-grille.deux { grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); }
+  .info-c p, .info-q p, .info-l p { margin: 6px 0 0; font-size: 13px; line-height: 1.5; opacity: .9; }
+  .info-ico { float: right; color: var(--gold); font-size: 18px; opacity: .8; }
+  .info-liste { display: flex; flex-direction: column; max-width: 900px; }
+  .info-l { display: grid; grid-template-columns: 230px 1fr; gap: 16px; align-items: center;
+            border-bottom: 1px solid var(--line); padding: 12px 0; }
+  .info-l p { margin: 0; }
+  .touches { color: var(--gold); font-size: 13px; display: flex; gap: 4px; align-items: center; flex-wrap: wrap; }
+  kbd { background: var(--panel); border: 1px solid var(--line); border-bottom-width: 2px; border-radius: 4px;
+        padding: 2px 8px; font-size: 12px; color: var(--text); }
+  .seg-mini { border: 1px solid var(--line); padding: 2px 8px; font-size: 11px; letter-spacing: 1px; color: var(--muted); }
+  .seg-mini.on { background: var(--green); color: #0b1a10; }
+  .info-q { margin-bottom: 10px; max-width: 900px; }
+  .info-q summary { cursor: pointer; font-weight: 600; color: var(--gold); }
+  .info-version { font-size: 15px; margin: 6px 0; }
+  .info-mention { font-size: 11px; color: var(--muted); margin-top: 14px; }
+  .info-nouv { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; }
+  .info-nouv li { padding: 5px 0; border-bottom: 1px solid var(--line); }
+  .info-nouv b { color: var(--gold); display: inline-block; min-width: 52px; }
+  .info-bientot { text-align: center; padding: 48px 20px; color: var(--muted); max-width: 640px; margin: 0 auto; }
+  .info-bientot b { display: block; color: var(--gold); font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
+  .info-form { max-width: 680px; }
+  a.bouton { background: var(--gold-soft); color: var(--gold); border: 1px solid color-mix(in srgb, var(--gold) 33%, transparent);
+             padding: 7px 12px; text-decoration: none; clip-path: var(--cut); letter-spacing: 1px; font-weight: 600; font-size: 14px; }
+  a.bouton:hover { background: color-mix(in srgb, var(--gold) 20%, transparent); }
+  .info-form textarea { width: 100%; box-sizing: border-box; margin: 4px 0 10px; background: var(--bg); color: var(--text);
+                        border: 1px solid var(--line); padding: 8px; font: inherit; resize: vertical; }
+  .info-form label.auto { margin-bottom: 10px; }
+  @media (max-width: 640px) { .info-l { grid-template-columns: 1fr; gap: 6px; } .info-choix button { min-width: 0; flex: 1; } }
   .m-ventes { display: flex; gap: 16px; align-items: flex-start; flex-wrap: wrap; }
   .m-ventes > .table { flex: 999 1 560px; min-width: 0; }
   .m-cote { flex: 1 1 280px; max-width: 340px; display: flex; flex-direction: column; gap: 14px; }
@@ -748,9 +790,35 @@
     </div>
   </div>
 </section>
-<!-- ============ onglet Info / aide : a dessiner ============ -->
+<!-- ============ onglet Info / aide : Warframe (le jeu) | Lotus Desk (l'appli) ============ -->
 <section class="page" id="pageInfo" hidden>
-  <div class="carte"><h2 data-t="pInfo"></h2><div class="sub" data-t="aVenir"></div></div>
+  <div class="info-choix" id="infoChoix">
+    <button type="button" data-g="jeu"><span class="ic">⚔</span><span><b>Warframe</b><small data-t="infoJeuSub"></small></span></button>
+    <button type="button" data-g="app"><span class="ic">✿</span><span><b>Lotus Desk</b><small data-t="infoAppSub"></small></span></button>
+  </div>
+  <nav class="sous-pages" id="sousJeu">
+    <button type="button" data-i="debuter" data-t="iDebuter"></button>
+    <button type="button" data-i="reliques" data-t="iReliques"></button>
+    <button type="button" data-i="ressources" data-t="iRessources"></button>
+    <button type="button" data-i="direct" data-t="iDirect"></button>
+  </nav>
+  <nav class="sous-pages" id="sousApp" hidden>
+    <button type="button" data-i="guide" data-t="iGuide"></button>
+    <button type="button" data-i="astuces" data-t="iAstuces"></button>
+    <button type="button" data-i="problemes" data-t="iProblemes"></button>
+    <button type="button" data-i="apropos" data-t="iApropos"></button>
+    <button type="button" data-i="signaler" data-t="iSignaler" id="btnSignaler" hidden></button>
+  </nav>
+  <div class="info-bloc" id="infoContenu"></div>
+  <!-- formulaire gardé hors du rendu (le texte tapé n'est pas perdu en changeant de langue) -->
+  <div class="info-bloc" id="infoSignaler" hidden>
+    <div class="carte info-form"><h2 data-t="iSignaler"></h2>
+      <div class="sub" data-t="sigSub"></div>
+      <textarea id="sigMsg" rows="7"></textarea>
+      <label class="auto"><input type="checkbox" id="sigJournaux" checked> <span data-t="sigJournaux"></span></label>
+      <div class="ligne-r"><button type="button" id="sigBtn" data-t="sigBtn"></button><small id="sigEtat" class="muted"></small></div>
+      <p class="info-mention" data-t="sigInfo"></p></div>
+  </div>
 </section>
 <!-- ============ onglet Profils : connexion, reglages, mises a jour ============ -->
 <section class="page reglages" id="pageParametres" hidden>
@@ -1102,6 +1170,43 @@ const T3 = {
   fr: { pres_ingame: "WFM : en jeu", pres_connexion: "WFM : connexion…", pres_hors_ligne: "WFM : hors ligne",
     pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presCo: "● Connecté", presNonCo: "Non connecté",
     presBtnTip: "Connecté : tu apparais « en jeu » sur Warframe Market tant que Warframe tourne (les acheteurs te contactent).\nNon connecté : tu es invisible, tu joues tranquille. Ton choix est gardé même après un redémarrage.",
+    infoJeuSub: "Le jeu : bases, reliques, ressources, en direct", infoAppSub: "L'application : guide, astuces, problèmes, signaler",
+    iDebuter: "Débuter", iReliques: "Reliques et fissures", iRessources: "Ressources", iDirect: "En direct",
+    iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
+    iSignaler: "Signaler un problème",
+    bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
+    guideIntro: "Lotus Desk lit ton inventaire Warframe et l'estime avec les prix de Warframe Market. Voici ce que fait chaque partie de l'appli.",
+    guideCartes: [
+      ["▦", "Inventaire", "Tout ce que tu possèdes avec son prix : Prime, Sets, Arcanes, Reliques, Mods, Objets, Ressources. Recherche, tri, filtres (prix min, rareté, doublons). Clique sur un objet : prix, 10 meilleurs vendeurs, mise en vente."],
+      ["◈", "Sets", "Les pièces que tu as pour chaque set, en <b>Schémas</b> ou <b>Craftées</b>. Une pièce en Fonderie a l'icône jaune. L'icône ⧉ copie le nom exact pour la recherche de reliques du jeu."],
+      ["✦", "Collection", "Comme le Codex : toutes les Warframes, armes, Archwing et compagnons, avec les badges <b>Maîtrisé</b> (laurier vert) et <b>Construit</b>."],
+      ["◆", "Market", "<b>Ventes</b> : tes annonces et les alertes « dépassé ». <b>Achats</b> : vendeurs en jeu et message /w prêt à coller. <b>Stats</b> : platine gagné, objets les plus vendus, courbe de prix."],
+      ["◎", "Overlay des reliques", "À l'écran de choix des reliques : prix et ducats au-dessus de chaque carte, « Tu en as : N », pièces du set (✓ ✗ ★). Le meilleur choix est en doré. Ta récompense s'ajoute tout de suite à l'inventaire."],
+      ["✉", "Chat du jeu", "Bouton <b>Chat</b> en haut à droite : le chat du jeu recopié et traduit dans ta langue."],
+      ["●", "Profils", "Connexion à Warframe Market (vente en un clic, statut « en jeu »), lecture du jeu, langue, couleurs, mises à jour."]],
+    astuces: [
+      ["<kbd>Alt</kbd> + <kbd>A</kbd>", "Sur la fiche d'une relique dans le jeu : une colonne de prix s'affiche à côté de chaque récompense."],
+      ['<span class="seg-mini on">● Connecté</span><span class="seg-mini">Non connecté</span>', "En haut de l'appli. <b>Connecté</b> : tu apparais « en jeu » sur Warframe Market pendant que tu joues. <b>Non connecté</b> : invisible, tu joues tranquille. Ton choix est gardé."],
+      ["Clic droit sur l'icône", "L'icône près de l'horloge : ouvrir l'appli, lecture auto du jeu, statut Market, overlay, journal de l'overlay, Quitter."],
+      ["Fermer la fenêtre", "L'appli ne se ferme pas, elle se range près de l'horloge. Pour la quitter : clic droit sur l'icône → Quitter."],
+      ["Plein écran sans bordure", "Dans les options vidéo de Warframe. Sans ce mode, l'overlay ne peut pas s'afficher par-dessus le jeu."],
+      ["« Lire le jeu »", "Le jeu ne montre ton inventaire qu'à certains moments (connexion, écran de chargement, fin de mission). L'appli le lit toute seule à ces moments-là."]],
+    problemes: [
+      ["« Inventaire absent » ou inventaire pas à jour", "C'est normal hors de certains moments : le jeu ne garde ton inventaire en mémoire que juste après la connexion, un écran de chargement ou un retour de mission. Fais un tour au vaisseau ou change de zone, l'appli le relit toute seule. Un échange avec un joueur n'apparaît qu'après un écran de chargement."],
+      ["L'overlay des reliques n'apparaît pas", "Vérifie que Warframe est en <b>plein écran sans bordure</b> et que la case <b>Overlay reliques</b> est cochée en haut de l'appli. Si ça ne marche toujours pas : clic droit sur l'icône → « Ouvrir le journal de l'overlay », puis signale le problème (Lotus Desk → Signaler un problème)."],
+      ["Une carte affiche « ? »", "Le nom n'a pas pu être lu avec assez de certitude : l'appli préfère « ? » à un mauvais prix."],
+      ["Je suis déconnecté de Warframe Market", "Reconnecte-toi dans <b>Profils</b>. Ton mot de passe n'est jamais enregistré : seul un ticket de connexion chiffré reste sur ton PC."],
+      ["Windows dit « Windows a protégé votre ordinateur »", "Clique sur <b>Informations complémentaires</b> puis <b>Exécuter quand même</b>. L'appli n'est pas signée, c'est pour ça que Windows prévient."],
+      ["Est-ce que l'appli touche au jeu ?", "Non : Lotus Desk lit la mémoire du jeu <b>en lecture seule</b>, comme AlecaFrame ou WFInfo. Il ne modifie jamais le jeu et n'automatise aucune action."]],
+    aproposTxt: "Alternative légère à AlecaFrame / Overwolf. Mises à jour automatiques.",
+    aproposMention: "Application non officielle, non liée à Digital Extremes ni à Warframe Market. Warframe est une marque de Digital Extremes.",
+    lienGithub: "Code sur GitHub", nouveautes: "Nouveautés", nouvChargement: "Chargement…", nouvErreur: "Nouveautés indisponibles (pas de connexion ?).",
+    sigSub: "Décris ce qui ne va pas, le plus précisément possible : ce que tu faisais, ce qui s'est passé.",
+    sigPlaceholder: "Ex. : l'overlay n'apparaît pas quand j'ouvre une relique Axi en escouade…",
+    sigJournaux: "Joindre la version et les journaux de l'appli (aide à trouver le problème)",
+    sigBtn: "Préparer l'e-mail",
+    sigInfo: "Ta messagerie s'ouvre avec le message prêt. Si les journaux sont joints, le dossier s'ouvre aussi avec le fichier sélectionné : glisse-le dans l'e-mail, puis envoie.",
+    sigOk: "C'est prêt : vérifie ta messagerie.", message_vide: "Écris d'abord ton message.", adresse_absente: "Signalement indisponible pour l'instant.",
     presTip: "Tant que Warframe tourne, tu apparais « en jeu » sur Warframe Market : tes offres passent devant celles des vendeurs hors ligne.",
     alertes: "Alertes", alDepasse: (n, v, p, m) => `${n} : ${v} vend à ${p}p (toi ${m}p)`, aligner: p => `Aligner à ${p}p`,
     alSouhait: (n, p, v, max) => `${n} à ${p}p chez ${v} (ton max : ${max}p)`, copierAchat: "Copier le message",
@@ -1170,6 +1275,43 @@ const T3 = {
   en: { pres_ingame: "WFM: in game", pres_connexion: "WFM: connecting…", pres_hors_ligne: "WFM: offline",
     pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presCo: "● Online", presNonCo: "Offline",
     presBtnTip: "Online: you show as “in game” on Warframe Market while Warframe is running (buyers can contact you).\nOffline: you are invisible and play in peace. Your choice is kept after a restart.",
+    infoJeuSub: "The game: basics, relics, resources, live", infoAppSub: "The app: guide, tips, problems, report",
+    iDebuter: "Getting started", iReliques: "Relics & fissures", iRessources: "Resources", iDirect: "Live",
+    iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
+    iSignaler: "Report a problem",
+    bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
+    guideIntro: "Lotus Desk reads your Warframe inventory and values it with Warframe Market prices. Here is what each part of the app does.",
+    guideCartes: [
+      ["▦", "Inventory", "Everything you own with its price: Prime, Sets, Arcanes, Relics, Mods, Items, Resources. Search, sort, filters (min price, rarity, duplicates). Click an item: price, top 10 sellers, sell it."],
+      ["◈", "Sets", "The parts you own for each set, as <b>Blueprints</b> or <b>Crafted</b>. A part in the Foundry has the yellow icon. The ⧉ icon copies the exact name for the in-game relic search."],
+      ["✦", "Collection", "Like the Codex: every Warframe, weapon, Archwing and companion, with <b>Mastered</b> (green laurel) and <b>Built</b> badges."],
+      ["◆", "Market", "<b>Sales</b>: your orders and “undercut” alerts. <b>Buying</b>: in-game sellers and a ready-to-paste /w message. <b>Stats</b>: platinum earned, best sellers, price chart."],
+      ["◎", "Relic overlay", "On the relic reward screen: price and ducats above each card, “You have: N”, set parts (✓ ✗ ★). The best pick is gold. Your reward is added to the inventory right away."],
+      ["✉", "Game chat", "<b>Chat</b> button at the top right: the game chat copied and translated into your language."],
+      ["●", "Profiles", "Warframe Market login (one-click selling, “in game” status), game reading, language, colours, updates."]],
+    astuces: [
+      ["<kbd>Alt</kbd> + <kbd>A</kbd>", "On a relic's details in the game: a price column shows next to each reward."],
+      ['<span class="seg-mini on">● Online</span><span class="seg-mini">Offline</span>', "At the top of the app. <b>Online</b>: you show as “in game” on Warframe Market while you play. <b>Offline</b>: invisible, play in peace. Your choice is kept."],
+      ["Right-click the icon", "The icon near the clock: open the app, auto game reading, Market status, overlay, overlay log, Quit."],
+      ["Closing the window", "The app doesn't quit, it hides near the clock. To quit: right-click the icon → Quit."],
+      ["Borderless fullscreen", "In Warframe's video options. Without it, the overlay can't show on top of the game."],
+      ["“Read the game”", "The game only exposes your inventory at certain moments (login, loading screen, end of mission). The app reads it by itself at those moments."]],
+    problemes: [
+      ["“Inventory missing” or not up to date", "That's normal outside certain moments: the game only keeps your inventory in memory right after login, a loading screen or the end of a mission. Go to your ship or change area and the app reads it again by itself. A trade with a player only shows after a loading screen."],
+      ["The relic overlay doesn't show", "Check that Warframe is in <b>borderless fullscreen</b> and that <b>Relic overlay</b> is ticked at the top of the app. If it still doesn't work: right-click the icon → “Open the overlay log”, then report the problem (Lotus Desk → Report a problem)."],
+      ["A card shows “?”", "The name couldn't be read with enough certainty: the app prefers “?” to a wrong price."],
+      ["I got logged out of Warframe Market", "Log in again in <b>Profiles</b>. Your password is never saved: only an encrypted login ticket stays on your PC."],
+      ["Windows says “Windows protected your PC”", "Click <b>More info</b> then <b>Run anyway</b>. The app isn't signed, that's why Windows warns you."],
+      ["Does the app touch the game?", "No: Lotus Desk reads the game's memory <b>read-only</b>, like AlecaFrame or WFInfo. It never changes the game and never automates any action."]],
+    aproposTxt: "Lightweight alternative to AlecaFrame / Overwolf. Automatic updates.",
+    aproposMention: "Unofficial app, not affiliated with Digital Extremes or Warframe Market. Warframe is a trademark of Digital Extremes.",
+    lienGithub: "Code on GitHub", nouveautes: "What's new", nouvChargement: "Loading…", nouvErreur: "What's new unavailable (no connection?).",
+    sigSub: "Describe what's wrong as precisely as you can: what you were doing, what happened.",
+    sigPlaceholder: "E.g.: the overlay doesn't show when I open an Axi relic in a squad…",
+    sigJournaux: "Attach the app version and logs (helps find the problem)",
+    sigBtn: "Prepare the e-mail",
+    sigInfo: "Your mail app opens with the message ready. If logs are attached, the folder also opens with the file selected: drag it into the e-mail, then send.",
+    sigOk: "Ready: check your mail app.", message_vide: "Write your message first.", adresse_absente: "Reporting is unavailable for now.",
     presTip: "While Warframe is running you show as “in game” on Warframe Market: your orders rank above offline sellers.",
     alertes: "Alerts", alDepasse: (n, v, p, m) => `${n}: ${v} sells at ${p}p (you ${m}p)`, aligner: p => `Match at ${p}p`,
     alSouhait: (n, p, v, max) => `${n} at ${p}p from ${v} (your max: ${max}p)`, copierAchat: "Copy message",
@@ -1381,6 +1523,7 @@ function textes() {
   $("#btnCompte").textContent = compte.connecte ? `${compte.compte?.pseudo || "WFM"} · ${t("deconnexion")}` : t("connexion");
   $("#langue").innerHTML = Object.entries(LANG_NAMES).filter(([k]) => (info.langues || Object.keys(LANG_NAMES)).includes(k))
     .map(([k, n]) => `<option value="${k}" ${k === lang ? "selected" : ""}>${n}</option>`).join("");
+  try { if (page === "info") rendreInfo(); } catch (e) {}  // nouvelle langue : onglet Info redessiné
 }
 
 function valeur(it, k) {
@@ -2134,7 +2277,78 @@ function montrerPage(p) {
   document.querySelectorAll("#pages button").forEach(b => b.classList.toggle("on", b.dataset.p === p));
   try { localStorage.setItem("page", p); } catch (e) {}
   if (p === "market") montrerSous(sousMarket);
+  if (p === "info") { rendreInfo(); if (infoNouv === null) chargerInfo(); }
 }
+// ---------------------------------------------------------------- onglet Info / aide
+var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
+try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
+const INFO_SOUS = { jeu: ["debuter", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+function rendreInfo() {
+  if (!INFO_SOUS[infoGroupe]) infoGroupe = "jeu";
+  if (infoSous.app === "signaler" && !infoSupport) infoSous.app = "guide";
+  let s = infoSous[infoGroupe];
+  if (!INFO_SOUS[infoGroupe].includes(s)) s = infoSous[infoGroupe] = INFO_SOUS[infoGroupe][0];
+  document.querySelectorAll("#infoChoix button").forEach(b => b.classList.toggle("on", b.dataset.g === infoGroupe));
+  $("#sousJeu").hidden = infoGroupe !== "jeu";
+  $("#sousApp").hidden = infoGroupe !== "app";
+  $("#btnSignaler").hidden = !infoSupport;
+  document.querySelectorAll(infoGroupe === "jeu" ? "#sousJeu button" : "#sousApp button")
+    .forEach(b => b.classList.toggle("on", b.dataset.i === s));
+  $("#infoSignaler").hidden = s !== "signaler";
+  $("#infoContenu").hidden = s === "signaler";
+  $("#sigMsg").placeholder = t("sigPlaceholder");
+  try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
+  const c = $("#infoContenu");
+  if (infoGroupe === "jeu") {  // la partie Warframe se remplit au fur et à mesure
+    c.innerHTML = `<div class="info-bientot"><b>${esc(t("bientotTitre"))}</b>${esc(t("bientot"))}</div>`;
+  } else if (s === "guide") {
+    c.innerHTML = `<p class="info-intro">${esc(t("guideIntro"))}</p><div class="info-grille">` +
+      t("guideCartes").map(([ic, titre, txt]) =>
+        `<div class="carte info-c"><span class="info-ico">${ic}</span><h2>${esc(titre)}</h2><p>${txt}</p></div>`).join("") + "</div>";
+  } else if (s === "astuces") {
+    c.innerHTML = `<div class="info-liste">` + t("astuces").map(([k, txt]) =>
+      `<div class="info-l"><span class="touches">${k}</span><p>${txt}</p></div>`).join("") + "</div>";
+  } else if (s === "problemes") {
+    c.innerHTML = t("problemes").map(([q, r], i) =>
+      `<details class="carte info-q"${i ? "" : " open"}><summary>${esc(q)}</summary><p>${r}</p></details>`).join("");
+  } else if (s === "apropos") {
+    const liste = infoNouv === null ? `<p class="muted">${esc(t("nouvChargement"))}</p>`
+      : !infoNouv.length ? `<p class="muted">${esc(t("nouvErreur"))}</p>`
+      : `<ul class="info-nouv">${infoNouv.map(n => `<li><b>${esc(n.version)}</b> ${esc(n.notes)}</li>`).join("")}</ul>`;
+    c.innerHTML = `<div class="info-grille deux">
+      <div class="carte"><h2>Lotus Desk</h2>
+        <div class="info-version">Version <b>${esc(window.versionApp || "?")}</b></div>
+        <p class="muted">${esc(t("aproposTxt"))}</p>
+        <div class="ligne-r"><a class="bouton" href="https://github.com/thino-yoshi/inventaire-tenno" target="_blank" rel="noopener">${esc(t("lienGithub"))}</a>
+          <a class="bouton" href="https://warframe.market" target="_blank" rel="noopener">Warframe Market</a></div>
+        <p class="info-mention">${esc(t("aproposMention"))}</p></div>
+      <div class="carte"><h2>${esc(t("nouveautes"))}</h2>${liste}</div></div>`;
+  }
+}
+async function chargerInfo() {
+  try {
+    const r = await api("/api/nouveautes");
+    infoNouv = r.liste || []; infoSupport = !!r.support; window.versionApp = r.version;
+  } catch (e) { infoNouv = []; }
+  if (page === "info") rendreInfo();
+}
+$("#infoChoix").addEventListener("click", e => {
+  const b = e.target.closest("button[data-g]");
+  if (b) { infoGroupe = b.dataset.g; rendreInfo(); }
+});
+for (const id of ["#sousJeu", "#sousApp"]) $(id).addEventListener("click", e => {
+  const b = e.target.closest("button[data-i]");
+  if (b) { infoSous[infoGroupe] = b.dataset.i; rendreInfo(); }
+});
+$("#sigBtn").addEventListener("click", async () => {
+  const b = $("#sigBtn");
+  b.disabled = true; $("#sigEtat").textContent = "";
+  try {
+    await api("/api/signalement", { message: $("#sigMsg").value, journaux: $("#sigJournaux").checked });
+    $("#sigEtat").textContent = t("sigOk");
+  } catch (err) { $("#sigEtat").textContent = traduitErreur(err.message); }
+  b.disabled = false;
+});
 $("#pages").addEventListener("click", e => {
   const b = e.target.closest("button[data-p]");
   if (b) montrerPage(b.dataset.p);

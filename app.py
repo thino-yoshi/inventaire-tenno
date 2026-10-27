@@ -1419,6 +1419,64 @@ def version_tuple(v):
     return tuple(int(x) for x in re.findall(r"\d+", v or "0")[:3])
 
 
+# ================================================================ onglet Info / aide
+# Adresse qui recoit les signalements (visible dans le code public). Vide = sous-onglet cache.
+SUPPORT_EMAIL = ""
+_news = {"t": 0, "liste": []}
+
+
+def nouveautes():
+    """Notes des dernieres versions publiees (GitHub), gardees 1 h."""
+    if time.time() - _news["t"] > 3600 or not _news["liste"]:
+        try:
+            r = requests.get(f"https://api.github.com/repos/{UPDATE_REPO}/releases?per_page=12", timeout=8,
+                             headers={"Accept": "application/vnd.github+json"})
+            r.raise_for_status()
+            _news["liste"] = [{"version": x.get("tag_name", "").lstrip("v"), "notes": x.get("body") or "",
+                               "date": (x.get("published_at") or "")[:10]}
+                              for x in r.json() if not x.get("prerelease") and not x.get("draft")][:8]
+            _news["t"] = time.time()
+        except Exception as e:
+            print("nouveautes :", e)
+    return _news["liste"]
+
+
+def log_tail(name, n=150):
+    """Fin d'un journal de l'app (pour un signalement)."""
+    f = BASE / name
+    try:
+        return "\n".join(f.read_text(encoding="utf-8", errors="replace").splitlines()[-n:])
+    except Exception:
+        return "(absent)"
+
+
+def signalement(message, journaux):
+    """Prepare un signalement : fichier texte a joindre + messagerie ouverte avec le message."""
+    if not SUPPORT_EMAIL:
+        raise RuntimeError("adresse_absente")
+    message = (message or "").strip()
+    if not message:
+        raise RuntimeError("message_vide")
+    from urllib.parse import quote
+    dossier = BASE / "signalements"
+    dossier.mkdir(exist_ok=True)
+    fichier = dossier / time.strftime("signalement_%Y-%m-%d_%H-%M.txt")
+    parts = [f"Lotus Desk {VERSION} - {time.strftime('%d/%m/%Y %H:%M')}", "", "MESSAGE", message]
+    if journaux:
+        parts += ["", "=== app.log (fin) ===", log_tail("app.log"), "", "=== overlay.log (fin) ===", log_tail("overlay.log")]
+    fichier.write_text("\n".join(parts), encoding="utf-8")
+    corps = (message[:1500] + f"\n\n-- Lotus Desk {VERSION}"
+             + (f"\nFichier a joindre : {fichier}" if journaux else ""))
+    url = f"mailto:{SUPPORT_EMAIL}?subject={quote(f'Lotus Desk {VERSION} : probleme')}&body={quote(corps)}"
+    if pi.IS_WINDOWS:
+        os.startfile(url)
+        if journaux:  # dossier ouvert, fichier selectionne : il n'y a plus qu'a le glisser dans l'e-mail
+            subprocess.Popen(["explorer", "/select,", str(fichier)])
+    else:
+        webbrowser.open(url)
+    return {"ok": True, "fichier": str(fichier) if journaux else None}
+
+
 def check_update():
     """Derniere version publiee. Desactive dans un dossier de developpement (.git)."""
     info = {"version": VERSION, "nouvelle": False}
@@ -1753,6 +1811,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, info)
             elif u.path == "/api/baro":
                 self.send(200, baro())
+            elif u.path == "/api/nouveautes":
+                self.send(200, {"version": VERSION, "liste": nouveautes(), "support": bool(SUPPORT_EMAIL)})
             elif u.path == "/api/alertes":
                 self.send(200, list(_alerts.values()))
             elif u.path == "/api/souhaits":
@@ -1866,6 +1926,8 @@ class Handler(BaseHTTPRequestHandler):
                 if OVERLAY:
                     OVERLAY.enabled = bool(body.get("actif"))
                 self.send(200, {"actif": bool(OVERLAY and OVERLAY.enabled)})
+            elif u.path == "/api/signalement":
+                self.send(200, signalement(str(body.get("message", "")), bool(body.get("journaux"))))
             elif u.path == "/api/presence":
                 PRESENCE.set_auto(body.get("auto"))
                 self.send(200, {"auto": PRESENCE.auto, "statut": PRESENCE.statut})
