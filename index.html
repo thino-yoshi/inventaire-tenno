@@ -461,6 +461,7 @@
   .info-q { margin-bottom: 10px; max-width: 900px; }
   .info-q summary { cursor: pointer; font-weight: 600; color: var(--gold); }
   .info-version { font-size: 15px; margin: 6px 0; }
+  .info-credit { color: var(--gold); font-size: 13px; letter-spacing: 1px; margin-bottom: 8px; }
   .info-mention { font-size: 11px; color: var(--muted); margin-top: 14px; }
   .info-nouv { margin: 6px 0 0; padding: 0; list-style: none; font-size: 13px; line-height: 1.5; }
   .info-nouv li { padding: 5px 0; border-bottom: 1px solid var(--line); }
@@ -1198,6 +1199,7 @@ const T3 = {
       ["Je suis déconnecté de Warframe Market", "Reconnecte-toi dans <b>Profils</b>. Ton mot de passe n'est jamais enregistré : seul un ticket de connexion chiffré reste sur ton PC."],
       ["Windows dit « Windows a protégé votre ordinateur »", "Clique sur <b>Informations complémentaires</b> puis <b>Exécuter quand même</b>. L'appli n'est pas signée, c'est pour ça que Windows prévient."],
       ["Est-ce que l'appli touche au jeu ?", "Non : Lotus Desk lit la mémoire du jeu <b>en lecture seule</b>, comme AlecaFrame ou WFInfo. Il ne modifie jamais le jeu et n'automatise aucune action."]],
+    aproposCredit: "Créé par Mavis et Thigrou",
     aproposTxt: "Alternative légère à AlecaFrame / Overwolf. Mises à jour automatiques.",
     aproposMention: "Application non officielle, non liée à Digital Extremes ni à Warframe Market. Warframe est une marque de Digital Extremes.",
     lienGithub: "Code sur GitHub", nouveautes: "Nouveautés", nouvChargement: "Chargement…", nouvErreur: "Nouveautés indisponibles (pas de connexion ?).",
@@ -1303,6 +1305,7 @@ const T3 = {
       ["I got logged out of Warframe Market", "Log in again in <b>Profiles</b>. Your password is never saved: only an encrypted login ticket stays on your PC."],
       ["Windows says “Windows protected your PC”", "Click <b>More info</b> then <b>Run anyway</b>. The app isn't signed, that's why Windows warns you."],
       ["Does the app touch the game?", "No: Lotus Desk reads the game's memory <b>read-only</b>, like AlecaFrame or WFInfo. It never changes the game and never automates any action."]],
+    aproposCredit: "Made by Mavis and Thigrou",
     aproposTxt: "Lightweight alternative to AlecaFrame / Overwolf. Automatic updates.",
     aproposMention: "Unofficial app, not affiliated with Digital Extremes or Warframe Market. Warframe is a trademark of Digital Extremes.",
     lienGithub: "Code on GitHub", nouveautes: "What's new", nouvChargement: "Loading…", nouvErreur: "What's new unavailable (no connection?).",
@@ -2318,6 +2321,7 @@ function rendreInfo() {
     c.innerHTML = `<div class="info-grille deux">
       <div class="carte"><h2>Lotus Desk</h2>
         <div class="info-version">Version <b>${esc(window.versionApp || "?")}</b></div>
+        <div class="info-credit">${esc(t("aproposCredit"))}</div>
         <p class="muted">${esc(t("aproposTxt"))}</p>
         <div class="ligne-r"><a class="bouton" href="https://github.com/thino-yoshi/inventaire-tenno" target="_blank" rel="noopener">${esc(t("lienGithub"))}</a>
           <a class="bouton" href="https://warframe.market" target="_blank" rel="noopener">Warframe Market</a></div>
