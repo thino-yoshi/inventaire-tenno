@@ -1,7 +1,8 @@
 # Construit LotusDesk.exe sur un ordinateur Windows de GitHub et publie la version.
-# Se declenche quand une etiquette de version (ex. v1.12.7) est envoyee sur GitHub.
-# Le texte de l'etiquette (git tag -a vX -m "...") sert de notes de version.
-# Lancement manuel (onglet Actions) : construit l'exe pour tester, SANS publier.
+# Deux facons de publier :
+#   - envoyer une etiquette vX.Y.Z (git tag -a vX -m "notes") : c'est ce que fait tools/release.ps1 ;
+#   - lancer la recette a la main (onglet Actions / gh workflow run) avec "version" et "notes".
+# Lancement a la main SANS version : construit l'exe pour tester, SANS publier.
 name: Publier une version
 
 on:
@@ -9,6 +10,15 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      version:
+        description: "Version a publier (ex. 1.12.7). Vide = construction de test sans publier."
+        required: false
+        default: ""
+      notes:
+        description: "Ce qui change, en francais, pour l'utilisateur."
+        required: false
+        default: ""
 
 permissions:
   contents: write
@@ -26,16 +36,22 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.14"
+      - name: Quelle version ?
+        shell: pwsh
+        env:
+          IN_VERSION: ${{ inputs.version }}
+        run: |
+          if ("${{ github.ref_type }}" -eq "tag") { $v = "${{ github.ref_name }}".TrimStart("v") }
+          else { $v = "$env:IN_VERSION".Trim() }
+          if ($v) {
+            if ($v -notmatch '^\d+\.\d+\.\d+$') { throw "Version attendue au format 1.2.3" }
+            if ((Get-Content app.py -Raw) -notmatch "VERSION = `"$([regex]::Escape($v))`"") {
+              throw "app.py ne porte pas la version $v"
+            }
+          }
+          "VERSION=$v" | Out-File -Append -Encoding utf8 $env:GITHUB_ENV
       - name: Installer les outils
         run: py -m pip install requests psutil websocket-client pystray pillow pywebview pyinstaller
-      - name: Verifier le numero de version
-        if: startsWith(github.ref, 'refs/tags/v')
-        shell: pwsh
-        run: |
-          $v = "${{ github.ref_name }}".TrimStart("v")
-          if ((Get-Content app.py -Raw) -notmatch "VERSION = `"$([regex]::Escape($v))`"") {
-            throw "app.py ne porte pas la version $v"
-          }
       - name: Construire l'exe
         shell: pwsh
         run: |
@@ -47,22 +63,25 @@ jobs:
           # TRANSITION : les versions <= 1.9.0 cherchent encore l'ancien nom pour se mettre a jour.
           Copy-Item dist\LotusDesk.exe dist\InventaireWarframe.exe
       - name: Garder l'exe de test (sans publier)
-        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        if: env.VERSION == ''
         uses: actions/upload-artifact@v4
         with:
           name: LotusDesk-test
           path: dist/LotusDesk.exe
           retention-days: 7
       - name: Publier
-        if: startsWith(github.ref, 'refs/tags/v')
+        if: env.VERSION != ''
         shell: pwsh
         env:
           GH_TOKEN: ${{ github.token }}
+          IN_NOTES: ${{ inputs.notes }}
         run: |
-          $tag = "${{ github.ref_name }}"
-          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
-          $notes = (git for-each-ref "refs/tags/$tag" --format="%(contents)") -join "`n"
-          if (-not $notes.Trim()) { $notes = "Version $($tag.TrimStart('v'))" }
+          $tag = "v$env:VERSION"
+          if ("${{ github.ref_type }}" -eq "tag") {
+            git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
+            $notes = (git for-each-ref "refs/tags/$tag" --format="%(contents)") -join "`n"
+          } else { $notes = "$env:IN_NOTES" }
+          if (-not $notes.Trim()) { $notes = "Version $env:VERSION" }
           [IO.File]::WriteAllText("$PWD\notes.md", $notes, (New-Object Text.UTF8Encoding $false))
           gh release create $tag dist\LotusDesk.exe dist\InventaireWarframe.exe `
-            --title "Version $($tag.TrimStart('v'))" --notes-file notes.md
+            --target "${{ github.sha }}" --title "Version $env:VERSION" --notes-file notes.md
