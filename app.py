@@ -1432,7 +1432,7 @@ MODO_FILE = BASE / "modo.dat"                # cle modo chiffree (DPAPI) sur ce 
 _news = {"t": 0, "liste": []}
 _aide = {"erreurs_auto": bool((load_json(AIDE_FILE, {}) or {}).get("erreurs_auto", True))}
 _err_envoyees = {}                           # (code, detail) -> derniere fois (une fois par 10 min)
-MODO = {"cle": None, "qui": None, "nb": None, "dernier": 0}
+MODO = {"cle": None, "qui": None, "nb": None, "dernier": 0, "rev": 0}
 
 
 def nouveautes():
@@ -1575,6 +1575,8 @@ def modo_tick(notifier=True):
     avant = MODO["dernier"]
     MODO["nb"] = {"signalements": nb.get("signalements", 0), "erreurs": nb.get("erreurs", 0)}
     MODO["dernier"] = nb.get("dernier") or 0
+    # revision du serveur (nouveau, statut change par l'autre modo...) ; ancien serveur : date du dernier element
+    MODO["rev"] = nb.get("rev", MODO["dernier"])
     if notifier and avant and MODO["dernier"] > avant and _notify:
         try:
             _notify(f"{MODO['nb']['signalements']} signalement(s) et {MODO['nb']['erreurs']} erreur(s) a regarder",
@@ -1584,13 +1586,14 @@ def modo_tick(notifier=True):
 
 
 def modo_loop():
+    """Toutes les 10 s quand le mode modo est actif : quasi temps reel (une petite requete)."""
     modo_load()
     while True:
         try:
             modo_tick()
         except Exception as e:
             print("modo :", e)
-        time.sleep(120)
+        time.sleep(10 if MODO["qui"] else 60)
 
 
 def check_update():
@@ -1914,7 +1917,7 @@ class Handler(BaseHTTPRequestHandler):
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
                                             "statut": OVERLAY.status if OVERLAY else "indisponible"},
                                 "recompense": REWARDS[-1] if REWARDS else None, "attente": len(REWARDS),
-                                "modo": {"qui": MODO["qui"], "nb": MODO["nb"]}})
+                                "modo": {"qui": MODO["qui"], "nb": MODO["nb"], "rev": MODO["rev"]}})
             elif u.path == "/api/chat":  # messages du chat du jeu (avec traduction)
                 if not CHAT:
                     return self.send(200, {"actif": False, "statut": "indisponible", "messages": []})

@@ -2443,7 +2443,7 @@ $("#sigBtn").addEventListener("click", async () => {
   b.disabled = false;
 });
 // ---------------------------------------------------------------- mode modo (équipe seulement)
-var modo = { qui: null, nb: null, type: "signalements", filtre: "nouveau", liste: [], sel: null, clics: [] };
+var modo = { qui: null, nb: null, rev: null, type: "signalements", filtre: "nouveau", liste: [], sel: null, clics: [], charge: false };
 function modoEtat(m) {
   const avant = modo.qui;
   modo.qui = m.qui || null; modo.nb = m.nb || null;
@@ -2451,7 +2451,10 @@ function modoEtat(m) {
   const n = modo.nb ? modo.nb.signalements + modo.nb.erreurs : 0;
   $("#modoNb").hidden = !n; $("#modoNb").textContent = n > 99 ? "99+" : n;
   if (avant && !modo.qui && page === "modo") montrerPage("info");
-  if (page === "modo") modoOnglets();
+  // quelque chose a changé sur le serveur (nouveau signalement, statut changé par l'autre modo…) : liste rechargée
+  const rev = m.rev ?? null, change = modo.rev !== null && rev !== null && rev !== modo.rev;
+  modo.rev = rev;
+  if (page === "modo") { modoOnglets(); if (change && !modo.charge && document.activeElement?.id !== "modoNote") chargerModo(); }
 }
 function modoOnglets() {
   const nb = modo.nb || {};
@@ -2465,9 +2468,10 @@ function modoOnglets() {
 }
 async function chargerModo() {
   modoOnglets();
-  try { modo.liste = (await api("/api/modo/liste?type=" + modo.type)).liste || []; }
-  catch (e) { modo.liste = []; $("#modoDetail").innerHTML = `<div class="modo-vide">${esc(traduitErreur(e.message))}</div>`; }
-  rendreModo();
+  modo.charge = true;
+  try { modo.liste = (await api("/api/modo/liste?type=" + modo.type)).liste || []; rendreModo(); }
+  catch (e) { modo.liste = []; $("#modoListe").innerHTML = ""; $("#modoDetail").innerHTML = `<div class="modo-vide">${esc(traduitErreur(e.message))}</div>`; }
+  modo.charge = false;
 }
 const quand = s => s ? new Date(s * 1000).toLocaleString(lang === "fr" ? "fr-FR" : "en-GB", { dateStyle: "short", timeStyle: "short" }) : "";
 function rendreModo() {

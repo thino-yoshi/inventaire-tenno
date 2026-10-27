@@ -11,6 +11,7 @@ const SCHEMA = [
      statut TEXT DEFAULT 'nouveau', pris_par TEXT, note TEXT)`,
   `CREATE TABLE IF NOT EXISTS erreur_install (erreur_id INTEGER, install TEXT, PRIMARY KEY (erreur_id, install))`,
   `CREATE TABLE IF NOT EXISTS limites (cle TEXT PRIMARY KEY, n INTEGER, fenetre INTEGER)`,
+  `CREATE TABLE IF NOT EXISTS etat (k TEXT PRIMARY KEY, v INTEGER)`,
 ];
 let pret = false;
 const STATUTS = ["nouveau", "en_cours", "regle"];
@@ -24,6 +25,9 @@ async function schema(db) {
   await db.batch(SCHEMA.map(q => db.prepare(q)));
   pret = true;
 }
+
+// numero de revision : augmente a chaque changement (l'appli des modos recharge la liste quand il bouge)
+const bouge = db => db.prepare("INSERT INTO etat (k, v) VALUES ('rev', 1) ON CONFLICT(k) DO UPDATE SET v = v + 1").run();
 
 async function sha(texte) {
   const h = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(texte));
@@ -78,6 +82,7 @@ export default {
         if (!await limite(env, req, "sig", 10)) return json({ erreur: "trop_de_messages" }, 429);
         await env.DB.prepare("INSERT INTO signalements (cree, version, langue, os, message, journaux) VALUES (?, ?, ?, ?, ?, ?)")
           .bind(maintenant(), coupe(b.version, 20), coupe(b.langue, 10), coupe(b.os, 60), message, coupe(b.journaux, 100000)).run();
+        await bouge(env.DB);
         return json({ ok: true });
       }
       if (p === "/erreur" && req.method === "POST") {
@@ -97,6 +102,7 @@ export default {
         const e = await env.DB.prepare("SELECT id FROM erreurs WHERE cle = ?").bind(cle).first();
         if (b.install) await env.DB.prepare("INSERT OR IGNORE INTO erreur_install (erreur_id, install) VALUES (?, ?)")
           .bind(e.id, await sha(coupe(b.install, 80))).run();
+        await bouge(env.DB);
         return json({ ok: true });
       }
 
@@ -109,7 +115,8 @@ export default {
           const s = await env.DB.prepare("SELECT COUNT(*) AS n FROM signalements WHERE statut = 'nouveau'").first();
           const e = await env.DB.prepare("SELECT COUNT(*) AS n FROM erreurs WHERE statut = 'nouveau'").first();
           const d = await env.DB.prepare("SELECT MAX(m) AS m FROM (SELECT MAX(cree) AS m FROM signalements UNION ALL SELECT MAX(derniere) FROM erreurs)").first();
-          return json({ signalements: s.n, erreurs: e.n, dernier: d.m || 0 });
+          const r = await env.DB.prepare("SELECT v FROM etat WHERE k = 'rev'").first();
+          return json({ signalements: s.n, erreurs: e.n, dernier: d.m || 0, rev: r ? r.v : 0 });
         }
         if (p === "/modo/liste") {
           const type = url.searchParams.get("type") === "erreurs" ? "erreurs" : "signalements";
@@ -129,12 +136,14 @@ export default {
           if (b.supprimer) {
             await env.DB.prepare(`DELETE FROM ${table} WHERE id = ?`).bind(id).run();
             if (table === "erreurs") await env.DB.prepare("DELETE FROM erreur_install WHERE erreur_id = ?").bind(id).run();
+            await bouge(env.DB);
             return json({ ok: true });
           }
           const statut = STATUTS.includes(b.statut) ? b.statut : null;
           await env.DB.prepare(`UPDATE ${table} SET statut = COALESCE(?, statut), note = COALESCE(?, note),
                                 pris_par = CASE WHEN ? = 'en_cours' THEN ? ELSE pris_par END WHERE id = ?`)
             .bind(statut, b.note === undefined ? null : coupe(b.note, 500), statut, qui, id).run();
+          await bouge(env.DB);
           return json({ ok: true });
         }
       }
