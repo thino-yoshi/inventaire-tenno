@@ -1,0 +1,68 @@
+# Construit LotusDesk.exe sur un ordinateur Windows de GitHub et publie la version.
+# Se declenche quand une etiquette de version (ex. v1.12.7) est envoyee sur GitHub.
+# Le texte de l'etiquette (git tag -a vX -m "...") sert de notes de version.
+# Lancement manuel (onglet Actions) : construit l'exe pour tester, SANS publier.
+name: Publier une version
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: publier
+  cancel-in-progress: false
+
+jobs:
+  publier:
+    runs-on: windows-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.14"
+      - name: Installer les outils
+        run: py -m pip install requests psutil websocket-client pystray pillow pywebview pyinstaller
+      - name: Verifier le numero de version
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        run: |
+          $v = "${{ github.ref_name }}".TrimStart("v")
+          if ((Get-Content app.py -Raw) -notmatch "VERSION = `"$([regex]::Escape($v))`"") {
+            throw "app.py ne porte pas la version $v"
+          }
+      - name: Construire l'exe
+        shell: pwsh
+        run: |
+          py -m PyInstaller --onefile --noconsole --name LotusDesk --icon assets\lotus.ico `
+            --add-data "index.html;." --add-data "assets;assets" `
+            --hidden-import webview --hidden-import pystray._win32 --hidden-import reliques_overlay --hidden-import chat_jeu --hidden-import tkinter --collect-all webview `
+            --distpath dist --workpath build --noconfirm --log-level WARN app.py
+          if (-not (Test-Path dist\LotusDesk.exe)) { throw "construction de l'exe impossible" }
+          # TRANSITION : les versions <= 1.9.0 cherchent encore l'ancien nom pour se mettre a jour.
+          Copy-Item dist\LotusDesk.exe dist\InventaireWarframe.exe
+      - name: Garder l'exe de test (sans publier)
+        if: ${{ !startsWith(github.ref, 'refs/tags/v') }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: LotusDesk-test
+          path: dist/LotusDesk.exe
+          retention-days: 7
+      - name: Publier
+        if: startsWith(github.ref, 'refs/tags/v')
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          $tag = "${{ github.ref_name }}"
+          git fetch --force origin "refs/tags/${tag}:refs/tags/${tag}"
+          $notes = (git for-each-ref "refs/tags/$tag" --format="%(contents)") -join "`n"
+          if (-not $notes.Trim()) { $notes = "Version $($tag.TrimStart('v'))" }
+          [IO.File]::WriteAllText("$PWD\notes.md", $notes, (New-Object Text.UTF8Encoding $false))
+          gh release create $tag dist\LotusDesk.exe dist\InventaireWarframe.exe `
+            --title "Version $($tag.TrimStart('v'))" --notes-file notes.md

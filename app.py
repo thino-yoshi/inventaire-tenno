@@ -442,18 +442,50 @@ if pi.IS_WINDOWS:
             _kernel32.LocalFree(ctypes.cast(out.pbData, ctypes.c_void_p))
 
 
+def jwt_expiry(token):
+    """Date d'expiration lisible d'un jeton JWT (champ 'exp'), ou None si illisible."""
+    try:
+        import base64 as b64
+        part = token.split(".")[1]
+        data = json.loads(b64.urlsafe_b64decode(part + "=" * (-len(part) % 4)))
+        exp = data.get("exp")
+        return time.strftime("%d/%m/%Y %H:%M", time.localtime(int(exp))) if exp else "aucune"
+    except Exception:
+        return None
+
+
+def log_session(msg, token=None):
+    """Note dans app.log ce qui arrive a la session WFM (pour comprendre les deconnexions)."""
+    exp = f" (expiration : {jwt_expiry(token) or 'illisible'})" if token else ""
+    print(f"{time.strftime('%d/%m/%Y %H:%M:%S')} session WFM : {msg}{exp}", flush=True)
+
+
 class Account:
     def __init__(self):
         self.token = None
         self.device = None
         self.user = None
         self.orders = []
+        self._token_lock = threading.Lock()
         try:
             raw = json.loads(_dpapi(base64.b64decode(SESSION_FILE.read_bytes()), False))
             self.token, self.device = raw.get("token"), raw.get("device")
         except Exception:
             pass
         self.device = self.device or str(uuid.uuid4())
+        if self.token:
+            log_session("jeton enregistre recharge", self.token)
+
+    def _renew(self, r):
+        """Si WFM renvoie un jeton neuf (en-tete ou cookie), on le garde, comme le navigateur."""
+        auth = r.headers.get("Authorization", "")
+        new = auth.split(" ", 1)[1].strip() if auth.startswith(("JWT ", "Bearer ")) else None
+        new = new or r.cookies.get("JWT")
+        if new and self.token and new != self.token:
+            with self._token_lock:
+                self.token = new
+                self._save()
+            log_session("jeton renouvele par WFM", new)
 
     def _save(self):
         if self.token:
@@ -477,10 +509,12 @@ class Account:
         time.sleep(max(0.0, start - time.time()))
         r = requests.request(method, f"{pi.WFM}{path}", headers=self.headers(), json=body, timeout=30)
         if r.status_code == 401:
+            log_session("jeton refuse par WFM, deconnexion", self.token)
             self.logout()
             raise RuntimeError("session_expiree")
         if not r.ok:
             raise RuntimeError(wfm_error(r))
+        self._renew(r)
         return r.json() if r.content else {}
 
     def login(self, email, password):
@@ -498,6 +532,7 @@ class Account:
             raise RuntimeError("connexion_impossible")
         self.token = auth[4:]
         self._save()
+        log_session("connexion reussie", self.token)
         return self.refresh()
 
     def logout(self):
