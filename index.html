@@ -503,11 +503,36 @@
   .guide-arc li b { color: var(--text); font-weight: 600; }
   .guide-arc li span { color: var(--muted); font-size: 12px; }
   .guide-note { font-size: 11px; color: var(--muted); margin: 10px 0 0; }
-  .guide-annexes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
-  .guide-annexe { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
-  .guide-annexe b { color: var(--gold); font-size: 14px; font-weight: 600; }
-  .guide-annexe span { color: var(--text); font-size: 12px; }
-  .guide-annexe small { color: var(--muted); font-size: 11px; }
+  .guide-onglets { display: flex; gap: 0; margin: 0 0 22px; border: 1px solid var(--line); width: max-content; max-width: 100%; }
+  .guide-onglets button { background: transparent; border: none; border-right: 1px solid var(--line); color: var(--muted);
+                          padding: 7px 18px; font-size: 12px; letter-spacing: 1.5px; text-transform: uppercase; border-radius: 0; }
+  .guide-onglets button:last-child { border-right: none; }
+  .guide-onglets button.on { background: var(--gold-soft); color: var(--gold); }
+  .guide-onglets button:hover:not(.on) { color: var(--text); }
+  .guide-recherche { min-width: 240px; }
+  .wf-frise { max-width: 1000px; margin-bottom: 14px; }
+  .wf-liste { list-style: none; margin: 8px 0 0; padding: 0; }
+  .wf-liste li { display: grid; grid-template-columns: minmax(150px, 230px) auto 1fr; gap: 4px 10px; align-items: baseline;
+                 padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; }
+  .wf-liste li:first-child { border-top: none; }
+  .wf-liste li[hidden], .wf-etape[hidden] { display: none; }
+  .wf-liste b { color: var(--text); font-weight: 600; }
+  .wf-liste span:not(.guide-badge) { color: var(--muted); grid-column: 3; }
+  .wf-liste li:not(:has(.guide-badge)) span { grid-column: 2 / 4; }
+  .guide-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border: 1px solid var(--line);
+                 color: var(--muted); white-space: nowrap; font-weight: 500; vertical-align: middle; }
+  .guide-badge.rang { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 45%, transparent); }
+  .guide-badge.clan { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+  .guide-astuce { max-width: 1000px; font-size: 13px; color: var(--muted); border-left: 2px solid var(--gold); padding: 8px 14px;
+                  background: var(--panel); margin: 4px 0 0; }
+  .guide-astuce b { color: var(--text); }
+  .con-ph { color: var(--text); border: 1px solid color-mix(in srgb, var(--gold) 50%, transparent); padding: 1px 8px; letter-spacing: 1.5px; }
+  .guide-conseil.sans-ic { grid-template-columns: 1fr; }
+  .con-avant { margin-top: 10px; padding: 10px 16px; border: 1px dashed color-mix(in srgb, var(--gold) 40%, transparent); font-size: 13px; }
+  .con-avant b { color: var(--gold); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .con-avant ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
+  .con-avant li::before { content: "☐ "; color: var(--gold); }
+  .con-armes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .guide-conseils { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
   .guide-conseil { display: grid; grid-template-columns: 36px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
   .guide-ic { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--gold);
@@ -1277,6 +1302,110 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
+    debOnglets: [["parcours", "Parcours"], ["warframes", "Warframes"], ["conseils", "Conseils"]],
+    wfTitre: "Quelles Warframes, et quand ?",
+    wfIntro: "Les Warframes dans l'ordre où tu peux les obtenir en avançant sur la Carte céleste (Terre, Vénus, Mercure, Mars…). Commence par le haut de la liste.",
+    wfRecherche: "Chercher une Warframe…", wfAucune: "Aucune Warframe trouvée.",
+    wfCircuit: "Astuce : après Le Paradoxe Duviri, le <b>Circuit</b> propose chaque semaine trois Warframes au choix. Pratique pour celles qui sont longues à obtenir.",
+    wfEtapes: [
+      ["Dès le début", "Aucune planète à débloquer", [
+        ["Warframe de départ", "Excalibur, Mag ou Volt, choisie dans L'Éveil.", ""],
+        ["Volt · Banshee · Zephyr · Wukong · Nezha", "Recherche au laboratoire Tenno du Dojo de clan. Banshee, Zephyr et Wukong ne s'obtiennent que là.", "Clan"],
+        ["Vauban", "Composants dans la boutique Nightwave.", ""],
+        ["Nyx", "Phorid, un boss qui n'apparaît que pendant une invasion Infestée : à surveiller.", ""]]],
+      ["Terre", "Cetus et les Plaines d'Eidolon", [
+        ["Gara", "Schéma principal avec La Veillée de Saya, composants avec les primes de Konzu à Cetus.", "Quête"],
+        ["Koumei", "Défense du sanctuaire sur la Terre, après La Veillée de Saya et Autrefois Éveillés.", "Quête"],
+        ["Revenant", "Quête Mask of the Revenant, puis primes de Cetus.", "Quête"],
+        ["Hydroid", "Conseiller Vay Hek sur Oro. La mission demande le rang de maîtrise 5.", "Rang 5"]]],
+      ["Vénus", "Fortuna et la Plaine d'Orb", [
+        ["Rhino", "Schéma principal au Marché pour des crédits, composants sur le Chacal à Fossa. La meilleure deuxième Warframe.", ""],
+        ["Garuda", "Schéma principal avec Vox Solaris, composants avec les primes d'Eudico.", "Quête"],
+        ["Baruuk", "Vendu par Little Duck à Fortuna contre de la réputation Vox Solaris.", ""],
+        ["Hildryn", "Schéma principal chez Little Duck, composants sur l'Orbe Exploiteuse.", ""]]],
+      ["Mars, Phobos, Deimos, Cérès", "", [
+        ["Excalibur", "Lieutenant Lech Kril sur War (Mars).", ""],
+        ["Mag", "Le Sergent sur Iliad (Phobos).", ""],
+        ["Xaku", "Schéma principal avec Cœur de Deimos, composants avec les primes de la Faille Cambion.", "Quête"],
+        ["Lavos", "Vendu par Father à la Nécralisk contre de la réputation Entrati.", ""],
+        ["Nekros", "Lephantis sur Magnacidium (Deimos).", ""],
+        ["Citrine", "Défense Miroir à Tyana Pass (Mars), après Cœur de Deimos.", "Quête"],
+        ["Frost", "Lech Kril puis le Capitaine Vor sur Exta (Cérès).", ""]]],
+      ["Jupiter, Europe, Saturne", "", [
+        ["Valkyr", "Alad V sur Themisto (Jupiter).", ""],
+        ["Nova", "Les Raptors sur Naamah (Europe).", ""],
+        ["Limbo", "Schéma principal au Marché, composants avec The Limbo Theorem (Jonction d'Europe et Archwing).", "Quête"],
+        ["Ember", "Général Sargas Ruk sur Tethys (Saturne).", ""]]],
+      ["Uranus, Neptune, Pluton, Éris, Sedna", "", [
+        ["Equinox", "Tyl Regor sur Titania (Uranus). Deux aspects à construire, huit schémas en tout.", ""],
+        ["Chroma", "Quête The New Strange, composants avec les Jonctions d'Uranus, Neptune et Pluton.", "Quête"],
+        ["Kullervo", "À Duviri, chez Acrithis, contre des Fléaux de Kullervo.", "Quête"],
+        ["Loki", "La Meute d'Hyènes sur Psamathe (Neptune).", ""],
+        ["Trinity", "Ambulas sur Hades (Pluton).", ""],
+        ["Atlas", "Quête The Jordas Precept, composants sur le Golem Jordas (Éris).", "Quête"],
+        ["Mesa", "Alad V Mutant sur Éris, avec une clé d'assassinat à fabriquer.", ""],
+        ["Nidus", "Quête The Glast Gambit, composants en Récupération Infestée sur Oestrus (Éris).", "Quête"],
+        ["Saryn", "Kela De Thaym sur Merrow (Sedna).", ""],
+        ["Mirage", "Schéma principal au Marché, composants avec Hidden Messages.", "Quête"],
+        ["Gauss", "Perturbation sur Kappa (Sedna), rotation C.", ""]]],
+      ["En suivant l'histoire", "Les Warframes liées aux quêtes plus avancées", [
+        ["Protea", "Quête The Deadlock Protocol.", "Rang 4"],
+        ["Octavia", "Quête Octavia's Anthem, après Le Second Rêve.", "Quête"],
+        ["Titania", "Quête The Silver Grove, après Le Second Rêve.", "Rang 7"],
+        ["Voruna", "Survie de Conjonction sur Lua, après La Guerre Intérieure.", "Quête"],
+        ["Harrow", "Quête Le Fardeau de Harrow.", "Quête"],
+        ["Excalibur Umbra", "Quête Le Sacrifice. Une seule par compte.", "Quête"],
+        ["Wisp", "Le Ropalolyst sur Jupiter, après Chimera Prologue.", "Quête"],
+        ["Follie", "Vesper Relay (Vénus), après Le Fardeau de Harrow.", "Quête"],
+        ["Caliban · Nokko", "Primes de Narmer et des Tréfonds, après La Nouvelle Guerre.", "Quête"],
+        ["Gyre · Styanax · Jade", "Angels of the Zariman, Veilbreaker, Les Ombres de Jade.", "Quête"],
+        ["Qorvex · Dante", "Murmures dans les Murs (Sanctum Anatomica).", "Quête"],
+        ["Cyte-09 · Temple · Oraxia", "Après The Hex (Höllvania et Duviri).", "Quête"],
+        ["Uriel · Sirius & Orion", "L'Ancienne Paix, Jade Shadows: Constellations.", "Quête"]]],
+      ["Autres sources", "Railjack, relais, marchands, fin de jeu", [
+        ["Ash · Oberon", "Missions Railjack (Empyrée).", ""],
+        ["Sevagoth", "Quête Call of the Tempestarii, composants dans les Tempêtes du Néant (Railjack).", "Quête"],
+        ["Khora", "Onslaught du Sanctuaire, chez Cephalon Simaris.", ""],
+        ["Ivara", "Missions Espionnage, rotation C (trois coffres réussis).", ""],
+        ["Inaros", "Quête Sands of Inaros, schéma vendu par Baro Ki'Teer.", "Rang 5"],
+        ["Yareli", "Fortuna, avec les Ventkids (K-Drive).", ""],
+        ["Dagath", "Salle dédiée dans le Dojo de clan.", "Clan"],
+        ["Grendel", "Localisateurs vendus contre des Essences Vitus (Arbitrages, fin de jeu).", ""]]]],
+    conTitre: "Bien faire évoluer son compte",
+    conIntro: "Quoi faire, et quand, pour progresser sans te perdre. Repère ta phase et suis les conseils, puis vérifie la liste « avant de passer à la suite ».",
+    conAvant: "Avant de passer à la suite",
+    conPhases: [
+      ["Phase 1", "Les premières heures · Terre et Vénus", [
+        ["Rejoins un clan tout de suite", "Le <b>Dojo</b> donne accès à des recherches de Warframes (Volt, Banshee, Zephyr, Wukong, Nezha) et d'armes. Les membres aident volontiers les débutants."],
+        ["Cetus et les Ostrons (Terre)", "Après Le Trophée de Vor, va à <b>Cetus</b> et fais les primes de <b>Konzu</b> : elles rapportent de la réputation <b>Ostron</b> et ouvrent les Plaines d'Eidolon. La Veillée de Saya commence aussi par une de ses primes."],
+        ["Fortuna et Solaris United (Vénus)", "En arrivant sur Vénus, termine le nœud <b>Unda</b> pour voir <b>Fortuna</b>. La quête <b>Vox Solaris</b> démarre à ta première visite. Fais ensuite les primes d'<b>Eudico</b> pour la réputation <b>Solaris United</b>."],
+        ["Monte tes mods de départ", "Le Professeur te donne les mods de base : <b>Vitalité</b>, <b>Redirection</b>, et un mod de dégâts par arme. Monte-les avec de l'<b>Endo</b> avant d'en chercher d'autres."],
+        ["Garde ton platine", "Les 50 platines de départ servent aux <b>emplacements</b> de Warframes et d'armes. Le reste se gagne en revendant des pièces Prime."]],
+        ["Le Professeur terminé", "Un clan rejoint", "Rhino construit", "Jonction de Mercure réussie"]],
+      ["Phase 2", "De Mars à Saturne · rangs de maîtrise 3 à 8", [
+        ["Choisis un syndicat de faction", "Dès le <b>rang de maîtrise 3</b>, tu peux t'engager auprès d'un des six syndicats des relais. Ils ont des alliés et des ennemis : <b>Steel Meridian, Arbiters of Hexis et Cephalon Suda</b> s'entendent, tout comme <b>Red Veil, New Loka et The Perrin Sequence</b>. Ils vendent des mods d'augmentation et des armes."],
+        ["Rends visite à Cephalon Simaris", "Dans n'importe quel <b>relais</b>. Il vend les scanners de synthèse (5 000 crédits les 25). Les quêtes Stolen Dreams puis The New Strange ouvrent ses tâches quotidiennes et l'Onslaught du Sanctuaire."],
+        ["Tes premières reliques", "Ouvre tes reliques dans les <b>fissures du Néant</b> : c'est la première vraie source de platine. L'overlay de Lotus Desk affiche le prix de chaque récompense."],
+        ["Deimos et l'Helminth", "Cœur de Deimos ouvre la réputation <b>Entrati</b>. Au rang Entrati 3 et au <b>rang de maîtrise 8</b>, Son vend le segment Helminth (15 000 de réputation), qui permet d'échanger des pouvoirs entre Warframes."],
+        ["Le plafond de réputation", "La réputation des syndicats de faction est limitée chaque jour : <b>16 000 + 500 par rang de maîtrise</b>. Monter de rang permet d'en gagner plus."]],
+        ["Rang de maîtrise 3 et un syndicat choisi", "Premières reliques ouvertes", "Cœur de Deimos terminé"]],
+      ["Phase 3", "Uranus à Sedna · Le Second Rêve", [
+        ["L'Opérateur et le Focus", "<b>Le Second Rêve</b> débloque l'Opérateur et les écoles de Focus. C'est un tournant du jeu : ne passe pas à côté."],
+        ["Duviri et le Circuit", "Après <b>Le Paradoxe Duviri</b>, le Circuit propose chaque semaine trois Warframes au choix, avec remise à zéro le lundi à 0 h UTC."],
+        ["La Forteresse Kuva", "<b>La Guerre Intérieure</b> ouvre la Forteresse Kuva et les Liches Kuva, avec des armes très puissantes."],
+        ["Ton Railjack", "<b>Marée Montante</b> te donne ton propre vaisseau Railjack, utile pour d'autres quêtes et plusieurs Warframes."]],
+        ["Le Second Rêve et La Guerre Intérieure terminés", "Une école de Focus choisie"]],
+      ["Phase 4", "Après l'histoire · la fin de jeu", [
+        ["La Route d'Acier", "Termine tous les nœuds de la Carte céleste (sauf les deux assassinats d'Éris), puis parle à <b>Teshin</b> : la Route d'Acier s'ouvre, avec des ennemis de niveau 100 et plus. Vay Hek (rang de maîtrise 5) fait partie des nœuds à finir."],
+        ["Et ensuite", "Arbitrages, Archontes, Zariman, Railjack… Le reste de l'histoire continue dans la liste du sous-onglet Parcours."]],
+        []]],
+    conArmesTitre: "Armes à viser au début",
+    conArmesNote: "Une petite sélection facile à obtenir. Le rang indiqué est le rang de maîtrise nécessaire.",
+    conArmes: [
+      ["Hek", "Fusil à pompe", "Marché", "Rang 4"],
+      ["Tonkor", "Lance-grenades", "Marché", "Rang 5"],
+      ["Vaykor Hek", "Fusil à pompe", "Steel Meridian (syndicat)", ""],
+      ["Ignis Wraith", "Lance-flammes", "Dojo de clan", "Rang 9"]],
     debTitre: "Guide du débutant",
     debIntro: "Les étapes clés pour bien démarrer sur Warframe, dans l'ordre conseillé. Le jeu est gratuit et sans limite de temps : avance à ton rythme.",
     debNbEtapes: "7 étapes", debNbConseils: "8 conseils", debNbQuetes: "26 quêtes",
@@ -1296,15 +1425,6 @@ const T3 = {
       ["Chapitre 2 · La Guerre Intérieure", [["Natah", "Sur Uranus"], ["Le Second Rêve", "L'Opérateur et le Focus"], ["Marée Montante", "Ton propre Railjack"], ["La Guerre Intérieure", "La Forteresse Kuva et les Liches Kuva"], ["Le Fardeau de Harrow", "Warframe Harrow"], ["Prologue Apostasie", "Mène au Sacrifice"], ["Le Sacrifice", "Excalibur Umbra"]]],
       ["Chapitre 3 · La Nouvelle Guerre", [["Prélude à la Guerre", "Chimera Prologue, Erra, The Maker"], ["La Nouvelle Guerre", "Le camp du Drifter · nécessite un Railjack"], ["Les Ombres de Jade", "Warframe Jade"], ["Le Paradoxe Duviri", "Duviri et le Drifter · jouable dès la Jonction d'Uranus"], ["Angels of the Zariman", "Le Zariman"], ["Veilbreaker", "Le segment des Éclats d'Archonte (Helminth)"]]],
       ["Chapitre 4 · La Guerre du Néant", [["Murmures dans les Murs", "Le Sanctum Anatomica · Qorvex"], ["Les Dévoreurs de Lotus", "Suite directe"], ["The Hex", "Höllvania (1999) · Cyte-09 · demande Le Paradoxe Duviri"], ["L'Ancienne Paix", "Le système Tau · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · après Les Ombres de Jade"], ["Prologue to Tau", "Octobre 2026 · demande The Hex et L'Ancienne Paix"]]]],
-    debAnnexesTitre: "Quêtes annexes : des Warframes à gagner",
-    debAnnexes: [
-      ["Saya's Vigil", "Gara", "Une prime à Cetus"], ["The New Strange", "Chroma", "Après Stolen Dreams"],
-      ["Hidden Messages", "Mirage", "Jonction de Sedna"], ["The Limbo Theorem", "Limbo", "Jonction d'Europe + Archwing"],
-      ["Patient Zero", "Mesa", "Jonction d'Éris"], ["The Jordas Precept", "Atlas", "Jonction d'Éris + Archwing"],
-      ["The Deadlock Protocol", "Protea", "Rang de maîtrise 4"], ["Sands of Inaros", "Inaros", "Rang 5 + clé de Baro Ki'Teer"],
-      ["The Silver Grove", "Titania", "Le Second Rêve + rang 7"], ["Octavia's Anthem", "Octavia", "Le Second Rêve"],
-      ["The Glast Gambit", "Nidus", "La Guerre Intérieure"], ["Mask of the Revenant", "Revenant", "Cetus, rang 2"],
-      ["Call of the Tempestarii", "Sevagoth", "The Deadlock Protocol + Railjack"], ["Howl of the Kubrow", "Ton premier Kubrow", "Jonction de Vénus"]],
     debConseilsTitre: "Conseils essentiels",
     debConseils: [
       ["◇", "Bien utiliser son platine", "Seule monnaie échangeable entre joueurs. Les 50 platines de départ sont à réserver aux <b>emplacements</b> de Warframes et d'armes."],
@@ -1435,6 +1555,110 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
+    debOnglets: [["parcours", "Path"], ["warframes", "Warframes"], ["conseils", "Tips"]],
+    wfTitre: "Which Warframes, and when?",
+    wfIntro: "Warframes in the order you can get them while moving across the Star Chart (Earth, Venus, Mercury, Mars…). Start from the top of the list.",
+    wfRecherche: "Search a Warframe…", wfAucune: "No Warframe found.",
+    wfCircuit: "Tip: after The Duviri Paradox, <b>The Circuit</b> offers three Warframes to pick from every week. Handy for the long ones.",
+    wfEtapes: [
+      ["From the start", "No planet to unlock", [
+        ["Starter Warframe", "Excalibur, Mag or Volt, picked in Awakening.", ""],
+        ["Volt · Banshee · Zephyr · Wukong · Nezha", "Research in the clan Dojo Tenno Lab. Banshee, Zephyr and Wukong are only found there.", "Clan"],
+        ["Vauban", "Components in the Nightwave shop.", ""],
+        ["Nyx", "Phorid, a boss that only shows up during an Infested invasion: keep an eye out.", ""]]],
+      ["Earth", "Cetus and the Plains of Eidolon", [
+        ["Gara", "Main blueprint from Saya's Vigil, components from Konzu's bounties in Cetus.", "Quest"],
+        ["Koumei", "Shrine Defense on Earth, after Saya's Vigil and Once Awake.", "Quest"],
+        ["Revenant", "Mask of the Revenant quest, then Cetus bounties.", "Quest"],
+        ["Hydroid", "Councilor Vay Hek on Oro. The mission needs mastery rank 5.", "Rank 5"]]],
+      ["Venus", "Fortuna and Orb Vallis", [
+        ["Rhino", "Main blueprint from the Market for credits, components from the Jackal on Fossa. The best second Warframe.", ""],
+        ["Garuda", "Main blueprint from Vox Solaris, components from Eudico's bounties.", "Quest"],
+        ["Baruuk", "Sold by Little Duck in Fortuna for Vox Solaris standing.", ""],
+        ["Hildryn", "Main blueprint from Little Duck, components from the Exploiter Orb.", ""]]],
+      ["Mars, Phobos, Deimos, Ceres", "", [
+        ["Excalibur", "Lieutenant Lech Kril on War (Mars).", ""],
+        ["Mag", "The Sergeant on Iliad (Phobos).", ""],
+        ["Xaku", "Main blueprint from Heart of Deimos, components from Cambion Drift bounties.", "Quest"],
+        ["Lavos", "Sold by Father in the Necralisk for Entrati standing.", ""],
+        ["Nekros", "Lephantis on Magnacidium (Deimos).", ""],
+        ["Citrine", "Mirror Defense at Tyana Pass (Mars), after Heart of Deimos.", "Quest"],
+        ["Frost", "Lech Kril then Captain Vor on Exta (Ceres).", ""]]],
+      ["Jupiter, Europa, Saturn", "", [
+        ["Valkyr", "Alad V on Themisto (Jupiter).", ""],
+        ["Nova", "The Raptors on Naamah (Europa).", ""],
+        ["Limbo", "Main blueprint from the Market, components from The Limbo Theorem (Europa Junction and Archwing).", "Quest"],
+        ["Ember", "General Sargas Ruk on Tethys (Saturn).", ""]]],
+      ["Uranus, Neptune, Pluto, Eris, Sedna", "", [
+        ["Equinox", "Tyl Regor on Titania (Uranus). Two aspects to build, eight blueprints in total.", ""],
+        ["Chroma", "The New Strange quest, components from the Uranus, Neptune and Pluto Junctions.", "Quest"],
+        ["Kullervo", "In Duviri, from Acrithis, for Kullervo's Bane.", "Quest"],
+        ["Loki", "The Hyena Pack on Psamathe (Neptune).", ""],
+        ["Trinity", "Ambulas on Hades (Pluto).", ""],
+        ["Atlas", "The Jordas Precept quest, components from the Jordas Golem (Eris).", "Quest"],
+        ["Mesa", "Mutalist Alad V on Eris, with an assassination key to craft.", ""],
+        ["Nidus", "The Glast Gambit quest, components from Infested Salvage on Oestrus (Eris).", "Quest"],
+        ["Saryn", "Kela De Thaym on Merrow (Sedna).", ""],
+        ["Mirage", "Main blueprint from the Market, components from Hidden Messages.", "Quest"],
+        ["Gauss", "Disruption on Kappa (Sedna), rotation C.", ""]]],
+      ["Following the story", "Warframes tied to later quests", [
+        ["Protea", "The Deadlock Protocol quest.", "Rank 4"],
+        ["Octavia", "Octavia's Anthem quest, after The Second Dream.", "Quest"],
+        ["Titania", "The Silver Grove quest, after The Second Dream.", "Rank 7"],
+        ["Voruna", "Conjunction Survival on Lua, after The War Within.", "Quest"],
+        ["Harrow", "Chains of Harrow quest.", "Quest"],
+        ["Excalibur Umbra", "The Sacrifice quest. One per account.", "Quest"],
+        ["Wisp", "The Ropalolyst on Jupiter, after Chimera Prologue.", "Quest"],
+        ["Follie", "Vesper Relay (Venus), after Chains of Harrow.", "Quest"],
+        ["Caliban · Nokko", "Narmer and Deepmines bounties, after The New War.", "Quest"],
+        ["Gyre · Styanax · Jade", "Angels of the Zariman, Veilbreaker, Jade Shadows.", "Quest"],
+        ["Qorvex · Dante", "Whispers in the Walls (Sanctum Anatomica).", "Quest"],
+        ["Cyte-09 · Temple · Oraxia", "After The Hex (Höllvania and Duviri).", "Quest"],
+        ["Uriel · Sirius & Orion", "The Old Peace, Jade Shadows: Constellations.", "Quest"]]],
+      ["Other sources", "Railjack, relays, vendors, endgame", [
+        ["Ash · Oberon", "Railjack missions (Empyrean).", ""],
+        ["Sevagoth", "Call of the Tempestarii quest, components from Void Storms (Railjack).", "Quest"],
+        ["Khora", "Sanctuary Onslaught, at Cephalon Simaris.", ""],
+        ["Ivara", "Spy missions, rotation C (three clean vaults).", ""],
+        ["Inaros", "Sands of Inaros quest, blueprint sold by Baro Ki'Teer.", "Rank 5"],
+        ["Yareli", "Fortuna, with the Ventkids (K-Drive).", ""],
+        ["Dagath", "Dedicated room in the clan Dojo.", "Clan"],
+        ["Grendel", "Locators sold for Vitus Essence (Arbitrations, endgame).", ""]]]],
+    conTitre: "Growing your account the right way",
+    conIntro: "What to do, and when, to progress without getting lost. Find your phase, follow the tips, then check the “before moving on” list.",
+    conAvant: "Before moving on",
+    conPhases: [
+      ["Phase 1", "The first hours · Earth and Venus", [
+        ["Join a clan right away", "The <b>Dojo</b> gives access to Warframe research (Volt, Banshee, Zephyr, Wukong, Nezha) and weapons. Members are usually happy to help beginners."],
+        ["Cetus and the Ostrons (Earth)", "After Vor's Prize, go to <b>Cetus</b> and do <b>Konzu</b>'s bounties: they give <b>Ostron</b> standing and open the Plains of Eidolon. Saya's Vigil also starts with one of his bounties."],
+        ["Fortuna and Solaris United (Venus)", "On Venus, finish the <b>Unda</b> node to see <b>Fortuna</b>. The <b>Vox Solaris</b> quest starts on your first visit. Then do <b>Eudico</b>'s bounties for <b>Solaris United</b> standing."],
+        ["Level up your starting mods", "The Teacher gives you the basic mods: <b>Vitality</b>, <b>Redirection</b>, and a damage mod per weapon. Upgrade them with <b>Endo</b> before looking for others."],
+        ["Keep your platinum", "Your starting 50 platinum is for Warframe and weapon <b>slots</b>. More can be earned by selling Prime parts."]],
+        ["The Teacher completed", "Joined a clan", "Rhino built", "Mercury Junction cleared"]],
+      ["Phase 2", "Mars to Saturn · mastery ranks 3 to 8", [
+        ["Pick a faction syndicate", "From <b>mastery rank 3</b>, you can pledge to one of the six relay syndicates. They have allies and enemies: <b>Steel Meridian, Arbiters of Hexis and Cephalon Suda</b> get along, as do <b>Red Veil, New Loka and The Perrin Sequence</b>. They sell augment mods and weapons."],
+        ["Visit Cephalon Simaris", "In any <b>relay</b>. He sells Synthesis Scanners (5,000 credits for 25). The Stolen Dreams then The New Strange quests open his daily tasks and Sanctuary Onslaught."],
+        ["Your first relics", "Open your relics in <b>Void Fissures</b>: it's the first real source of platinum. The Lotus Desk overlay shows the price of each reward."],
+        ["Deimos and the Helminth", "Heart of Deimos opens <b>Entrati</b> standing. At Entrati rank 3 and <b>mastery rank 8</b>, Son sells the Helminth segment (15,000 standing), which lets you swap abilities between Warframes."],
+        ["The standing cap", "Faction syndicate standing is capped each day: <b>16,000 + 500 per mastery rank</b>. Ranking up lets you earn more."]],
+        ["Mastery rank 3 and a syndicate picked", "First relics opened", "Heart of Deimos completed"]],
+      ["Phase 3", "Uranus to Sedna · The Second Dream", [
+        ["The Operator and Focus", "<b>The Second Dream</b> unlocks the Operator and Focus schools. It's a turning point: don't miss it."],
+        ["Duviri and The Circuit", "After <b>The Duviri Paradox</b>, The Circuit offers three Warframes to pick from every week, resetting on Monday at 0:00 UTC."],
+        ["The Kuva Fortress", "<b>The War Within</b> opens the Kuva Fortress and Kuva Liches, with very strong weapons."],
+        ["Your Railjack", "<b>Rising Tide</b> gives you your own Railjack ship, useful for other quests and several Warframes."]],
+        ["The Second Dream and The War Within completed", "A Focus school picked"]],
+      ["Phase 4", "After the story · endgame", [
+        ["The Steel Path", "Finish every Star Chart node (except the two Eris assassinations), then talk to <b>Teshin</b>: the Steel Path opens, with level 100+ enemies. Vay Hek (mastery rank 5) is one of the nodes to clear."],
+        ["And then", "Arbitrations, Archons, Zariman, Railjack… The rest of the story continues in the Path tab list."]],
+        []]],
+    conArmesTitre: "Weapons to aim for early",
+    conArmesNote: "A small selection that is easy to get. The rank shown is the mastery rank required.",
+    conArmes: [
+      ["Hek", "Shotgun", "Market", "Rank 4"],
+      ["Tonkor", "Grenade launcher", "Market", "Rank 5"],
+      ["Vaykor Hek", "Shotgun", "Steel Meridian (syndicate)", ""],
+      ["Ignis Wraith", "Flamethrower", "Clan Dojo", "Rank 9"]],
     debTitre: "Beginner's guide",
     debIntro: "The key steps to get started in Warframe, in the recommended order. The game is free with no time limit: go at your own pace.",
     debNbEtapes: "7 steps", debNbConseils: "8 tips", debNbQuetes: "26 quests",
@@ -1454,15 +1678,6 @@ const T3 = {
       ["Chapter 2 · The War Within", [["Natah", "On Uranus"], ["The Second Dream", "The Operator and Focus"], ["Rising Tide", "Your own Railjack"], ["The War Within", "The Kuva Fortress and Kuva Liches"], ["Chains of Harrow", "Harrow Warframe"], ["Apostasy Prologue", "Leads into The Sacrifice"], ["The Sacrifice", "Excalibur Umbra"]]],
       ["Chapter 3 · The New War", [["Prelude to War", "Chimera Prologue, Erra, The Maker"], ["The New War", "The Drifter's camp · needs a Railjack"], ["Jade Shadows", "Jade Warframe"], ["The Duviri Paradox", "Duviri and the Drifter · playable from the Uranus Junction"], ["Angels of the Zariman", "The Zariman"], ["Veilbreaker", "Helminth Archon Shard segment"]]],
       ["Chapter 4 · The Void War", [["Whispers in the Walls", "Sanctum Anatomica · Qorvex"], ["The Lotus Eaters", "Direct follow-up"], ["The Hex", "Höllvania (1999) · Cyte-09 · needs The Duviri Paradox"], ["The Old Peace", "The Tau system · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · after Jade Shadows"], ["Prologue to Tau", "October 2026 · needs The Hex and The Old Peace"]]]],
-    debAnnexesTitre: "Side quests: Warframes to earn",
-    debAnnexes: [
-      ["Saya's Vigil", "Gara", "A Cetus bounty"], ["The New Strange", "Chroma", "After Stolen Dreams"],
-      ["Hidden Messages", "Mirage", "Sedna Junction"], ["The Limbo Theorem", "Limbo", "Europa Junction + Archwing"],
-      ["Patient Zero", "Mesa", "Eris Junction"], ["The Jordas Precept", "Atlas", "Eris Junction + Archwing"],
-      ["The Deadlock Protocol", "Protea", "Mastery rank 4"], ["Sands of Inaros", "Inaros", "Rank 5 + Baro Ki'Teer key"],
-      ["The Silver Grove", "Titania", "The Second Dream + rank 7"], ["Octavia's Anthem", "Octavia", "The Second Dream"],
-      ["The Glast Gambit", "Nidus", "The War Within"], ["Mask of the Revenant", "Revenant", "Cetus, rank 2"],
-      ["Call of the Tempestarii", "Sevagoth", "The Deadlock Protocol + Railjack"], ["Howl of the Kubrow", "Your first Kubrow", "Venus Junction"]],
     debConseilsTitre: "Key tips",
     debConseils: [
       ["◇", "Spend platinum wisely", "The only currency players can trade. Keep your starting 50 platinum for Warframe and weapon <b>slots</b>."],
@@ -2493,6 +2708,50 @@ function montrerPage(p) {
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
 const INFO_SOUS = { jeu: ["debuter", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+// Débuter : sous-onglets Parcours | Warframes | Conseils
+var debSous = "parcours", wfFiltre = "";
+try { debSous = localStorage.getItem("debSous") || "parcours"; } catch (e) {}
+function navDebuter() {
+  if (!t("debOnglets").some(([k]) => k === debSous)) debSous = "parcours";
+  return `<nav class="guide-onglets">` + t("debOnglets").map(([k, l]) =>
+    `<button type="button" data-d="${k}" class="${k === debSous ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
+}
+const badgeGuide = b => b ? `<span class="guide-badge${/^(Clan)$/.test(b) ? " clan" : /\d/.test(b) ? " rang" : ""}">${esc(b)}</span>` : "";
+function rendreWarframes() {
+  return `<div class="guide-tete"><div><h1>${esc(t("wfTitre"))}</h1><p>${esc(t("wfIntro"))}</p></div>
+      <input type="search" id="wfRecherche" class="guide-recherche" placeholder="${esc(t("wfRecherche"))}" value="${esc(wfFiltre)}"></div>
+    <ol class="guide-frise wf-frise">` + t("wfEtapes").map(([etape, sous, frames], i) =>
+      `<li class="wf-etape"><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
+        <div class="guide-etape"><span class="guide-cat">${esc(sous)}</span><h3>${esc(etape)}</h3>
+        <ul class="wf-liste">` + frames.map(([nom, txt, badge]) =>
+          `<li data-n="${esc((nom + " " + txt).toLowerCase())}"><b>${esc(nom)}</b>${badgeGuide(badge)}<span>${esc(txt)}</span></li>`).join("") +
+        `</ul></div></li>`).join("") + `</ol>
+    <p class="wf-vide muted" hidden>${esc(t("wfAucune"))}</p>
+    <p class="guide-astuce">${t("wfCircuit")}</p>`;
+}
+function filtrerWarframes() {
+  const q = wfFiltre.trim().toLowerCase();
+  let total = 0;
+  document.querySelectorAll("#infoContenu .wf-etape").forEach(et => {
+    let n = 0;
+    et.querySelectorAll(".wf-liste li").forEach(li => { const ok = !q || li.dataset.n.includes(q); li.hidden = !ok; if (ok) n++; });
+    et.hidden = !n; total += n;
+  });
+  const v = document.querySelector("#infoContenu .wf-vide"); if (v) v.hidden = total > 0;
+}
+function rendreConseils() {
+  return `<div class="guide-tete"><div><h1>${esc(t("conTitre"))}</h1><p>${esc(t("conIntro"))}</p></div></div>` +
+    t("conPhases").map(([ph, titre, conseils, liste]) =>
+      `<div class="guide-section con-phase"><h2 class="info-titre"><span class="con-ph">${esc(ph)}</span>${esc(titre)}</h2>
+        <div class="guide-conseils">` + conseils.map(([ti, txt]) =>
+          `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${txt}</p></div></div>`).join("") + `</div>` +
+        (liste.length ? `<div class="con-avant"><b>${esc(t("conAvant"))}</b><ul>` +
+          liste.map(x => `<li>${esc(x)}</li>`).join("") + "</ul></div>" : "") + `</div>`).join("") +
+    `<div class="guide-section"><h2 class="info-titre">${esc(t("conArmesTitre"))}</h2>
+      <div class="con-armes">` + t("conArmes").map(([nom, type, ou, rang]) =>
+        `<div class="guide-conseil sans-ic"><div><h3>${esc(nom)} ${badgeGuide(rang)}</h3><p>${esc(type)} · ${esc(ou)}</p></div></div>`).join("") +
+      `</div><p class="guide-note">${esc(t("conArmesNote"))}</p></div>`;
+}
 function rendreInfo() {
   if (!INFO_SOUS[infoGroupe]) infoGroupe = "jeu";
   if (infoSous.app === "signaler" && !infoSupport) infoSous.app = "guide";
@@ -2509,8 +2768,13 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
-  if (infoGroupe === "jeu" && s === "debuter") {
-    c.innerHTML = `<div class="guide-tete">
+  if (infoGroupe === "jeu" && s === "debuter" && debSous === "warframes") {
+    c.innerHTML = navDebuter() + rendreWarframes();
+    filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "debuter" && debSous === "conseils") {
+    c.innerHTML = navDebuter() + rendreConseils();
+  } else if (infoGroupe === "jeu" && s === "debuter") {
+    c.innerHTML = navDebuter() + `<div class="guide-tete">
         <div><h1>${esc(t("debTitre"))}</h1><p>${esc(t("debIntro"))}</p></div>
         <div class="guide-meta"><span>${esc(t("debNbEtapes"))}</span><span>${esc(t("debNbQuetes"))}</span><span>${esc(t("debNbConseils"))}</span></div></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debEtapesTitre"))}</h2>
@@ -2522,9 +2786,6 @@ function rendreInfo() {
         `<div class="guide-arc"><h3>${esc(arc)}</h3><ol>` + quetes.map(([nom, info]) =>
           `<li><b>${esc(nom)}</b><span>${esc(info)}</span></li>`).join("") + "</ol></div>").join("") + `</div>
       <p class="guide-note">${esc(t("debArcsNote"))}</p></div>
-      <div class="guide-section"><h2 class="info-titre">${esc(t("debAnnexesTitre"))}</h2><div class="guide-annexes">` +
-      t("debAnnexes").map(([nom, gain, cond]) =>
-        `<div class="guide-annexe"><b>${esc(gain)}</b><span>${esc(nom)}</span><small>${esc(cond)}</small></div>`).join("") + `</div></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debConseilsTitre"))}</h2><div class="guide-conseils">` +
       t("debConseils").map(([ic, titre, txt]) =>
         `<div class="guide-conseil"><span class="guide-ic">${ic}</span><div><h3>${esc(titre)}</h3><p>${txt}</p></div></div>`).join("") + "</div></div>";
@@ -2563,6 +2824,17 @@ async function chargerInfo() {
   } catch (e) { infoNouv = []; }
   if (page === "info") rendreInfo();
 }
+$("#infoContenu").addEventListener("click", e => {
+  const b = e.target.closest("button[data-d]");
+  if (!b) return;
+  debSous = b.dataset.d;
+  try { localStorage.setItem("debSous", debSous); } catch (e) {}
+  rendreInfo();
+});
+$("#infoContenu").addEventListener("input", e => {
+  if (e.target.id !== "wfRecherche") return;
+  wfFiltre = e.target.value; filtrerWarframes();
+});
 $("#infoChoix").addEventListener("click", e => {
   const b = e.target.closest("button[data-g]");
   if (b) { infoGroupe = b.dataset.g; rendreInfo(); }
