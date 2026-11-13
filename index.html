@@ -492,6 +492,22 @@
   .guide-etape h3, .guide-conseil h3 { margin: 2px 0 4px; font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: .3px; }
   .guide-etape p, .guide-conseil p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
   .guide-etape b, .guide-conseil b { color: var(--text); font-weight: 600; }
+  .guide-arcs { display: grid; grid-template-columns: repeat(auto-fill, minmax(440px, 1fr)); gap: 12px; }
+  .guide-arc { background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
+  .guide-arc h3 { margin: 0 0 10px; font-size: 12px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--gold); }
+  .guide-arc ol { margin: 0; padding: 0; list-style: none; counter-reset: q; }
+  .guide-arc li { counter-increment: q; display: grid; grid-template-columns: 22px 1fr; column-gap: 8px; padding: 6px 0;
+                  border-top: 1px solid var(--line); font-size: 13px; }
+  .guide-arc li:first-child { border-top: none; }
+  .guide-arc li::before { content: counter(q); grid-row: span 2; color: var(--muted); font-size: 12px; padding-top: 1px; }
+  .guide-arc li b { color: var(--text); font-weight: 600; }
+  .guide-arc li span { color: var(--muted); font-size: 12px; }
+  .guide-note { font-size: 11px; color: var(--muted); margin: 10px 0 0; }
+  .guide-annexes { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 8px; }
+  .guide-annexe { background: var(--panel); border: 1px solid var(--line); padding: 10px 12px; display: flex; flex-direction: column; gap: 2px; }
+  .guide-annexe b { color: var(--gold); font-size: 14px; font-weight: 600; }
+  .guide-annexe span { color: var(--text); font-size: 12px; }
+  .guide-annexe small { color: var(--muted); font-size: 11px; }
   .guide-conseils { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
   .guide-conseil { display: grid; grid-template-columns: 36px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
   .guide-ic { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--gold);
@@ -1263,24 +1279,41 @@ const T3 = {
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debTitre: "Guide du débutant",
     debIntro: "Les étapes clés pour bien démarrer sur Warframe, dans l'ordre conseillé. Le jeu est gratuit et sans limite de temps : avance à ton rythme.",
-    debNbEtapes: "8 étapes", debNbConseils: "6 conseils",
+    debNbEtapes: "7 étapes", debNbConseils: "8 conseils", debNbQuetes: "26 quêtes",
     debEtapesTitre: "Parcours conseillé",
     debEtapes: [
-      ["Quête", "Le prologue : « L'Éveil »", "Le jeu commence par cette quête. Tu y choisis ta première Warframe parmi <b>Excalibur</b>, <b>Mag</b> et <b>Volt</b>, ainsi que tes premières armes, puis tu échappes au Capitaine Vor. Les deux autres Warframes restent disponibles plus tard."],
-      ["Quête", "« Le Trophée de Vor »", "Tu répares ton vaisseau, l'<b>Orbiteur</b>, et débloques ses sections : <b>Arsenal</b> (équipement), <b>Fonderie</b> (fabrication), <b>Station de Mods</b> et <b>Navigation</b> (choix des missions). La quête se termine par un combat contre Vor."],
-      ["Quête", "« Le Professeur »", "Ajoutée fin 2025, cette quête suit directement Le Trophée de Vor. <b>Teshin</b> t'y apprend à utiliser les mods, le système le plus important du jeu. Elle rapporte une première série de mods, de l'<b>Endo</b>, des crédits et le fusil <b>Thornbak</b>."],
-      ["Progression", "Avancer sur la Carte céleste", "Chaque planète terminée ouvre l'accès à la suivante via une <b>Jonction</b>, un court défi qui récompense souvent un schéma. La première à viser est celle de <b>Mercure</b>, sur Terre."],
-      ["Histoire", "Chapitre 1 : L'Éveil", "Les quêtes suivantes, dans l'ordre : <b>La Veillée de Saya</b> (Cetus et les Plaines d'Eidolon), <b>Vox Solaris</b>, <b>Autrefois Éveillés</b>, <b>Cœur de Deimos</b> et <b>L'Archwing</b>. Elles se lancent depuis le Codex."],
-      ["Histoire", "Chapitre 2 : la Guerre Intérieure", "Le cœur de l'histoire : <b>Natah</b>, puis <b>Le Second Rêve</b> et <b>La Guerre Intérieure</b>. Ces quêtes changent complètement ta façon de jouer : ne les saute pas."],
-      ["Progression", "Monter son rang de maîtrise", "Chaque Warframe ou arme amenée au <b>niveau 30</b> rapporte de la maîtrise. Barre pleine : passe le <b>test de maîtrise</b> pour monter de rang et débloquer de nouveaux équipements."],
+      ["Quête", "Le prologue : « L'Éveil »", "Le jeu commence par cette quête. Tu y choisis ta première Warframe parmi <b>Excalibur</b>, <b>Mag</b> et <b>Volt</b>, ainsi que tes premières armes. Les deux autres Warframes restent disponibles plus tard."],
+      ["Quête", "« Le Trophée de Vor »", "Tu répares ton vaisseau, l'<b>Orbiteur</b>, et débloques ses sections : <b>Arsenal</b> (équipement), <b>Fonderie</b> (fabrication), <b>Station de Mods</b> et <b>Navigation</b> (choix des missions). La quête se termine par un combat contre le Capitaine Vor."],
+      ["Quête", "« Le Professeur »", "Ajoutée en octobre 2025, juste après Le Trophée de Vor. <b>Teshin</b> t'y apprend les mods, le système le plus important du jeu. Récompenses : une série de mods, de l'<b>Endo</b>, des crédits et le fusil <b>Thornbak</b>."],
+      ["Progression", "Avancer sur la Carte céleste", "Chaque planète s'ouvre en réussissant une <b>Jonction</b> : remplis les tâches affichées (survole-les pour des indices), puis bats le Spectre qui la garde. Chaque Jonction rapporte <b>1 000 points de maîtrise</b>."],
+      ["Histoire", "Suivre l'histoire principale", "Les quêtes se lancent depuis le <b>Codex</b> et s'enchaînent dans l'ordre : la liste complète est juste en dessous. Celles du chapitre 2 (<b>Le Second Rêve</b>, <b>La Guerre Intérieure</b>) changent complètement ta façon de jouer."],
+      ["Progression", "Monter son rang de maîtrise", "Chaque Warframe ou arme amenée au <b>niveau 30</b> rapporte de la maîtrise. Barre pleine : ouvre le menu avec <kbd>Échap</kbd> et lance le <b>test de maîtrise</b>. Il n'y a plus d'attente de 24 h entre deux rangs."],
       ["Communauté", "Rejoindre un clan", "Le <b>Dojo</b> du clan donne accès à des recherches d'armes et de Warframes introuvables ailleurs. De nombreux clans recrutent des débutants dans le chat <b>Recrutement</b>."]],
+    debArcsTitre: "Toutes les quêtes de l'histoire, dans l'ordre",
+    debArcsNote: "L'ordre du Codex en novembre 2026. Les noms sont en anglais quand la traduction officielle n'a pas pu être vérifiée.",
+    debArcs: [
+      ["Chapitre 1 · L'Éveil", [["L'Éveil", "Choix de la première Warframe"], ["Le Trophée de Vor", "L'Orbiteur et ses sections"], ["Le Professeur", "Les mods, avec Teshin · fusil Thornbak"], ["Vox Solaris", "Fortuna, la Plaine d'Orb, les K-Drives · parler à Eudico à Fortuna"], ["Autrefois Éveillés", "Après la Jonction de Mercure"], ["Cœur de Deimos", "La Faille Cambion, les Nécramécas, l'Helminth · Xaku"], ["L'Archwing", "L'Archwing · nécessaire pour Natah"]]],
+      ["Chapitre 2 · La Guerre Intérieure", [["Natah", "Sur Uranus"], ["Le Second Rêve", "L'Opérateur et le Focus"], ["Marée Montante", "Ton propre Railjack"], ["La Guerre Intérieure", "La Forteresse Kuva et les Liches Kuva"], ["Le Fardeau de Harrow", "Warframe Harrow"], ["Prologue Apostasie", "Mène au Sacrifice"], ["Le Sacrifice", "Excalibur Umbra"]]],
+      ["Chapitre 3 · La Nouvelle Guerre", [["Prélude à la Guerre", "Chimera Prologue, Erra, The Maker"], ["La Nouvelle Guerre", "Le camp du Drifter · nécessite un Railjack"], ["Les Ombres de Jade", "Warframe Jade"], ["Le Paradoxe Duviri", "Duviri et le Drifter · jouable dès la Jonction d'Uranus"], ["Angels of the Zariman", "Le Zariman"], ["Veilbreaker", "Le segment des Éclats d'Archonte (Helminth)"]]],
+      ["Chapitre 4 · La Guerre du Néant", [["Murmures dans les Murs", "Le Sanctum Anatomica · Qorvex"], ["Les Dévoreurs de Lotus", "Suite directe"], ["The Hex", "Höllvania (1999) · Cyte-09 · demande Le Paradoxe Duviri"], ["L'Ancienne Paix", "Le système Tau · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · après Les Ombres de Jade"], ["Prologue to Tau", "Octobre 2026 · demande The Hex et L'Ancienne Paix"]]]],
+    debAnnexesTitre: "Quêtes annexes : des Warframes à gagner",
+    debAnnexes: [
+      ["Saya's Vigil", "Gara", "Une prime à Cetus"], ["The New Strange", "Chroma", "Après Stolen Dreams"],
+      ["Hidden Messages", "Mirage", "Jonction de Sedna"], ["The Limbo Theorem", "Limbo", "Jonction d'Europe + Archwing"],
+      ["Patient Zero", "Mesa", "Jonction d'Éris"], ["The Jordas Precept", "Atlas", "Jonction d'Éris + Archwing"],
+      ["The Deadlock Protocol", "Protea", "Rang de maîtrise 4"], ["Sands of Inaros", "Inaros", "Rang 5 + clé de Baro Ki'Teer"],
+      ["The Silver Grove", "Titania", "Le Second Rêve + rang 7"], ["Octavia's Anthem", "Octavia", "Le Second Rêve"],
+      ["The Glast Gambit", "Nidus", "La Guerre Intérieure"], ["Mask of the Revenant", "Revenant", "Cetus, rang 2"],
+      ["Call of the Tempestarii", "Sevagoth", "The Deadlock Protocol + Railjack"], ["Howl of the Kubrow", "Ton premier Kubrow", "Jonction de Vénus"]],
     debConseilsTitre: "Conseils essentiels",
     debConseils: [
       ["◇", "Bien utiliser son platine", "Seule monnaie échangeable entre joueurs. Les 50 platines de départ sont à réserver aux <b>emplacements</b> de Warframes et d'armes."],
       ["◆", "Gagner du platine en jouant", "Les pièces Prime obtenues dans les reliques se revendent aux autres joueurs. Lotus Desk affiche leur valeur réelle."],
       ["⚠", "Vérifier avant de vendre", "Une pièce Prime vendue au jeu ne rapporte que des crédits. Elle peut valoir du platine, ou des <b>ducats</b> pour Baro Ki'Teer."],
-      ["⚙", "Réacteurs et catalyseurs", "Ils doublent la capacité de mods d'une Warframe (réacteur Orokin) ou d'une arme (catalyseur). À réserver à l'équipement que tu gardes."],
+      ["⚙", "Réacteurs et catalyseurs", "Ils doublent la capacité de mods d'une Warframe (réacteur Orokin) ou d'une arme (catalyseur). La quête <b>Stolen Dreams</b> donne un schéma de catalyseur."],
+      ["⌂", "Garder les objets de quête", "Ne vends pas ce que les quêtes te donnent : beaucoup de ces objets ne s'obtiennent nulle part ailleurs. Ils comptent aussi pour la maîtrise."],
       ["↻", "Routine quotidienne", "Récompense de connexion chaque jour, et missions <b>Nightwave</b> pour obtenir réacteurs, catalyseurs et emplacements."],
+      ["»", "Le raccourci de L'Ancienne Paix", "Depuis décembre 2025, un joueur <b>rang de maîtrise 10</b> peut sauter directement aux modes de jeu de L'Ancienne Paix. C'est pratique, mais tu perds l'histoire : mieux vaut suivre les quêtes."],
       ["✦", "Jouer en équipe", "Le jeu est conçu pour 4 joueurs. Le matchmaking <b>public</b> accélère les missions et permet d'apprendre des autres."]],
     guideIntro: "Lotus Desk lit ton inventaire Warframe et l'estime avec les prix de Warframe Market. Voici ce que fait chaque partie de l'appli.",
     guideCartes: [
@@ -1404,24 +1437,41 @@ const T3 = {
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debTitre: "Beginner's guide",
     debIntro: "The key steps to get started in Warframe, in the recommended order. The game is free with no time limit: go at your own pace.",
-    debNbEtapes: "8 steps", debNbConseils: "6 tips",
+    debNbEtapes: "7 steps", debNbConseils: "8 tips", debNbQuetes: "26 quests",
     debEtapesTitre: "Recommended path",
     debEtapes: [
-      ["Quest", "The prologue: “Awakening”", "The game starts with this quest. You pick your first Warframe from <b>Excalibur</b>, <b>Mag</b> and <b>Volt</b>, plus your first weapons, then escape Captain Vor. The other two Warframes remain available later."],
-      ["Quest", "“Vor's Prize”", "You repair your ship, the <b>Orbiter</b>, and unlock its sections: <b>Arsenal</b> (gear), <b>Foundry</b> (crafting), <b>Mod Station</b> and <b>Navigation</b> (mission select). The quest ends with a fight against Vor."],
-      ["Quest", "“The Teacher”", "Added in late 2025, this quest follows Vor's Prize. <b>Teshin</b> teaches you how to use mods, the game's most important system. It rewards a first set of mods, <b>Endo</b>, credits and the <b>Thornbak</b> rifle."],
-      ["Progression", "Advance across the Star Chart", "Each completed planet opens the next one through a <b>Junction</b>, a short challenge that often rewards a blueprint. The first one to aim for is the <b>Mercury</b> Junction on Earth."],
-      ["Story", "Chapter 1: Awakening", "The next quests, in order: <b>Saya's Vigil</b> (Cetus and the Plains of Eidolon), <b>Vox Solaris</b>, <b>Once Awake</b>, <b>Heart of Deimos</b> and <b>The Archwing</b>. They start from the Codex."],
-      ["Story", "Chapter 2: The War Within", "The heart of the story: <b>Natah</b>, then <b>The Second Dream</b> and <b>The War Within</b>. These quests completely change how you play: don't skip them."],
-      ["Progression", "Raise your mastery rank", "Every Warframe or weapon taken to <b>rank 30</b> gives mastery. Full bar: take the <b>mastery test</b> to rank up and unlock new gear."],
+      ["Quest", "The prologue: “Awakening”", "The game starts with this quest. You pick your first Warframe from <b>Excalibur</b>, <b>Mag</b> and <b>Volt</b>, plus your first weapons. The other two Warframes remain available later."],
+      ["Quest", "“Vor's Prize”", "You repair your ship, the <b>Orbiter</b>, and unlock its sections: <b>Arsenal</b> (gear), <b>Foundry</b> (crafting), <b>Mod Station</b> and <b>Navigation</b> (mission select). The quest ends with a fight against Captain Vor."],
+      ["Quest", "“The Teacher”", "Added in October 2025, right after Vor's Prize. <b>Teshin</b> teaches you mods, the game's most important system. Rewards: a set of mods, <b>Endo</b>, credits and the <b>Thornbak</b> rifle."],
+      ["Progression", "Advance across the Star Chart", "Each planet opens by beating a <b>Junction</b>: complete the listed tasks (hover them for hints), then defeat the Specter guarding it. Each Junction gives <b>1,000 mastery points</b>."],
+      ["Story", "Follow the main story", "Quests start from the <b>Codex</b> and follow one another in order: the full list is just below. Chapter 2 (<b>The Second Dream</b>, <b>The War Within</b>) completely changes how you play."],
+      ["Progression", "Raise your mastery rank", "Every Warframe or weapon taken to <b>rank 30</b> gives mastery. Full bar: press <kbd>Esc</kbd> and pick <b>Mastery Rank Up</b> to take the test. There is no longer a 24 h wait between ranks."],
       ["Community", "Join a clan", "The clan <b>Dojo</b> gives access to weapon and Warframe research found nowhere else. Many clans recruit beginners in the <b>Recruiting</b> chat."]],
+    debArcsTitre: "Every story quest, in order",
+    debArcsNote: "Codex order as of November 2026.",
+    debArcs: [
+      ["Chapter 1 · Awakening", [["Awakening", "Pick your first Warframe"], ["Vor's Prize", "The Orbiter and its sections"], ["The Teacher", "Mods, with Teshin · Thornbak rifle"], ["Vox Solaris", "Fortuna, Orb Vallis, K-Drives · talk to Eudico in Fortuna"], ["Once Awake", "After the Mercury Junction"], ["Heart of Deimos", "Cambion Drift, Necramechs, Helminth · Xaku"], ["The Archwing", "The Archwing · needed for Natah"]]],
+      ["Chapter 2 · The War Within", [["Natah", "On Uranus"], ["The Second Dream", "The Operator and Focus"], ["Rising Tide", "Your own Railjack"], ["The War Within", "The Kuva Fortress and Kuva Liches"], ["Chains of Harrow", "Harrow Warframe"], ["Apostasy Prologue", "Leads into The Sacrifice"], ["The Sacrifice", "Excalibur Umbra"]]],
+      ["Chapter 3 · The New War", [["Prelude to War", "Chimera Prologue, Erra, The Maker"], ["The New War", "The Drifter's camp · needs a Railjack"], ["Jade Shadows", "Jade Warframe"], ["The Duviri Paradox", "Duviri and the Drifter · playable from the Uranus Junction"], ["Angels of the Zariman", "The Zariman"], ["Veilbreaker", "Helminth Archon Shard segment"]]],
+      ["Chapter 4 · The Void War", [["Whispers in the Walls", "Sanctum Anatomica · Qorvex"], ["The Lotus Eaters", "Direct follow-up"], ["The Hex", "Höllvania (1999) · Cyte-09 · needs The Duviri Paradox"], ["The Old Peace", "The Tau system · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · after Jade Shadows"], ["Prologue to Tau", "October 2026 · needs The Hex and The Old Peace"]]]],
+    debAnnexesTitre: "Side quests: Warframes to earn",
+    debAnnexes: [
+      ["Saya's Vigil", "Gara", "A Cetus bounty"], ["The New Strange", "Chroma", "After Stolen Dreams"],
+      ["Hidden Messages", "Mirage", "Sedna Junction"], ["The Limbo Theorem", "Limbo", "Europa Junction + Archwing"],
+      ["Patient Zero", "Mesa", "Eris Junction"], ["The Jordas Precept", "Atlas", "Eris Junction + Archwing"],
+      ["The Deadlock Protocol", "Protea", "Mastery rank 4"], ["Sands of Inaros", "Inaros", "Rank 5 + Baro Ki'Teer key"],
+      ["The Silver Grove", "Titania", "The Second Dream + rank 7"], ["Octavia's Anthem", "Octavia", "The Second Dream"],
+      ["The Glast Gambit", "Nidus", "The War Within"], ["Mask of the Revenant", "Revenant", "Cetus, rank 2"],
+      ["Call of the Tempestarii", "Sevagoth", "The Deadlock Protocol + Railjack"], ["Howl of the Kubrow", "Your first Kubrow", "Venus Junction"]],
     debConseilsTitre: "Key tips",
     debConseils: [
       ["◇", "Spend platinum wisely", "The only currency players can trade. Keep your starting 50 platinum for Warframe and weapon <b>slots</b>."],
       ["◆", "Earn platinum by playing", "Prime parts from relics sell to other players. Lotus Desk shows their real value."],
       ["⚠", "Check before selling", "A Prime part sold to the game only gives credits. It may be worth platinum, or <b>ducats</b> for Baro Ki'Teer."],
-      ["⚙", "Reactors and catalysts", "They double the mod capacity of a Warframe (Orokin Reactor) or a weapon (Catalyst). Save them for gear you keep."],
+      ["⚙", "Reactors and catalysts", "They double the mod capacity of a Warframe (Orokin Reactor) or a weapon (Catalyst). The <b>Stolen Dreams</b> quest gives a Catalyst blueprint."],
+      ["⌂", "Keep quest items", "Don't sell what quests give you: many of these items can't be obtained anywhere else. They also count for mastery."],
       ["↻", "Daily routine", "Claim the login reward every day, and do <b>Nightwave</b> missions for reactors, catalysts and slots."],
+      ["»", "The Old Peace shortcut", "Since December 2025, a <b>mastery rank 10</b> player can jump straight into The Old Peace game modes. Handy, but you miss the story: following the quests is better."],
       ["✦", "Play as a team", "The game is built for 4 players. Public matchmaking speeds up missions and lets you learn from others."]],
     guideIntro: "Lotus Desk reads your Warframe inventory and values it with Warframe Market prices. Here is what each part of the app does.",
     guideCartes: [
@@ -2462,11 +2512,19 @@ function rendreInfo() {
   if (infoGroupe === "jeu" && s === "debuter") {
     c.innerHTML = `<div class="guide-tete">
         <div><h1>${esc(t("debTitre"))}</h1><p>${esc(t("debIntro"))}</p></div>
-        <div class="guide-meta"><span>${esc(t("debNbEtapes"))}</span><span>${esc(t("debNbConseils"))}</span></div></div>
+        <div class="guide-meta"><span>${esc(t("debNbEtapes"))}</span><span>${esc(t("debNbQuetes"))}</span><span>${esc(t("debNbConseils"))}</span></div></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debEtapesTitre"))}</h2>
       <ol class="guide-frise">` + t("debEtapes").map(([cat, titre, txt], i) =>
         `<li><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
           <div class="guide-etape"><span class="guide-cat">${esc(cat)}</span><h3>${esc(titre)}</h3><p>${txt}</p></div></li>`).join("") + `</ol></div>
+      <div class="guide-section"><h2 class="info-titre">${esc(t("debArcsTitre"))}</h2>
+      <div class="guide-arcs">` + t("debArcs").map(([arc, quetes]) =>
+        `<div class="guide-arc"><h3>${esc(arc)}</h3><ol>` + quetes.map(([nom, info]) =>
+          `<li><b>${esc(nom)}</b><span>${esc(info)}</span></li>`).join("") + "</ol></div>").join("") + `</div>
+      <p class="guide-note">${esc(t("debArcsNote"))}</p></div>
+      <div class="guide-section"><h2 class="info-titre">${esc(t("debAnnexesTitre"))}</h2><div class="guide-annexes">` +
+      t("debAnnexes").map(([nom, gain, cond]) =>
+        `<div class="guide-annexe"><b>${esc(gain)}</b><span>${esc(nom)}</span><small>${esc(cond)}</small></div>`).join("") + `</div></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debConseilsTitre"))}</h2><div class="guide-conseils">` +
       t("debConseils").map(([ic, titre, txt]) =>
         `<div class="guide-conseil"><span class="guide-ic">${ic}</span><div><h3>${esc(titre)}</h3><p>${txt}</p></div></div>`).join("") + "</div></div>";
