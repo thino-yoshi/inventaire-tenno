@@ -469,6 +469,33 @@
   .info-bientot { text-align: center; padding: 48px 20px; color: var(--muted); max-width: 640px; margin: 0 auto; }
   .info-bientot b { display: block; color: var(--gold); font-size: 15px; letter-spacing: 1.5px; text-transform: uppercase; margin-bottom: 8px; }
   .info-form { max-width: 680px; }
+  .info-titre { font-size: 12px; letter-spacing: 2px; text-transform: uppercase; color: var(--gold); margin: 0 0 14px;
+                display: flex; align-items: center; gap: 12px; }
+  .info-titre::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+  .guide-tete { display: flex; justify-content: space-between; align-items: flex-end; gap: 24px; flex-wrap: wrap;
+                padding: 4px 0 20px; border-bottom: 1px solid var(--line); margin-bottom: 26px; max-width: 1000px; }
+  .guide-tete h1 { margin: 0 0 6px; font-size: 22px; font-weight: 600; letter-spacing: 3px; text-transform: uppercase; color: var(--text); }
+  .guide-tete p { margin: 0; color: var(--muted); max-width: 680px; line-height: 1.55; }
+  .guide-meta { display: flex; gap: 8px; }
+  .guide-meta span { border: 1px solid var(--line); padding: 4px 10px; font-size: 11px; letter-spacing: 1.5px;
+                     text-transform: uppercase; color: var(--muted); }
+  .guide-section { margin-bottom: 30px; max-width: 1000px; }
+  .guide-frise { list-style: none; margin: 0; padding: 0; position: relative; }
+  .guide-frise::before { content: ""; position: absolute; left: 21px; top: 22px; bottom: 22px; width: 1px;
+                         background: linear-gradient(var(--gold), color-mix(in srgb, var(--gold) 15%, transparent)); }
+  .guide-frise li { display: grid; grid-template-columns: 44px 1fr; gap: 18px; align-items: start; padding-bottom: 12px; position: relative; }
+  .guide-num { width: 44px; height: 44px; display: flex; align-items: center; justify-content: center; background: var(--bg, #0b0d12);
+               border: 1px solid var(--gold); color: var(--gold); font-size: 14px; font-weight: 600; letter-spacing: 1px; position: relative; }
+  .guide-etape { background: var(--panel); border: 1px solid var(--line); border-left: 2px solid color-mix(in srgb, var(--gold) 60%, transparent);
+                 padding: 12px 16px; }
+  .guide-cat { font-size: 10px; letter-spacing: 1.8px; text-transform: uppercase; color: var(--muted); }
+  .guide-etape h3, .guide-conseil h3 { margin: 2px 0 4px; font-size: 14px; font-weight: 600; color: var(--text); letter-spacing: .3px; }
+  .guide-etape p, .guide-conseil p { margin: 0; font-size: 13px; line-height: 1.55; color: var(--muted); }
+  .guide-etape b, .guide-conseil b { color: var(--text); font-weight: 600; }
+  .guide-conseils { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+  .guide-conseil { display: grid; grid-template-columns: 36px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
+  .guide-ic { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--gold);
+              border: 1px solid color-mix(in srgb, var(--gold) 45%, transparent); background: var(--gold-soft); font-size: 15px; }
   .info-version b { cursor: default; user-select: none; }
   /* onglet Modo */
   .pages .btn-modo { position: relative; }
@@ -1234,6 +1261,26 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
+    debTitre: "Guide du débutant",
+    debIntro: "Les étapes clés pour bien démarrer sur Warframe, dans l'ordre conseillé. Le jeu est gratuit et sans limite de temps : avance à ton rythme.",
+    debNbEtapes: "7 étapes", debNbConseils: "6 conseils",
+    debEtapesTitre: "Parcours conseillé",
+    debEtapes: [
+      ["Quête", "Terminer « Le Prix de Vor »", "Le tutoriel du jeu. Tu y choisis ta première Warframe parmi <b>Excalibur</b>, <b>Mag</b> et <b>Volt</b>, puis tu récupères ton vaisseau. Les deux autres restent disponibles plus tard."],
+      ["Vaisseau", "Découvrir l'Orbiteur", "Ta base entre les missions. <b>Arsenal</b> : équipement et mods. <b>Fonderie</b> : fabrication à partir de schémas. <b>Navigation</b> : choix des missions. <b>Marché</b> : achat de schémas. <b>Codex</b> : encyclopédie et quêtes."],
+      ["Progression", "Avancer sur la carte des planètes", "Chaque planète terminée ouvre l'accès à la suivante via une <b>Jonction</b>, un court défi qui récompense souvent un schéma."],
+      ["Histoire", "Suivre les quêtes principales", "Elles débloquent des fonctions essentielles et se lancent depuis le Codex. Deux sont incontournables : <b>Le Second Rêve</b>, puis <b>La Guerre Intérieure</b>."],
+      ["Équipement", "Installer ses premiers mods", "Les mods améliorent ton équipement. Priorité à <b>Vitalité</b> et <b>Redirection</b> pour la Warframe, et au mod de <b>dégâts de base</b> de chaque arme. Ils se renforcent avec de l'<b>Endo</b> et des crédits."],
+      ["Progression", "Monter son rang de maîtrise", "Chaque Warframe ou arme amenée au <b>niveau 30</b> rapporte de la maîtrise. Barre pleine : passe le <b>test de maîtrise</b> pour monter de rang et débloquer de nouveaux équipements."],
+      ["Communauté", "Rejoindre un clan", "Le <b>Dojo</b> du clan donne accès à des recherches d'armes et de Warframes introuvables ailleurs. De nombreux clans recrutent des débutants dans le chat <b>Recrutement</b>."]],
+    debConseilsTitre: "Conseils essentiels",
+    debConseils: [
+      ["◇", "Bien utiliser son platine", "Seule monnaie échangeable entre joueurs. Les 50 platines de départ sont à réserver aux <b>emplacements</b> de Warframes et d'armes."],
+      ["◆", "Gagner du platine en jouant", "Les pièces Prime obtenues dans les reliques se revendent aux autres joueurs. Lotus Desk affiche leur valeur réelle."],
+      ["⚠", "Vérifier avant de vendre", "Une pièce Prime vendue au jeu ne rapporte que des crédits. Elle peut valoir du platine, ou des <b>ducats</b> pour Baro Ki'Teer."],
+      ["⚙", "Réacteurs et catalyseurs", "Ils doublent la capacité de mods d'une Warframe (réacteur Orokin) ou d'une arme (catalyseur). À réserver à l'équipement que tu gardes."],
+      ["↻", "Routine quotidienne", "Récompense de connexion chaque jour, et missions <b>Nightwave</b> pour obtenir réacteurs, catalyseurs et emplacements."],
+      ["✦", "Jouer en équipe", "Le jeu est conçu pour 4 joueurs. Le matchmaking <b>public</b> accélère les missions et permet d'apprendre des autres."]],
     guideIntro: "Lotus Desk lit ton inventaire Warframe et l'estime avec les prix de Warframe Market. Voici ce que fait chaque partie de l'appli.",
     guideCartes: [
       ["▦", "Inventaire", "Tout ce que tu possèdes avec son prix : Prime, Sets, Arcanes, Reliques, Mods, Objets, Ressources. Recherche, tri, filtres (prix min, rareté, doublons). Clique sur un objet : prix, 10 meilleurs vendeurs, mise en vente."],
@@ -1354,6 +1401,26 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
+    debTitre: "Beginner's guide",
+    debIntro: "The key steps to get started in Warframe, in the recommended order. The game is free with no time limit: go at your own pace.",
+    debNbEtapes: "7 steps", debNbConseils: "6 tips",
+    debEtapesTitre: "Recommended path",
+    debEtapes: [
+      ["Quest", "Finish “Vor's Prize”", "The game's tutorial. You pick your first Warframe from <b>Excalibur</b>, <b>Mag</b> and <b>Volt</b>, then get your ship. The other two remain available later."],
+      ["Ship", "Explore the Orbiter", "Your base between missions. <b>Arsenal</b>: gear and mods. <b>Foundry</b>: crafting from blueprints. <b>Navigation</b>: mission select. <b>Market</b>: blueprint purchases. <b>Codex</b>: encyclopedia and quests."],
+      ["Progression", "Advance across the star chart", "Each completed planet opens the next one through a <b>Junction</b>, a short challenge that often rewards a blueprint."],
+      ["Story", "Follow the main quests", "They unlock essential features and start from the Codex. Two are a must: <b>The Second Dream</b>, then <b>The War Within</b>."],
+      ["Gear", "Install your first mods", "Mods upgrade your gear. Start with <b>Vitality</b> and <b>Redirection</b> for the Warframe, and the <b>base damage</b> mod for each weapon. They are upgraded with <b>Endo</b> and credits."],
+      ["Progression", "Raise your mastery rank", "Every Warframe or weapon taken to <b>rank 30</b> gives mastery. Full bar: take the <b>mastery test</b> to rank up and unlock new gear."],
+      ["Community", "Join a clan", "The clan <b>Dojo</b> gives access to weapon and Warframe research found nowhere else. Many clans recruit beginners in the <b>Recruiting</b> chat."]],
+    debConseilsTitre: "Key tips",
+    debConseils: [
+      ["◇", "Spend platinum wisely", "The only currency players can trade. Keep your starting 50 platinum for Warframe and weapon <b>slots</b>."],
+      ["◆", "Earn platinum by playing", "Prime parts from relics sell to other players. Lotus Desk shows their real value."],
+      ["⚠", "Check before selling", "A Prime part sold to the game only gives credits. It may be worth platinum, or <b>ducats</b> for Baro Ki'Teer."],
+      ["⚙", "Reactors and catalysts", "They double the mod capacity of a Warframe (Orokin Reactor) or a weapon (Catalyst). Save them for gear you keep."],
+      ["↻", "Daily routine", "Claim the login reward every day, and do <b>Nightwave</b> missions for reactors, catalysts and slots."],
+      ["✦", "Play as a team", "The game is built for 4 players. Public matchmaking speeds up missions and lets you learn from others."]],
     guideIntro: "Lotus Desk reads your Warframe inventory and values it with Warframe Market prices. Here is what each part of the app does.",
     guideCartes: [
       ["▦", "Inventory", "Everything you own with its price: Prime, Sets, Arcanes, Relics, Mods, Items, Resources. Search, sort, filters (min price, rarity, duplicates). Click an item: price, top 10 sellers, sell it."],
@@ -2390,7 +2457,18 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
-  if (infoGroupe === "jeu") {  // la partie Warframe se remplit au fur et à mesure
+  if (infoGroupe === "jeu" && s === "debuter") {
+    c.innerHTML = `<div class="guide-tete">
+        <div><h1>${esc(t("debTitre"))}</h1><p>${esc(t("debIntro"))}</p></div>
+        <div class="guide-meta"><span>${esc(t("debNbEtapes"))}</span><span>${esc(t("debNbConseils"))}</span></div></div>
+      <div class="guide-section"><h2 class="info-titre">${esc(t("debEtapesTitre"))}</h2>
+      <ol class="guide-frise">` + t("debEtapes").map(([cat, titre, txt], i) =>
+        `<li><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
+          <div class="guide-etape"><span class="guide-cat">${esc(cat)}</span><h3>${esc(titre)}</h3><p>${txt}</p></div></li>`).join("") + `</ol></div>
+      <div class="guide-section"><h2 class="info-titre">${esc(t("debConseilsTitre"))}</h2><div class="guide-conseils">` +
+      t("debConseils").map(([ic, titre, txt]) =>
+        `<div class="guide-conseil"><span class="guide-ic">${ic}</span><div><h3>${esc(titre)}</h3><p>${txt}</p></div></div>`).join("") + "</div></div>";
+  } else if (infoGroupe === "jeu") {  // la partie Warframe se remplit au fur et à mesure
     c.innerHTML = `<div class="info-bientot"><b>${esc(t("bientotTitre"))}</b>${esc(t("bientot"))}</div>`;
   } else if (s === "guide") {
     c.innerHTML = `<p class="info-intro">${esc(t("guideIntro"))}</p><div class="info-grille">` +
