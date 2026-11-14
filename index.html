@@ -749,8 +749,10 @@
                     letter-spacing: 2px; text-transform: uppercase; font-weight: 600; }
   .segment button.on { background: var(--gold); color: var(--on-gold); }
   /* bouton Market Connecté / Non connecté : vert quand on vend, gris quand on joue tranquille */
-  .pres-seg button[data-pres="1"].on { background: var(--green); color: #0b1a10; }
-  .pres-seg button[data-pres="0"].on { background: var(--line); color: var(--text); }
+  .pres-seg button[data-pres="ingame"].on { background: var(--green); color: #0b1a10; }
+  .pres-seg button[data-pres="online"].on { background: #4fa3d9; color: #08131c; }
+  .pres-seg button[data-pres="invisible"].on { background: var(--line); color: var(--text); }
+  .pres-lbl { color: var(--muted); font-size: 12px; letter-spacing: 1px; text-transform: uppercase; }
   .st-kpis { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 14px; }
   .st-kpis .carte { display: flex; flex-direction: column; gap: 4px; }
   .st-corps { display: flex; gap: 14px; align-items: stretch; flex-wrap: wrap; }
@@ -914,8 +916,9 @@
   <span class="jeu muted" id="jeu"></span>
   <span class="jeu muted" id="presence" hidden></span>
   <label class="auto" id="overlayBox" hidden><input type="checkbox" id="ovActif"> <span data-t="overlayLbl"></span></label>
+  <span class="pres-lbl" id="presenceLbl" data-t="presLbl" hidden></span>
   <div class="segment petit-seg pres-seg" id="presenceAuto" hidden>
-    <button type="button" data-pres="1" data-t="presCo"></button><button type="button" data-pres="0" data-t="presNonCo"></button>
+    <button type="button" data-pres="invisible" data-t="presInvisible"></button><button type="button" data-pres="online" data-t="presOnline"></button><button type="button" data-pres="ingame" data-t="presIngame"></button>
   </div>
   <div class="recherche" id="recherche">
     <input type="search" id="filtre">
@@ -1464,9 +1467,9 @@ for (const l in T2) Object.assign(T[l], T2[l]);
 
 // Alertes, lots, souhaits, reliques, volumes (français + anglais ; les autres langues tombent sur l'anglais)
 const T3 = {
-  fr: { pres_ingame: "WFM : en jeu", pres_connexion: "WFM : connexion…", pres_hors_ligne: "WFM : hors ligne",
-    pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presCo: "● Connecté", presNonCo: "Non connecté",
-    presBtnTip: "Connecté : tu apparais « en jeu » sur Warframe Market tant que Warframe tourne (les acheteurs te contactent).\nNon connecté : tu es invisible, tu joues tranquille. Ton choix est gardé même après un redémarrage.",
+  fr: { pres_ingame: "WFM : en jeu", pres_online: "WFM : en ligne", pres_connexion: "WFM : connexion…", pres_hors_ligne: "WFM : hors ligne",
+    pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presLbl: "Vente :", presInvisible: "Invisible", presOnline: "En ligne", presIngame: "En jeu",
+    presBtnTip: "Ton statut sur Warframe Market :\n• En jeu : prête à vendre, tu passes devant les autres vendeurs tant que Warframe est lancé.\n• En ligne : visible même quand le jeu est fermé (tant que Lotus Desk est ouvert).\n• Invisible : personne ne te contacte, tu joues tranquille.\nTon choix est gardé après un redémarrage ; en fermant Lotus Desk, tu repasses invisible.",
     infoJeuSub: "Le jeu : bases, reliques, ressources, en direct", infoAppSub: "L'application : guide, astuces, problèmes, signaler",
     iDebuter: "Débuter", iArsenal: "Arsenal", iPrime: "Prime", iRessources: "Ressources", iDirect: "En direct",
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
@@ -1748,7 +1751,7 @@ const T3 = {
     modoSuppr: "Supprimer", modoSupprOk: "Supprimer définitivement ?", modoPris: q => `pris par ${q}`,
     modoJournaux: "Journaux joints", modoSansJournaux: "Pas de journaux joints.", modoFois: (f, u) => `${f} fois · ${u} utilisateur(s)`,
     modoVersions: v => `versions ${v}`, modoPremiere: "première", modoDerniere: "dernière", modoExtrait: "Extrait",
-    presTip: "Tant que Warframe tourne, tu apparais « en jeu » sur Warframe Market : tes offres passent devant celles des vendeurs hors ligne.",
+    presTip: "Ton statut réel sur Warframe Market, tel que les acheteurs le voient.",
     alertes: "Alertes", alDepasse: (n, v, p, m) => `${n} : ${v} vend à ${p}p (toi ${m}p)`, aligner: p => `Aligner à ${p}p`,
     alSouhait: (n, p, v, max) => `${n} à ${p}p chez ${v} (ton max : ${max}p)`, copierAchat: "Copier le message",
     depasse: p => `dépassé : ${p}p`, enTrop: n => `+${n} en trop`,
@@ -1813,9 +1816,9 @@ const T3 = {
     attenteFr: "Attente FR", attenteEn: "Attente EN", attenteTip: "Copie un message pour faire patienter l'acheteur",
     pseudoAcheteur: "Pseudo de l'acheteur (optionnel, ajoute /w au message)", venduOk: "Vente enregistrée.",
     aucuneOffre: "Aucune offre en vente. Mets un item en vente depuis l'inventaire.", qteVendue: "Quantité vendue" },
-  en: { pres_ingame: "WFM: in game", pres_connexion: "WFM: connecting…", pres_hors_ligne: "WFM: offline",
-    pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presCo: "● Online", presNonCo: "Offline",
-    presBtnTip: "Online: you show as “in game” on Warframe Market while Warframe is running (buyers can contact you).\nOffline: you are invisible and play in peace. Your choice is kept after a restart.",
+  en: { pres_ingame: "WFM: in game", pres_online: "WFM: online", pres_connexion: "WFM: connecting…", pres_hors_ligne: "WFM: offline",
+    pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presLbl: "Selling:", presInvisible: "Invisible", presOnline: "Online", presIngame: "In game",
+    presBtnTip: "Your Warframe Market status:\n• In game: ready to sell, you rank above other sellers while Warframe is running.\n• Online: visible even when the game is closed (while Lotus Desk is open).\n• Invisible: nobody contacts you, play in peace.\nYour choice is kept after a restart; closing Lotus Desk makes you invisible.",
     infoJeuSub: "The game: basics, relics, resources, live", infoAppSub: "The app: guide, tips, problems, report",
     iDebuter: "Getting started", iArsenal: "Arsenal", iPrime: "Prime", iRessources: "Resources", iDirect: "Live",
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
@@ -2097,7 +2100,7 @@ const T3 = {
     modoSuppr: "Delete", modoSupprOk: "Delete for good?", modoPris: q => `taken by ${q}`,
     modoJournaux: "Attached logs", modoSansJournaux: "No logs attached.", modoFois: (f, u) => `${f} times · ${u} user(s)`,
     modoVersions: v => `versions ${v}`, modoPremiere: "first", modoDerniere: "last", modoExtrait: "Excerpt",
-    presTip: "While Warframe is running you show as “in game” on Warframe Market: your orders rank above offline sellers.",
+    presTip: "Your real Warframe Market status, as buyers see it.",
     alertes: "Alerts", alDepasse: (n, v, p, m) => `${n}: ${v} sells at ${p}p (you ${m}p)`, aligner: p => `Match at ${p}p`,
     alSouhait: (n, p, v, max) => `${n} at ${p}p from ${v} (your max: ${max}p)`, copierAchat: "Copy message",
     depasse: p => `undercut: ${p}p`, enTrop: n => `+${n} extra`,
@@ -2856,9 +2859,10 @@ async function surveiller() {
     if (e.version !== version && version !== -1 && e.version > 0) chargerInventaire(false);
     presence = e.presence || {};
     modoEtat(e.modo || {});
-    $("#presence").hidden = $("#presenceAuto").hidden = !compte.connecte;
+    $("#presence").hidden = $("#presenceAuto").hidden = $("#presenceLbl").hidden = !compte.connecte;
+    const mode = presence.mode || (presence.auto ? "ingame" : "invisible");
     for (const b of $("#presenceAuto").querySelectorAll("button"))
-      b.classList.toggle("on", (b.dataset.pres === "1") === !!presence.auto);
+      b.classList.toggle("on", b.dataset.pres === mode);
     $("#presenceAuto").title = t("presBtnTip");
     // bouton « Mettre à jour » : le serveur vérifie GitHub toutes les 30 min
     $("#versionTxt").textContent = t("versionTxt", e.version_app || "?");
@@ -2870,7 +2874,7 @@ async function surveiller() {
     $("#overlayBox").title = t("overlayTip") + (ov.statut ? ` (${ov.statut})` : "");
     if (document.activeElement !== $("#ovActif")) $("#ovActif").checked = !!ov.actif;
     $("#presence").title = t("presTip");
-    $("#presence").innerHTML = `<span class="dot ${presence.statut === "ingame" ? "ingame" : ""}"></span>${t("pres_" + presence.statut) || presence.statut}`;
+    $("#presence").innerHTML = `<span class="dot ${presence.statut === "ingame" ? "ingame" : presence.statut === "online" ? "online" : ""}"></span>${t("pres_" + presence.statut) || presence.statut}`;
     const avant = JSON.stringify(alertes);
     alertes = await api("/api/alertes");
     if (JSON.stringify(alertes) !== avant) rendreAlertes();
@@ -4408,9 +4412,10 @@ $("#alertes").addEventListener("click", async e => {
 $("#presenceAuto").addEventListener("click", e => {
   const b = e.target.closest("button[data-pres]");
   if (!b) return;
-  const auto = b.dataset.pres === "1";
+  const mode = b.dataset.pres;
   for (const x of $("#presenceAuto").querySelectorAll("button")) x.classList.toggle("on", x === b);
-  api("/api/presence", { auto }).catch(() => {});
+  presence.mode = mode;
+  api("/api/presence", { mode }).catch(() => {});
 });
 $("#ovActif").addEventListener("change", e => api("/api/overlay", { actif: e.target.checked }).catch(() => {}));
 

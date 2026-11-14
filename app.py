@@ -49,7 +49,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.19.1"
+VERSION = "1.20.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -714,29 +714,52 @@ WS_URL = "wss://ws.warframe.market/socket"
 PRESENCE_FILE = BASE / "presence_wfm.json"
 
 
+MODES_WFM = ("invisible", "online", "ingame")
+
+
 class Presence:
-    """Statut sur Warframe Market. Bouton Connecte / Non connecte (retenu entre deux lancements) :
-    - connecte : "en jeu" tant que Warframe tourne ;
-    - non connecte : "invisible", et on le redit a WFM au lancement et a chaque changement
-      (au cas ou un ancien statut "en jeu" serait reste, ex. apres un plantage du PC)."""
+    """Statut sur Warframe Market, choisi avec 3 boutons (retenu entre deux lancements) :
+    - "ingame"  (En jeu)   : « en jeu » tant que Warframe tourne, invisible sinon ;
+    - "online"  (En ligne) : « en ligne » tant que l'app est ouverte, meme sans le jeu ;
+    - "invisible"          : cache, et on le redit a WFM au lancement et a chaque changement
+      (au cas ou un ancien statut serait reste, ex. apres un plantage du PC).
+    A la fermeture de l'app, on repasse toujours invisible."""
 
     def __init__(self):
-        self.auto = bool((load_json(PRESENCE_FILE, {}) or {}).get("connecte", True))
+        d = load_json(PRESENCE_FILE, {}) or {}
+        mode = d.get("mode")
+        if mode not in MODES_WFM:  # ancien fichier : {"connecte": true/false}
+            mode = "ingame" if d.get("connecte", True) else "invisible"
+        self.mode = mode
         self.ws = None
         self.statut = "hors_ligne"
         self.target = "ingame"           # statut a envoyer une fois authentifie
-        self.forcer_invisible = not self.auto
+        self.forcer_invisible = mode == "invisible"
         self.lock = threading.Lock()
 
-    def set_auto(self, value):
-        """Choix de l'utilisateur (bouton) : retenu dans presence_wfm.json."""
-        value = bool(value)
-        if value != self.auto:
-            self.auto = value
-            save_json(PRESENCE_FILE, {"connecte": value})
-            if not value:
+    @property
+    def auto(self):  # compatibilite (menu de l'icone) : visible ou non
+        return self.mode != "invisible"
+
+    @auto.setter
+    def auto(self, value):  # utilise a la fermeture : se cacher, sans changer le choix enregistre
+        if not value:
+            self.mode = "invisible"
+            self.forcer_invisible = True
+
+    def set_mode(self, mode):
+        """Choix de l'utilisateur (boutons) : retenu dans presence_wfm.json."""
+        if mode not in MODES_WFM:
+            return
+        if mode != self.mode:
+            self.mode = mode
+            save_json(PRESENCE_FILE, {"mode": mode})
+            if mode == "invisible":
                 self.forcer_invisible = True
         threading.Thread(target=self.tick, daemon=True).start()
+
+    def set_auto(self, value):  # menu de l'icone : En jeu / Invisible
+        self.set_mode("ingame" if value else "invisible")
 
     def _send(self, route, payload=None):
         msg = {"route": route, "id": uuid.uuid4().hex[:12]}
@@ -783,14 +806,21 @@ class Presence:
             self.statut = "hors_ligne"
 
     def tick(self):
-        """Appele regulierement : ouvre ou ferme la connexion selon le bouton et l'etat du jeu."""
+        """Appele regulierement : ouvre, change ou ferme la connexion selon le choix et l'etat du jeu."""
         acc = account()
-        want = self.auto and bool(acc.token) and STATE.game_running
+        voulu = {"online": "online", "ingame": "ingame" if STATE.game_running else None}.get(self.mode)
+        want = bool(voulu and acc.token)
         with self.lock:
             if want and self.ws is None:
-                self.statut, self.target = "connexion", "ingame"
+                self.statut, self.target = "connexion", voulu
                 self._open(acc.token)
-            elif not want and self.ws is not None and self.target == "ingame":
+            elif want and self.target != voulu:  # En ligne <-> En jeu sans refermer la connexion
+                self.target = voulu
+                try:
+                    self._send("@wfm|cmd/status/set", {"status": voulu})
+                except Exception:
+                    pass
+            elif not want and self.ws is not None and self.target != "invisible":
                 try:
                     self._send("@wfm|cmd/status/set", {"status": "invisible"})
                     self.ws.close()
@@ -798,7 +828,7 @@ class Presence:
                 except Exception:
                     pass
                 self.ws = None
-                self.statut = "invisible" if not self.auto else "hors_ligne"
+                self.statut = "invisible" if self.mode == "invisible" else "hors_ligne"
             elif not want and self.ws is None and self.forcer_invisible and acc.token:
                 self.statut, self.target = "connexion", "invisible"
                 self._open(acc.token)
@@ -2217,7 +2247,7 @@ class Handler(BaseHTTPRequestHandler):
                                 "jeu": STATE.game_running, "scan": STATE.scanning,
                                 "source": STATE.source, "quand": STATE.when,
                                 "erreur": STATE.error, "langues": LANGS,
-                                "presence": {"auto": PRESENCE.auto, "statut": PRESENCE.statut},
+                                "presence": {"auto": PRESENCE.auto, "mode": PRESENCE.mode, "statut": PRESENCE.statut},
                                 "nb_alertes": len(_alerts), "version_app": VERSION,
                                 "maj": {k: UPDATE_INFO.get(k) for k in ("nouvelle", "derniere")},
                                 "overlay": {"actif": bool(OVERLAY and OVERLAY.enabled),
@@ -2386,8 +2416,11 @@ class Handler(BaseHTTPRequestHandler):
                     pass
                 self.send(200, out)
             elif u.path == "/api/presence":
-                PRESENCE.set_auto(body.get("auto"))
-                self.send(200, {"auto": PRESENCE.auto, "statut": PRESENCE.statut})
+                if body.get("mode") in MODES_WFM:
+                    PRESENCE.set_mode(body["mode"])
+                else:  # ancienne page : {"auto": true/false}
+                    PRESENCE.set_auto(body.get("auto"))
+                self.send(200, {"auto": PRESENCE.auto, "mode": PRESENCE.mode, "statut": PRESENCE.statut})
             elif u.path == "/api/deconnexion":
                 acc.logout()
                 self.send(200, acc.state())
@@ -2598,7 +2631,7 @@ def make_tray(open_fn, quit_fn):
     icon = pystray.Icon("lotus-desk", tray_image(), APP_NAME, menu=pystray.Menu(
         pystray.MenuItem("Ouvrir l'inventaire", lambda i, it: open_fn(), default=True),
         pystray.MenuItem("Lecture auto du jeu", toggle_auto, checked=lambda it: STATE.auto),
-        pystray.MenuItem("Connecté à Warframe Market (statut « en jeu »)", toggle_presence,
+        pystray.MenuItem("Visible sur Warframe Market (« en jeu »)", toggle_presence,
                          checked=lambda it: PRESENCE.auto),
         pystray.MenuItem("Prix des récompenses de reliques (overlay)", toggle_overlay,
                          checked=lambda it: bool(OVERLAY and OVERLAY.enabled)),
