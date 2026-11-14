@@ -559,6 +559,30 @@
   .arm-src { display: flex; flex-wrap: wrap; gap: 4px 6px; }
   .arm-s { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; }
   .arm-src a { font-size: 12px; color: var(--gold); }
+  .dir-att { border: 1px solid #e08a2e; background: color-mix(in srgb, #e08a2e 14%, transparent); color: #f0a24a;
+             font-weight: 700; font-size: 14px; padding: 9px 12px; margin: 0 0 10px; }
+  .dir-erreur { color: #f0a24a; font-weight: 600; }
+  .dir-table { max-width: 1100px; }
+  .dir-l { display: grid; grid-template-columns: 90px minmax(140px, 200px) minmax(140px, 1fr) 140px 120px; gap: 10px; align-items: baseline;
+           padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .dir-l.nw { grid-template-columns: 90px minmax(160px, 240px) 1fr 140px 110px; }
+  .dir-l.inv { grid-template-columns: minmax(150px, 220px) 1fr 160px 60px 110px; }
+  .dir-l b { color: var(--text); font-weight: 600; }
+  .dir-rb { color: var(--gold); font-variant-numeric: tabular-nums; text-align: right; }
+  .dir-tier { font-size: 11px; letter-spacing: 1px; text-transform: uppercase; color: var(--muted); }
+  .dir-tier.t1 { color: #c9a26b; } .dir-tier.t2 { color: #b9c3cf; } .dir-tier.t3 { color: #e3c25a; } .dir-tier.t4 { color: #e9e2c9; } .dir-tier.t5 { color: #d05a5a; } .dir-tier.t6 { color: #8fb4ff; }
+  .dir-cycles { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; max-width: 1100px; }
+  .dir-cycle { border: 1px solid var(--line); background: var(--panel); padding: 12px 14px; display: flex; flex-direction: column; gap: 4px; }
+  .dir-cycle small { color: var(--muted); letter-spacing: 1px; text-transform: uppercase; font-size: 11px; }
+  .dir-cycle b { font-size: 18px; color: var(--text); }
+  .dir-cycle span { font-size: 12px; color: var(--muted); }
+  .dir-meta { margin: 0 0 8px; color: var(--muted); }
+  .dir-meta b { color: var(--text); }
+  .dir-deux { display: grid; grid-template-columns: repeat(auto-fit, minmax(420px, 1fr)); gap: 0 24px; max-width: 1100px; }
+  .dir-deux .dir-l { grid-template-columns: 30px minmax(110px, 160px) 1fr 120px 0; }
+  .dir-baro { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; max-width: 1100px; }
+  .dir-bo { border: 1px solid var(--line); padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
+  .dir-bo span { color: var(--muted); white-space: nowrap; }
   .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
   .res-onglets button { padding: 6px 12px; }
   .res-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; max-width: 1200px; }
@@ -1426,6 +1450,20 @@ const T3 = {
       ["Extracteurs", "Sur une planète où tu as fini toutes les missions, un Extracteur ramasse ses ressources tout seul pendant que tu fais autre chose."],
       ["Missions longues", "Survie, Défense et Excavation donnent beaucoup d'ennemis et de caisses : idéal pour les ressources rares."]],
     resChargement: "Chargement des ressources…", resSource: "Planètes et meilleurs endroits : wiki officiel de Warframe ; mondes ouverts : fichiers du jeu et base WFCD.",
+    dirTitre: "En direct", dirIntro: "Ce qui se passe dans le jeu en ce moment (PC). Mis à jour tout seul toutes les 2 minutes.",
+    dirAttention: "⚠ Ces informations peuvent être incorrectes si la récupération des données s'est mal passée. Vérifie dans le jeu avant de compter dessus.",
+    dirIndispo: "Indisponible pour le moment.", dirErreur: "Impossible de lire l'état du jeu pour le moment. Réessaie dans quelques minutes.",
+    dirChargement: "Lecture de l'état du jeu…", dirSource: "Source : état officiel du jeu, via warframestat.us. Baro : état officiel du jeu.",
+    dirFissures: "Fissures du Néant", dirFisOnglets: [["normal", "Normales"], ["acier", "Voie de l'Acier"], ["tempete", "Tempêtes du Néant"]],
+    dirAucune: "Aucune fissure de ce type pour le moment.",
+    dirCycles: "Mondes ouverts", dirCetus: "Plaines d'Eidolon", dirVallis: "Vallée Orbis", dirCambion: "Faille Cambion",
+    dirEtats: { day: "☀ Jour", night: "☾ Nuit", warm: "☀ Chaud", cold: "❄ Froid", fass: "Fass", vome: "Vome" },
+    dirChange: "change dans", dirReste: "encore", dirSortie: "Sortie du jour", dirArchontes: "Chasse aux Archontes (semaine)",
+    dirBaro: "Baro Ki'Teer", dirBaroLa: (lieu) => `Il est là : ${lieu}. Il repart dans`, dirBaroVient: (lieu) => `Il arrivera à ${lieu} dans`,
+    dirBaroStock: "Ce qu'il vend", dirBaroVide: "Sa boutique n'est connue qu'à son arrivée.",
+    dirTeshin: "Récompense de Teshin (Voie de l'Acier)", dirTeshinPrix: n => `${n} Essences d'Acier`,
+    dirNightwave: "Nightwave : défis en cours", dirJour: "Jour", dirSemaine: "Semaine", dirElite: "Élite", dirRep: n => `${n.toLocaleString("fr-FR")} réputation`,
+    dirInvasions: "Invasions", dirEvenements: "Événements en cours",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
@@ -1722,6 +1760,20 @@ const T3 = {
       ["Extractors", "On a planet where you finished every mission, an Extractor gathers its resources by itself while you do something else."],
       ["Long missions", "Survival, Defense and Excavation give lots of enemies and containers: great for rare resources."]],
     resChargement: "Loading resources…", resSource: "Planets and best places: official Warframe wiki; open worlds: game files and the WFCD database.",
+    dirTitre: "Live", dirIntro: "What's happening in the game right now (PC). Updated by itself every 2 minutes.",
+    dirAttention: "⚠ This information may be wrong if the data was not fetched correctly. Check in game before relying on it.",
+    dirIndispo: "Unavailable right now.", dirErreur: "Can't read the game state right now. Try again in a few minutes.",
+    dirChargement: "Reading the game state…", dirSource: "Source: official game state, via warframestat.us. Baro: official game state.",
+    dirFissures: "Void Fissures", dirFisOnglets: [["normal", "Normal"], ["acier", "Steel Path"], ["tempete", "Void Storms"]],
+    dirAucune: "No fissure of this kind right now.",
+    dirCycles: "Open worlds", dirCetus: "Plains of Eidolon", dirVallis: "Orb Vallis", dirCambion: "Cambion Drift",
+    dirEtats: { day: "☀ Day", night: "☾ Night", warm: "☀ Warm", cold: "❄ Cold", fass: "Fass", vome: "Vome" },
+    dirChange: "changes in", dirReste: "left", dirSortie: "Today's Sortie", dirArchontes: "Archon Hunt (week)",
+    dirBaro: "Baro Ki'Teer", dirBaroLa: (lieu) => `He's here, at ${lieu}. He leaves in`, dirBaroVient: (lieu) => `He'll arrive at ${lieu} in`,
+    dirBaroStock: "What he sells", dirBaroVide: "His shop is only known when he arrives.",
+    dirTeshin: "Teshin's reward (Steel Path)", dirTeshinPrix: n => `${n} Steel Essence`,
+    dirNightwave: "Nightwave: current challenges", dirJour: "Daily", dirSemaine: "Weekly", dirElite: "Elite", dirRep: n => `${n.toLocaleString("en-US")} standing`,
+    dirInvasions: "Invasions", dirEvenements: "Current events",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
@@ -3161,6 +3213,70 @@ function rendreConseils() {
         `<div class="guide-conseil sans-ic"><div><h3>${esc(nom)} ${badgeGuide(rang)}</h3><p>${esc(type)} · ${esc(ou)}</p></div></div>`).join("") +
       `</div><p class="guide-note">${esc(t("conArmesNote"))}</p></div>`;
 }
+// En direct : /api/direct (warframestat.us) ; rechargé toutes les 2 min, comptes à rebours chaque seconde
+var direct = null, directT = 0, dirFis = "normal";
+try { dirFis = localStorage.getItem("dirFis") || "normal"; } catch (e) {}
+async function chargerDirect() {
+  if (direct && direct.charge) return;
+  direct = Object.assign(direct || {}, { charge: true });
+  try { direct = await api(`/api/direct?lang=${lang}`); } catch (e) { direct = { ok: false }; }
+  directT = Date.now();
+  if (page === "info" && infoGroupe === "jeu" && infoSous.jeu === "direct") rendreInfo();
+}
+function rebours(fin) {
+  const ms = new Date(fin) - Date.now();
+  if (!fin || isNaN(ms)) return "";
+  if (ms <= 0) return "0 s";
+  const s = Math.floor(ms / 1000), j = Math.floor(s / 86400), h = Math.floor(s % 86400 / 3600), m = Math.floor(s % 3600 / 60);
+  return j ? `${j} j ${h} h` : h ? `${h} h ${String(m).padStart(2, "0")} min` : `${m} min ${String(s % 60).padStart(2, "0")} s`;
+}
+const rb = fin => fin ? `<span class="dir-rb" data-fin="${esc(fin)}">${esc(rebours(fin))}</span>` : "";
+setInterval(() => {
+  if (page !== "info" || infoSous.jeu !== "direct") return;
+  document.querySelectorAll("#infoContenu .dir-rb").forEach(x => { x.textContent = rebours(x.dataset.fin); });
+  if (Date.now() - directT > 120000) chargerDirect();
+}, 1000);
+function rendreDirect() {
+  if (!direct || (direct.charge && !direct.maintenant)) { chargerDirect(); return `<p class="muted">${esc(t("dirChargement"))}</p>`; }
+  if (!direct.ok) return `<div class="guide-tete"><div><h1>${esc(t("dirTitre"))}</h1></div></div><p class="dir-erreur">${esc(t("dirErreur"))}</p>`;
+  const D = direct, indispo = `<p class="muted">${esc(t("dirIndispo"))}</p>`, att = `<p class="dir-att">${esc(t("dirAttention"))}</p>`;
+  const sec = (titre, corps, douteux) => `<div class="guide-section dir-sec"><h2 class="info-titre">${esc(titre)}</h2>${douteux ? att : ""}${corps}</div>`;
+  // fissures
+  const FIS = { normal: f => !f.acier && !f.tempete, acier: f => f.acier && !f.tempete, tempete: f => f.tempete };
+  const fis = D.fissures ? D.fissures.filter(FIS[dirFis] || FIS.normal).sort((a, b) => (a.n || 9) - (b.n || 9) || new Date(a.fin) - new Date(b.fin)) : null;
+  const fissures = !D.fissures ? indispo : `<nav class="guide-onglets">` + t("dirFisOnglets").map(([k, l]) =>
+      `<button type="button" data-fis="${k}" class="${k === dirFis ? "on" : ""}">${esc(l)} <small>${D.fissures.filter(FIS[k]).length}</small></button>`).join("") + `</nav>` +
+    (fis.length ? `<div class="dir-table">` + fis.map(f => `<div class="dir-l"><span class="dir-tier t${f.n || 0}">${esc(f.tier || "")}</span>
+      <b>${esc(f.mission || "")}</b><span>${esc(f.noeud || "")}</span><span class="muted">${esc(f.ennemi || "")}</span>${rb(f.fin)}</div>`).join("") + "</div>"
+      : `<p class="muted">${esc(t("dirAucune"))}</p>`);
+  // cycles
+  const E = t("dirEtats"), cyc = (nom, c) => c ? `<div class="dir-cycle"><small>${esc(nom)}</small><b>${esc(E[String(c.etat).toLowerCase()] || c.etat || "?")}</b><span>${esc(t("dirChange"))} ${rb(c.fin)}</span></div>` : "";
+  const cycles = !D.cycles ? indispo : `<div class="dir-cycles">${cyc(t("dirCetus"), D.cycles.cetus)}${cyc(t("dirVallis"), D.cycles.vallis)}${cyc(t("dirCambion"), D.cycles.cambion)}</div>`;
+  const missions = (m, avecMod) => `<div class="dir-table">` + m.missions.map((x, i) => `<div class="dir-l mis"><span class="dir-tier">${i + 1}</span><b>${esc(x.mission || "")}</b><span>${esc(x.noeud || "")}</span>
+      <span class="muted">${avecMod ? esc(x.mod || "") : ""}</span><span></span></div>`).join("") + "</div>";
+  const sortie = !D.sortie ? indispo : `<p class="dir-meta"><b>${esc(D.sortie.boss || "")}</b> · ${esc(D.sortie.faction || "")} · ${esc(t("dirReste"))} ${rb(D.sortie.fin)}</p>` + missions(D.sortie, true);
+  const archontes = !D.archontes ? indispo : `<p class="dir-meta"><b>${esc(D.archontes.boss || "")}</b> · ${esc(t("dirReste"))} ${rb(D.archontes.fin)}</p>` + missions(D.archontes, false);
+  // Baro
+  const v = D.baroVisite, ici = v && new Date(v.debut) <= Date.now();
+  const baroTxt = !v ? indispo : `<p class="dir-meta">${esc(ici ? t("dirBaroLa", v.lieu) : t("dirBaroVient", v.lieu))} ${rb(ici ? v.fin : v.debut)}</p>`;
+  const stock = D.baro && D.baro.objets && D.baro.objets.length
+    ? att + `<h3 class="res-gr">${esc(t("dirBaroStock"))} <small>${D.baro.objets.length}</small></h3><div class="dir-baro">` + D.baro.objets.map(o =>
+      `<div class="dir-bo"><b>${esc(o.nom || "")}</b><span>${o.ducats ? `<img class="ico" src="/assets/ducat.png" alt=""> ${esc(o.ducats)}` : ""} ${o.credits ? `· ${esc(Number(o.credits).toLocaleString(lang === "fr" ? "fr-FR" : "en-US"))} cr` : ""}</span></div>`).join("") + "</div>"
+    : `<p class="muted">${esc(t("dirBaroVide"))}</p>`;
+  const teshin = !D.teshin ? indispo : `<p class="dir-meta"><b>${esc(D.teshin.nom || "")}</b>${D.teshin.prix ? " · " + esc(t("dirTeshinPrix", D.teshin.prix)) : ""} · ${esc(t("dirReste"))} ${rb(D.teshin.fin)}</p>`;
+  const nw = !D.nightwave ? indispo : `<div class="dir-table">` + D.nightwave.defis.map(c => `<div class="dir-l nw"><span class="dir-tier">${esc(c.jour ? t("dirJour") : c.elite ? t("dirElite") : t("dirSemaine"))}</span>
+      <b>${esc(c.titre || "")}</b><span class="muted">${esc(c.txt || "")}</span><span>${c.rep ? esc(t("dirRep", c.rep)) : ""}</span>${rb(c.fin)}</div>`).join("") + "</div>";
+  const inv = !D.invasions ? indispo : !D.invasions.length ? `<p class="muted">—</p>` : `<div class="dir-table">` + D.invasions.map(i => `<div class="dir-l inv"><b>${esc(i.noeud || "")}</b>
+      <span>${esc([i.att, i.def].filter(Boolean).join(" / "))}</span><span class="muted">${esc([i.attF, i.defF].filter(Boolean).join(" vs "))}</span>
+      <span class="muted">${i.avance != null ? Math.round(Math.abs(i.avance)) + " %" : ""}</span><span></span></div>`).join("") + "</div>";
+  const ev = D.evenements && D.evenements.length ? sec(t("dirEvenements"), `<div class="dir-table">` + D.evenements.map(e => `<div class="dir-l inv"><b>${esc(e.nom || "")}</b>
+      <span>${esc(e.noeud || "")}</span><span class="muted">${esc(e.txt || "")}</span><span></span>${rb(e.fin)}</div>`).join("") + "</div>", true) : "";
+  return `<div class="guide-tete"><div><h1>${esc(t("dirTitre"))}</h1><p>${esc(t("dirIntro"))}</p></div></div>` +
+    sec(t("dirCycles"), cycles) + sec(t("dirFissures"), fissures) + sec(t("dirBaro"), baroTxt + stock) +
+    `<div class="dir-deux">` + sec(t("dirSortie"), sortie) + sec(t("dirArchontes"), archontes) + `</div>` +
+    sec(t("dirTeshin"), teshin, true) + sec(t("dirNightwave"), nw, true) + sec(t("dirInvasions"), inv, true) + ev +
+    `<p class="guide-note">${esc(t("dirSource"))}</p>`;
+}
 // Ressources : planète par planète (assets/ressources.json, tools/gen_ressources.py)
 var ressources = null, resSous = "earth";
 try { resSous = localStorage.getItem("resSous") || "earth"; } catch (e) {}
@@ -3224,6 +3340,8 @@ function rendreInfo() {
   } else if (infoGroupe === "jeu" && s === "arsenal") {
     c.innerHTML = navArsenal() + rendreWarframes();
     filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "direct") {
+    c.innerHTML = rendreDirect();
   } else if (infoGroupe === "jeu" && s === "ressources") {
     c.innerHTML = rendreRessources();
   } else if (infoGroupe === "jeu" && s === "prime") {
@@ -3302,6 +3420,12 @@ $("#infoContenu").addEventListener("click", e => {
   if (am) {
     armSous = am.dataset.arm;
     try { localStorage.setItem("armSous", armSous); } catch (e) {}
+    return rendreInfo();
+  }
+  const fi = e.target.closest("button[data-fis]");
+  if (fi) {
+    dirFis = fi.dataset.fis;
+    try { localStorage.setItem("dirFis", dirFis); } catch (e) {}
     return rendreInfo();
   }
   const rs = e.target.closest("button[data-res]");

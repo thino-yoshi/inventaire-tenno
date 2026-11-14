@@ -957,6 +957,77 @@ def baro():
     return _baro["data"]
 
 
+# ---------------------------------------------------------------- Info / aide -> En direct
+_direct = {}
+WFSTAT_URL = "https://api.warframestat.us/pc/"  # etat du jeu officiel, rendu lisible par la communaute
+
+
+def direct_view(lang):
+    """Etat du jeu en ce moment : fissures, cycles, Sortie, Archontes, Baro, Teshin, Nightwave, invasions,
+    evenements. Chaque partie est lue separement : si l'une manque, les autres restent."""
+    hit = _direct.get(lang)
+    if hit and time.time() - hit[0] < 120:
+        return hit[1]
+    r = requests.get(WFSTAT_URL, params={"language": lang}, timeout=20, headers={"Accept-Language": lang})
+    r.raise_for_status()
+    w = r.json()
+    d = lambda x: x if isinstance(x, dict) else {}
+    l = lambda x: x if isinstance(x, list) else []
+    out = {"ok": True, "maintenant": time.time()}
+
+    def partie(cle, f):
+        try:
+            out[cle] = f()
+        except Exception as e:
+            print("En direct :", cle, e)
+            out[cle] = None
+
+    partie("fissures", lambda: [{"tier": f.get("tier"), "n": f.get("tierNum"), "mission": f.get("missionType"),
+                                 "noeud": f.get("node"), "ennemi": f.get("enemy"), "fin": f.get("expiry"),
+                                 "tempete": bool(f.get("isStorm")), "acier": bool(f.get("isHard"))}
+                                for f in l(w.get("fissures")) if not f.get("expired") and f.get("expiry")])
+
+    def cycle(c, cle_etat):
+        c = d(w.get(c))
+        etat = c.get(cle_etat) if cle_etat else None
+        return {"etat": c.get("state") or c.get("active") or etat, "fin": c.get("expiry")} if c.get("expiry") else None
+    partie("cycles", lambda: {"cetus": cycle("cetusCycle", None), "vallis": cycle("vallisCycle", None),
+                              "cambion": cycle("cambionCycle", None)})
+    partie("sortie", lambda: {"boss": d(w.get("sortie")).get("boss"), "faction": d(w.get("sortie")).get("faction"),
+                              "fin": d(w.get("sortie")).get("expiry"),
+                              "missions": [{"mission": v.get("missionType"), "noeud": v.get("node"),
+                                            "mod": v.get("modifier"), "modTxt": v.get("modifierDescription")}
+                                           for v in l(d(w.get("sortie")).get("variants"))]} if d(w.get("sortie")).get("expiry") else None)
+    partie("archontes", lambda: {"boss": d(w.get("archonHunt")).get("boss"), "fin": d(w.get("archonHunt")).get("expiry"),
+                                 "missions": [{"mission": m.get("type"), "noeud": m.get("node")}
+                                              for m in l(d(w.get("archonHunt")).get("missions"))]} if d(w.get("archonHunt")).get("expiry") else None)
+    partie("baro", lambda: {"actif": bool(d(w.get("voidTrader")).get("active")),
+                            "objets": [{"nom": i.get("item"), "ducats": i.get("ducats"), "credits": i.get("credits")}
+                                       for i in l(d(w.get("voidTrader")).get("inventory"))]})
+    partie("teshin", lambda: {"nom": d(d(w.get("steelPath")).get("currentReward")).get("name"),
+                              "prix": d(d(w.get("steelPath")).get("currentReward")).get("cost"),
+                              "fin": d(w.get("steelPath")).get("expiry")} if d(d(w.get("steelPath")).get("currentReward")) else None)
+    partie("nightwave", lambda: {"fin": d(w.get("nightwave")).get("expiry"),
+                                 "defis": [{"titre": c.get("title"), "txt": c.get("desc"), "rep": c.get("reputation"),
+                                            "jour": bool(c.get("isDaily")), "elite": bool(c.get("isElite")), "fin": c.get("expiry")}
+                                           for c in l(d(w.get("nightwave")).get("activeChallenges"))]} if d(w.get("nightwave")) else None)
+    partie("invasions", lambda: [{"noeud": i.get("node"), "txt": i.get("desc"), "avance": i.get("completion"),
+                                  "att": d(d(i.get("attacker")).get("reward")).get("asString") or "",
+                                  "attF": d(i.get("attacker")).get("faction"),
+                                  "def": d(d(i.get("defender")).get("reward")).get("asString") or "",
+                                  "defF": d(i.get("defender")).get("faction")}
+                                 for i in l(w.get("invasions")) if not i.get("completed")])
+    partie("evenements", lambda: [{"nom": e.get("description"), "noeud": e.get("node"), "fin": e.get("expiry"),
+                                   "txt": e.get("tooltip")} for e in l(w.get("events")) if not e.get("expired")])
+    try:
+        out["baroVisite"] = baro()  # arrivee / depart / relais : source officielle (deja en place)
+    except Exception as e:
+        print("En direct : Baro", e)
+        out["baroVisite"] = None
+    _direct[lang] = (time.time(), out)
+    return out
+
+
 _volumes = {}
 _stats = {}
 
@@ -2015,6 +2086,12 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, price_history(q["slug"], rank))
             elif u.path == "/api/mes-ventes":  # ventes marquees « Vendu » (onglet Market > Stats)
                 self.send(200, load_json(SALES_LOG, []) or [])
+            elif u.path == "/api/direct":  # Info / aide -> En direct
+                try:
+                    self.send(200, direct_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
+                except Exception as e:
+                    print("En direct :", e)
+                    self.send(200, {"ok": False})
             elif u.path == "/api/progression":  # Info / aide : quetes faites, planetes, rang de maitrise
                 self.send(200, progression_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
             elif u.path == "/api/collection":  # Warframes et armes du jeu : construit / maitrise
