@@ -11,6 +11,11 @@ Outil Windows pour Warframe : lit ton inventaire (en lecture seule) et l'estime 
 - 15 langues pour les noms d'items, interface en français et en anglais
 - Mise à jour automatique au démarrage depuis les releases de ce dépôt
 
+## Soutenir le projet
+
+Lotus Desk est gratuit et fait par deux personnes sur leur temps libre. Si l'app t'aide, tu peux
+nous offrir un café sur [Ko-fi](https://ko-fi.com/lotusdesk). Merci ! ♥
+
 ## Installation
 
 Télécharger `LotusDesk.exe` dans la dernière

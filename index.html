@@ -405,6 +405,14 @@
   .pages button.on { background: var(--gold); color: var(--on-gold); }
   /* ---- chat du jeu : meme allure que le chat de Warframe (fond noir, pseudos vert-bleu) ---- */
   .pages .btn-chat { position: relative; }
+  /* ---- dons : simple lien vers la page de dons (ouvre le navigateur, rien ne tourne en fond) ---- */
+  .pages .btn-don { color: #f07a8c; text-decoration: none; display: inline-flex; align-items: center;
+                    clip-path: polygon(9px 0, 100% 0, 100% 100%, 0 100%, 0 9px); padding: 9px 16px; letter-spacing: 2px;
+                    text-transform: uppercase; background: var(--panel); border: 1px solid var(--line); border-bottom: none; }
+  .pages .btn-don:hover { background: #f07a8c22; }
+  .pages .btn-don[hidden], .info-don[hidden] { display: none; }
+  .info-don { margin-top: 14px; padding: 10px 12px; border-left: 3px solid #f07a8c; background: #f07a8c12; }
+  .info-don .bouton { margin-top: 8px; }
   .pages .btn-chat.on { background: #050405; color: #efefef; border-color: #2aaa8c; }
   #chatNb { position: absolute; top: 3px; right: 5px; min-width: 16px; padding: 0 4px; border-radius: 8px;
             background: #2aaa8c; color: #050405; font: 700 10px/16px "Segoe UI", sans-serif; letter-spacing: 0; }
@@ -800,6 +808,7 @@
     <button data-p="info" data-t="pInfo"></button>
     <button data-p="parametres" data-t="pParam"></button>
     <button data-p="modo" id="btnModo" class="btn-modo" hidden>Modo<i id="modoNb" hidden></i></button>
+    <a id="btnDon" class="btn-don" target="_blank" rel="noopener" hidden>♥&nbsp;<span data-t="soutenir"></span></a>
     <button type="button" id="btnChat" class="btn-chat"><span data-t="chat"></span><i id="chatNb" hidden></i></button>
   </nav>
 </header>
@@ -1132,7 +1141,7 @@ const LANG_NAMES = { fr: "Français", en: "English", de: "Deutsch", es: "Españo
   pt: "Português", pl: "Polski", ru: "Русский", uk: "Українська", tr: "Türkçe", ja: "日本語",
   ko: "한국어", zh: "简体中文", tc: "繁體中文", th: "ไทย" };
 const T = {
-  fr: { seuil0: "Tous les prix", seuilTip: "Ignore les mods, arcanes et reliques moins chers (difficiles à vendre)", totMed: "total (médian)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
+  fr: { soutenir: "Soutenir", donTxt: "Lotus Desk est gratuit et fait par deux personnes sur leur temps libre. Si l'app t'aide, un petit don nous permet de continuer à la maintenir. Merci !", donBouton: "Faire un don", seuil0: "Tous les prix", seuilTip: "Ignore les mods, arcanes et reliques moins chers (difficiles à vendre)", totMed: "total (médian)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
     filtre: "Filtrer…", auto: "Lecture auto", lire: "Lire le jeu", rafraichir: "Rafraîchir les prix",
     tous: "Tout", prime: "Prime", set: "Sets", arcane: "Arcanes", mod: "Mods", relique: "Reliques",
     colItem: "Item", colRang: "Rang", colQte: "Qté", colMin: "Min", colMed: "Médian", colTotal: "Total",
@@ -1170,7 +1179,7 @@ const T = {
     aucune_copie: "Aucune copie enregistrée : lance le jeu puis clique sur « Lire le jeu ».",
     rang0: "Pas d'offre à ton rang : prix des offres au rang 0.", tous_rangs: "Pas d'offre à ton rang : tous rangs confondus.",
     plus: n => `Afficher ${n} de plus` },
-  en: { seuil0: "All prices", seuilTip: "Ignore cheaper mods, arcanes and relics (hard to sell)", totMed: "total (median)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
+  en: { soutenir: "Support", donTxt: "Lotus Desk is free and made by two people in their spare time. If the app helps you, a small donation lets us keep maintaining it. Thank you!", donBouton: "Donate", seuil0: "All prices", seuilTip: "Ignore cheaper mods, arcanes and relics (hard to sell)", totMed: "total (median)", totMin: "total (minimum)", totDuc: "ducats", nbItems: "items",
     filtre: "Filter…", auto: "Auto read", lire: "Read game", rafraichir: "Refresh prices",
     tous: "All", prime: "Prime", set: "Sets", arcane: "Arcanes", mod: "Mods", relique: "Relics",
     colItem: "Item", colRang: "Rank", colQte: "Qty", colMin: "Min", colMed: "Median", colTotal: "Total",
@@ -1208,7 +1217,7 @@ const T = {
     aucune_copie: "No saved copy: start the game then click “Read game”.",
     rang0: "No offers at your rank: rank 0 prices shown.", tous_rangs: "No offers at your rank: all ranks shown.",
     plus: n => `Show ${n} more` },
-  de: { seuil0: "Alle Preise", seuilTip: "Billigere Mods, Arkanas und Relikte ignorieren (schwer verkäuflich)", totMed: "Gesamt (Median)", totMin: "Gesamt (Minimum)", totDuc: "Dukaten", nbItems: "Items",
+  de: { soutenir: "Unterstützen", donTxt: "Lotus Desk ist kostenlos und wird von zwei Leuten in ihrer Freizeit gemacht. Wenn dir die App hilft, hilft uns eine kleine Spende, sie weiter zu pflegen. Danke!", donBouton: "Spenden", seuil0: "Alle Preise", seuilTip: "Billigere Mods, Arkanas und Relikte ignorieren (schwer verkäuflich)", totMed: "Gesamt (Median)", totMin: "Gesamt (Minimum)", totDuc: "Dukaten", nbItems: "Items",
     filtre: "Filtern…", auto: "Auto-Lesen", lire: "Spiel lesen", rafraichir: "Preise aktualisieren",
     tous: "Alle", prime: "Prime", set: "Sets", arcane: "Arkanas", mod: "Mods", relique: "Relikte",
     colItem: "Item", colRang: "Rang", colQte: "Anz.", colMin: "Min", colMed: "Median", colTotal: "Gesamt",
@@ -1230,7 +1239,7 @@ const T = {
     aucune_copie: "Keine Kopie gespeichert: starte das Spiel und klicke auf „Spiel lesen“.",
     rang0: "Keine Angebote auf deinem Rang: Preise für Rang 0.", tous_rangs: "Keine Angebote auf deinem Rang: alle Ränge.",
     plus: n => `${n} weitere anzeigen` },
-  es: { seuil0: "Todos los precios", seuilTip: "Ignora mods, arcanos y reliquias más baratos (difíciles de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "objetos",
+  es: { soutenir: "Apoyar", donTxt: "Lotus Desk es gratis y lo hacen dos personas en su tiempo libre. Si la app te ayuda, una pequeña donación nos permite seguir manteniéndola. ¡Gracias!", donBouton: "Donar", seuil0: "Todos los precios", seuilTip: "Ignora mods, arcanos y reliquias más baratos (difíciles de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "objetos",
     filtre: "Filtrar…", auto: "Lectura auto", lire: "Leer el juego", rafraichir: "Actualizar precios",
     tous: "Todo", prime: "Prime", set: "Sets", arcane: "Arcanos", mod: "Mods", relique: "Reliquias",
     colItem: "Objeto", colRang: "Rango", colQte: "Cant.", colMin: "Mín", colMed: "Mediana", colTotal: "Total",
@@ -1252,7 +1261,7 @@ const T = {
     aucune_copie: "No hay copia guardada: abre el juego y pulsa «Leer el juego».",
     rang0: "Sin ofertas en tu rango: precios de rango 0.", tous_rangs: "Sin ofertas en tu rango: todos los rangos.",
     plus: n => `Mostrar ${n} más` },
-  it: { seuil0: "Tutti i prezzi", seuilTip: "Ignora mod, arcani e reliquie più economici (difficili da vendere)", totMed: "totale (mediana)", totMin: "totale (minimo)", totDuc: "ducati", nbItems: "oggetti",
+  it: { soutenir: "Sostieni", donTxt: "Lotus Desk è gratuito ed è fatto da due persone nel tempo libero. Se l'app ti aiuta, una piccola donazione ci permette di continuare a mantenerla. Grazie!", donBouton: "Dona", seuil0: "Tutti i prezzi", seuilTip: "Ignora mod, arcani e reliquie più economici (difficili da vendere)", totMed: "totale (mediana)", totMin: "totale (minimo)", totDuc: "ducati", nbItems: "oggetti",
     filtre: "Filtra…", auto: "Lettura auto", lire: "Leggi il gioco", rafraichir: "Aggiorna prezzi",
     tous: "Tutto", prime: "Prime", set: "Set", arcane: "Arcani", mod: "Mod", relique: "Reliquie",
     colItem: "Oggetto", colRang: "Grado", colQte: "Qtà", colMin: "Min", colMed: "Mediana", colTotal: "Totale",
@@ -1274,7 +1283,7 @@ const T = {
     aucune_copie: "Nessuna copia salvata: avvia il gioco e clicca «Leggi il gioco».",
     rang0: "Nessuna offerta al tuo grado: prezzi di grado 0.", tous_rangs: "Nessuna offerta al tuo grado: tutti i gradi.",
     plus: n => `Mostra altri ${n}` },
-  pt: { seuil0: "Todos os preços", seuilTip: "Ignora mods, arcanos e relíquias mais baratos (difíceis de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "itens",
+  pt: { soutenir: "Apoiar", donTxt: "O Lotus Desk é gratuito e feito por duas pessoas no tempo livre. Se o app te ajuda, uma pequena doação nos permite continuar a mantê-lo. Obrigado!", donBouton: "Doar", seuil0: "Todos os preços", seuilTip: "Ignora mods, arcanos e relíquias mais baratos (difíceis de vender)", totMed: "total (mediana)", totMin: "total (mínimo)", totDuc: "ducados", nbItems: "itens",
     filtre: "Filtrar…", auto: "Leitura auto", lire: "Ler o jogo", rafraichir: "Atualizar preços",
     tous: "Tudo", prime: "Prime", set: "Sets", arcane: "Arcanos", mod: "Mods", relique: "Relíquias",
     colItem: "Item", colRang: "Nível", colQte: "Qtd", colMin: "Mín", colMed: "Mediana", colTotal: "Total",
@@ -1296,7 +1305,7 @@ const T = {
     aucune_copie: "Nenhuma cópia salva: abra o jogo e clique em “Ler o jogo”.",
     rang0: "Sem ofertas no seu nível: preços de nível 0.", tous_rangs: "Sem ofertas no seu nível: todos os níveis.",
     plus: n => `Mostrar mais ${n}` },
-  pl: { seuil0: "Wszystkie ceny", seuilTip: "Pomija tańsze mody, arkana i relikwie (trudne do sprzedania)", totMed: "suma (mediana)", totMin: "suma (minimum)", totDuc: "dukaty", nbItems: "przedmioty",
+  pl: { soutenir: "Wesprzyj", donTxt: "Lotus Desk jest darmowy i tworzony przez dwie osoby w wolnym czasie. Jeśli aplikacja ci pomaga, mała darowizna pozwoli nam dalej ją rozwijać. Dzięki!", donBouton: "Wesprzyj", seuil0: "Wszystkie ceny", seuilTip: "Pomija tańsze mody, arkana i relikwie (trudne do sprzedania)", totMed: "suma (mediana)", totMin: "suma (minimum)", totDuc: "dukaty", nbItems: "przedmioty",
     filtre: "Filtruj…", auto: "Auto odczyt", lire: "Odczytaj grę", rafraichir: "Odśwież ceny",
     tous: "Wszystko", prime: "Prime", set: "Zestawy", arcane: "Arkana", mod: "Mody", relique: "Relikwie",
     colItem: "Przedmiot", colRang: "Ranga", colQte: "Ilość", colMin: "Min", colMed: "Mediana", colTotal: "Suma",
@@ -1318,7 +1327,7 @@ const T = {
     aucune_copie: "Brak zapisanej kopii: uruchom grę i kliknij „Odczytaj grę”.",
     rang0: "Brak ofert na twojej randze: ceny rangi 0.", tous_rangs: "Brak ofert na twojej randze: wszystkie rangi.",
     plus: n => `Pokaż ${n} więcej` },
-  ru: { seuil0: "Все цены", seuilTip: "Скрыть более дешёвые моды, мистификаторы и реликвии (трудно продать)", totMed: "итого (медиана)", totMin: "итого (минимум)", totDuc: "дукаты", nbItems: "предметы",
+  ru: { soutenir: "Поддержать", donTxt: "Lotus Desk бесплатен, его делают два человека в свободное время. Если приложение вам помогает, небольшое пожертвование позволит нам и дальше его поддерживать. Спасибо!", donBouton: "Пожертвовать", seuil0: "Все цены", seuilTip: "Скрыть более дешёвые моды, мистификаторы и реликвии (трудно продать)", totMed: "итого (медиана)", totMin: "итого (минимум)", totDuc: "дукаты", nbItems: "предметы",
     filtre: "Фильтр…", auto: "Авточтение", lire: "Прочитать игру", rafraichir: "Обновить цены",
     tous: "Все", prime: "Прайм", set: "Наборы", arcane: "Мистификаторы", mod: "Моды", relique: "Реликвии",
     colItem: "Предмет", colRang: "Ранг", colQte: "Кол.", colMin: "Мин", colMed: "Медиана", colTotal: "Итого",
@@ -2205,6 +2214,9 @@ if (!LANG_NAMES[lang]) {
   const nav = (navigator.language || "fr").slice(0, 2);
   lang = LANG_NAMES[nav] ? nav : "en";
 }
+// Page de dons (Ko-fi...). Vide = bouton « Soutenir » et encart caches.
+const DON_URL = "https://ko-fi.com/lotusdesk";
+if (DON_URL) { const b = document.getElementById("btnDon"); b.href = DON_URL; b.hidden = false; b.title = ""; }
 const t = (k, ...a) => { const v = (T[lang] || T.en)[k] ?? T.en[k]; return typeof v === "function" ? v(...a) : v; };
 const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const PLAT = `<img class="ico" src="/assets/platine.png" alt="platine">`, DUC = `<img class="ico" src="/assets/ducat.png" alt="ducats">`;
@@ -3643,6 +3655,8 @@ function rendreInfo() {
         <p class="muted">${esc(t("aproposTxt"))}</p>
         <div class="ligne-r"><a class="bouton" href="https://github.com/thino-yoshi/inventaire-tenno" target="_blank" rel="noopener">${esc(t("lienGithub"))}</a>
           <a class="bouton" href="https://warframe.market" target="_blank" rel="noopener">Warframe Market</a></div>
+        ${DON_URL ? `<div class="info-don"><b>♥ ${esc(t("soutenir"))}</b><p class="muted">${esc(t("donTxt"))}</p>
+          <a class="bouton" href="${esc(DON_URL)}" target="_blank" rel="noopener">${esc(t("donBouton"))}</a></div>` : ""}
         <p class="info-mention">${esc(t("aproposMention"))}</p></div>
       <div class="carte"><h2>${esc(t("nouveautes"))}</h2>${liste}</div></div>`;
   }
