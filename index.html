@@ -586,6 +586,16 @@
   .res-desc { font-style: italic; }
   .res-recherche { width: 380px; margin: 0 0 10px; }
   .res-grille.large { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .mj-liste { display: flex; flex-direction: column; gap: 10px; max-width: 1000px; }
+  .mj-c { border: 1px solid var(--line); background: var(--panel); padding: 12px 14px; font-size: 13px; }
+  .mj-c.maj { border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); }
+  .mj-tete { display: flex; flex-wrap: wrap; align-items: baseline; gap: 10px; }
+  .mj-tete b { font-size: 15px; color: var(--text); }
+  .mj-tete small { color: var(--muted); margin-left: auto; }
+  .mj-type { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); }
+  .mj-c.maj .mj-type { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
+  .mj-c ul { margin: 8px 0; padding-left: 18px; color: var(--muted); }
+  .mj-c a { color: var(--gold); font-size: 12px; }
   .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
   .res-onglets button { padding: 6px 12px; }
   .res-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; max-width: 1200px; }
@@ -849,6 +859,15 @@
   <div class="nv-liste" id="nvListe"></div>
   <div class="bv-pied"><span></span><button type="button" id="nvOk" class="bv-ok" data-t="bvOk"></button></div>
 </dialog>
+<dialog id="dlgMajJeu" class="bienvenue" aria-labelledby="mjTitre">
+  <div class="bv-tete">
+    <div class="bv-sur" data-t="mjSur"></div>
+    <h2 id="mjTitre"></h2>
+    <div class="muted" id="mjDate"></div>
+  </div>
+  <div class="nv-liste" id="mjResume"></div>
+  <div class="bv-pied"><a class="bouton" id="mjLien" target="_blank" rel="noopener" data-t="mjLire"></a><button type="button" id="mjOk" class="bv-ok" data-t="bvOk"></button></div>
+</dialog>
 <dialog id="dlgCo">
   <form id="formCo" method="dialog">
     <h2 data-t="coTitre"></h2>
@@ -1044,6 +1063,7 @@
     <button type="button" data-i="prime" data-t="iPrime"></button>
     <button type="button" data-i="ressources" data-t="iRessources"></button>
     <button type="button" data-i="direct" data-t="iDirect"></button>
+    <button type="button" data-i="majjeu" data-t="iMajJeu"></button>
   </nav>
   <nav class="sous-pages" id="sousApp" hidden>
     <button type="button" data-i="guide" data-t="iGuide"></button>
@@ -1473,6 +1493,10 @@ const T3 = {
     dirTeshin: "Récompense de Teshin (Voie de l'Acier)", dirTeshinPrix: n => `${n} Essences d'Acier`,
     dirNightwave: "Nightwave : défis en cours", dirJour: "Jour", dirSemaine: "Semaine", dirElite: "Élite", dirRep: n => `${n.toLocaleString("fr-FR")} réputation`,
     dirInvasions: "Invasions", dirEvenements: "Événements en cours",
+    iMajJeu: "Mises à jour du jeu", mjSur: "Nouvelle mise à jour de Warframe", mjLire: "Lire les notes complètes ↗",
+    mjTitre: "Mises à jour du jeu", mjIntro: "Les dernières notes de mise à jour PC publiées par Digital Extremes, en anglais comme sur le forum officiel. Les grosses mises à jour s'affichent aussi dans une fenêtre au lancement.",
+    mjMaj: "Mise à jour", mjCorrectif: "Correctif", mjChargement: "Lecture des notes officielles…", mjErreur: "Impossible de lire les notes de mise à jour pour le moment.",
+    mjAnglais: "Notes officielles en anglais.",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
@@ -1790,6 +1814,10 @@ const T3 = {
     dirTeshin: "Teshin's reward (Steel Path)", dirTeshinPrix: n => `${n} Steel Essence`,
     dirNightwave: "Nightwave: current challenges", dirJour: "Daily", dirSemaine: "Weekly", dirElite: "Elite", dirRep: n => `${n.toLocaleString("en-US")} standing`,
     dirInvasions: "Invasions", dirEvenements: "Current events",
+    iMajJeu: "Game updates", mjSur: "New Warframe update", mjLire: "Read the full notes ↗",
+    mjTitre: "Game updates", mjIntro: "The latest PC update notes published by Digital Extremes, as on the official forum. Big updates also show in a window at launch.",
+    mjMaj: "Update", mjCorrectif: "Hotfix", mjChargement: "Reading the official notes…", mjErreur: "Can't read the update notes right now.",
+    mjAnglais: "Official notes.",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
@@ -2969,7 +2997,7 @@ function montrerPage(p) {
 // ---------------------------------------------------------------- onglet Info / aide
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
-const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "ressources", "direct", "majjeu"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
 // Progression du joueur (lue dans le jeu) : quêtes faites, planètes, rang de maîtrise
 var prog = { ok: false, cle: "", charge: false }, spoilRevele = [];
 try { spoilRevele = JSON.parse(localStorage.getItem("spoilRevele")) || []; } catch (e) {}
@@ -3294,6 +3322,45 @@ function rendreDirect() {
     sec(t("dirTeshin"), teshin, true) + sec(t("dirNightwave"), nw, true) + sec(t("dirInvasions"), inv, true) + ev +
     `<p class="guide-note">${esc(t("dirSource"))}</p>`;
 }
+// Mises à jour du jeu : notes PC officielles (/api/maj-jeu)
+var majJeu = null;
+async function chargerMajJeu() {
+  if (majJeu) return majJeu;
+  majJeu = { charge: true, liste: [] };
+  try { majJeu = { liste: (await api("/api/maj-jeu")).liste || [] }; } catch (e) { majJeu = { liste: [], erreur: true }; }
+  if (page === "info" && infoGroupe === "jeu" && infoSous.jeu === "majjeu") rendreInfo();
+  return majJeu;
+}
+const dateCourte = d => { try { return new Date(d).toLocaleDateString(lang === "fr" ? "fr-FR" : "en-US", { day: "numeric", month: "long", year: "numeric" }); } catch (e) { return ""; } };
+const resumeHtml = lignes => `<ul>${(lignes || []).map(l => `<li>${esc(l)}</li>`).join("")}</ul>`;
+function rendreMajJeu() {
+  if (!majJeu || majJeu.charge) { chargerMajJeu(); return `<p class="muted">${esc(t("mjChargement"))}</p>`; }
+  const tete = `<div class="guide-tete"><div><h1>${esc(t("mjTitre"))}</h1><p>${esc(t("mjIntro"))}</p></div></div>`;
+  if (!majJeu.liste.length) return tete + `<p class="dir-erreur">${esc(t("mjErreur"))}</p>`;
+  return tete + `<div class="mj-liste">` + majJeu.liste.map(m => `<div class="mj-c ${m.type}">
+      <div class="mj-tete"><span class="mj-type">${esc(t(m.type === "maj" ? "mjMaj" : "mjCorrectif"))}</span><b>${esc(m.titre)}</b><small>${esc(dateCourte(m.date))}</small></div>
+      ${resumeHtml(m.resume)}<a href="${esc(m.lien)}" target="_blank" rel="noopener">${esc(t("mjLire"))}</a></div>`).join("") + "</div>";
+}
+// Fenêtre au lancement (après « Quoi de neuf ») : seulement pour une vraie mise à jour, pas les correctifs
+let majJeuFaite = false;
+async function majJeuDepuis() {
+  if (majJeuFaite) return;
+  majJeuFaite = true;
+  const r = await chargerMajJeu(), m = (r.liste || []).find(x => x.type === "maj");
+  if (!m) return;
+  let vue = null;
+  try { vue = localStorage.getItem("majJeuVue"); } catch (e) {}
+  const garder = () => { try { localStorage.setItem("majJeuVue", m.id); } catch (e) {} };
+  if (!vue) return garder();  // premier lancement : on retient juste la dernière
+  if (vue === m.id) return;
+  $("#mjTitre").textContent = m.titre;
+  $("#mjDate").textContent = dateCourte(m.date) + " · " + t("mjAnglais");
+  $("#mjResume").innerHTML = `<div class="nv-version">${resumeHtml(m.resume)}</div>`;
+  $("#mjLien").href = m.lien;
+  $("#dlgMajJeu").showModal();
+  $("#dlgMajJeu").addEventListener("close", garder, { once: true });
+}
+$("#mjOk").addEventListener("click", () => $("#dlgMajJeu").close());
 // Ressources : planète par planète (assets/ressources.json, tools/gen_ressources.py)
 var ressources = null, resSous = "earth", resFiltre = "";
 try { resSous = localStorage.getItem("resSous") || "earth"; } catch (e) {}
@@ -3411,6 +3478,8 @@ function rendreInfo() {
   } else if (infoGroupe === "jeu" && s === "arsenal") {
     c.innerHTML = navArsenal() + rendreWarframes();
     filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "majjeu") {
+    c.innerHTML = rendreMajJeu();
   } else if (infoGroupe === "jeu" && s === "direct") {
     c.innerHTML = rendreDirect();
   } else if (infoGroupe === "jeu" && s === "ressources") {
@@ -3801,7 +3870,7 @@ async function nouveautesDepuis() {
   if (nouvFaites || $("#dlgBienvenue").open) return;
   nouvFaites = true;
   let r;
-  try { r = await api("/api/nouveautes"); } catch (e) { return; }
+  try { r = await api("/api/nouveautes"); } catch (e) { return majJeuDepuis(); }
   const actuelle = r.version, liste = r.liste || [];
   let vue = null;
   try { vue = localStorage.getItem("versionVue"); } catch (e) {}
@@ -3809,16 +3878,16 @@ async function nouveautesDepuis() {
   if (!vue) {
     let ancien = false;
     try { ancien = localStorage.getItem("bienvenueVu") === "1"; } catch (e) {}
-    if (!ancien) return garder();                  // première installation : la présentation suffit
+    if (!ancien) { garder(); return majJeuDepuis(); }  // première installation : la présentation suffit
     // joueur d'avant cette fenêtre : on lui montre la dernière nouveauté
     const avant = liste.map(n => n.version).filter(v => cmpV(v, actuelle) < 0).sort(cmpV).pop();
-    if (!avant) return garder();
+    if (!avant) { garder(); return majJeuDepuis(); }
     vue = avant;
   }
-  if (cmpV(actuelle, vue) <= 0) return;
+  if (cmpV(actuelle, vue) <= 0) return majJeuDepuis();
   const nouv = liste.filter(n => cmpV(n.version, vue) > 0 && cmpV(n.version, actuelle) <= 0)
                     .sort((x, y) => cmpV(y.version, x.version));
-  if (!nouv.length) return garder();
+  if (!nouv.length) { garder(); return majJeuDepuis(); }
   $("#nvSur").textContent = t("nvSur", actuelle);
   $("#nvSous").textContent = t("nvSous", vue, nouv.length);
   $("#nvListe").innerHTML = nouv.map(n => {
@@ -3830,7 +3899,7 @@ async function nouveautesDepuis() {
     return `<div class="nv-version"><h3><b>Version ${esc(n.version)}</b><small>${esc(n.date || "")}</small></h3>${html}</div>`;
   }).join("");
   $("#dlgNouv").showModal();
-  $("#dlgNouv").addEventListener("close", garder, { once: true });
+  $("#dlgNouv").addEventListener("close", () => { garder(); majJeuDepuis(); }, { once: true });
 }
 $("#nvOk").addEventListener("click", () => $("#dlgNouv").close());
 function bienvenue() {

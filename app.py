@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.16.1"
+VERSION = "1.17.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -955,6 +955,46 @@ def baro():
             data = {"debut": d.get("activation"), "fin": d.get("expiry"), "lieu": d.get("location")}
         _baro.update(t=time.time(), data=data)
     return _baro["data"]
+
+
+# ---------------------------------------------------------------- mises a jour du jeu (notes PC officielles)
+MAJ_JEU_URL = "https://forums.warframe.com/forum/3-pc-update-notes.xml/"
+_maj_jeu = {"t": 0, "liste": []}
+
+
+def maj_jeu():
+    """Dernieres notes de mise a jour PC publiees par Digital Extremes (flux RSS du forum officiel), gardees 30 min.
+    type : "maj" pour une mise a jour (Update), "correctif" pour un hotfix."""
+    import email.utils
+    import html as html_mod
+    import xml.etree.ElementTree as ET
+    if time.time() - _maj_jeu["t"] < 1800 and _maj_jeu["liste"]:
+        return _maj_jeu["liste"]
+    try:
+        r = requests.get(MAJ_JEU_URL, timeout=20, headers={"User-Agent": "LotusDesk"})
+        r.raise_for_status()
+        root = ET.fromstring(r.content)
+        liste = []
+        for it in root.iter("item"):
+            titre = (it.findtext("title") or "").strip()
+            if not titre:
+                continue
+            brut = it.findtext("description") or ""
+            txt = re.sub(r"<(br|/p|/li|/h\d)[^>]*>", "\n", brut)
+            txt = html_mod.unescape(re.sub(r"<[^>]+>", "", txt))
+            lignes = [l.strip() for l in txt.splitlines() if l.strip()]
+            try:
+                date = email.utils.parsedate_to_datetime(it.findtext("pubDate") or "").isoformat()
+            except (TypeError, ValueError):
+                date = ""
+            liste.append({"titre": titre, "lien": (it.findtext("link") or "").strip(), "date": date,
+                          "resume": lignes[:8], "id": (it.findtext("guid") or it.findtext("link") or titre).strip(),
+                          "type": "correctif" if re.search(r"hotfix", titre, re.I) else "maj"})
+        if liste:
+            _maj_jeu.update(t=time.time(), liste=liste[:15])
+    except Exception as e:
+        print("Mises a jour du jeu :", e)
+    return _maj_jeu["liste"]
 
 
 # ---------------------------------------------------------------- Info / aide -> En direct
@@ -2147,6 +2187,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, price_history(q["slug"], rank))
             elif u.path == "/api/mes-ventes":  # ventes marquees « Vendu » (onglet Market > Stats)
                 self.send(200, load_json(SALES_LOG, []) or [])
+            elif u.path == "/api/maj-jeu":  # fenetre « nouvelle mise a jour de Warframe » + onglet
+                self.send(200, {"liste": maj_jeu()})
             elif u.path == "/api/direct":  # Info / aide -> En direct
                 try:
                     self.send(200, direct_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
