@@ -91,7 +91,33 @@ MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati":
           "Brakk": ["Les Trois Grustrag (attaque pendant les missions)", "The Grustrag Three (attack during missions)"],
           "Seer": ["Capitaine Vor (Tolstoj, Mercure)", "Captain Vor (Tolstoj, Mercury)"],
           "Azima": TRIBUT, "Zenistar": TRIBUT, "Zenith": TRIBUT, "Sigma & Octantis": TRIBUT,
-          "Laetum": ZARIMAN, "Phenmor": ZARIMAN, "Felarx": ZARIMAN, "Innodem": ZARIMAN, "Praedos": ZARIMAN}
+          "Laetum": ZARIMAN, "Phenmor": ZARIMAN, "Felarx": ZARIMAN, "Innodem": ZARIMAN, "Praedos": ZARIMAN,
+          # verifiees une par une (wiki officiel et guides, novembre 2026)
+          "Cronus": ["Capitaine Vor (Tolstoj, Mercure) : schéma garanti", "Captain Vor (Tolstoj, Mercury): guaranteed blueprint"],
+          "Ether Daggers": ["Quête Rêves Volés, puis Cephalon Simaris", "Quest Stolen Dreams, then Cephalon Simaris"],
+          "Wolf Sledge": ["Le Loup de Saturne Six", "The Wolf of Saturn Six"],
+          "Sporothrix": ["Loid, Necraloid (Deimos) · Coffres d'Isolement", "Loid, Necraloid (Deimos) · Isolation Vaults"],
+          "Arum Spinosa": ["Coffres d'Isolement Arcana (Faille Cambion, Deimos)", "Arcana Isolation Vaults (Cambion Drift, Deimos)"],
+          "Pathocyst": ["Zealoid Prelate (Assassinat du Derelict, Deimos)", "Zealoid Prelate (Derelict Assassination, Deimos)"],
+          "Vitrica": ["Nihil : son Oubliette et sa clé sont dans la boutique Nightwave", "Nihil: his Oubliette and key are in the Nightwave shop"],
+          "War": ["Le Stalker (après Le Second Rêve) · demande War Brisée", "The Stalker (after The Second Dream) · needs Broken War"],
+          "Broken War": ["Quête Le Second Rêve · puis le Stalker", "Quest The Second Dream · then the Stalker"],
+          "Braton": ["Arme de départ (Éveil) ou Marché", "Starter weapon (Awakening) or Market"],
+          "Lato": ["Arme de départ (Éveil) ou Marché", "Starter weapon (Awakening) or Market"],
+          "Aklato": ["Marché (fabriqué avec deux Lato)", "Market (built from two Lato)"],
+          "Strun": ["Marché", "Market"], "Lex": ["Marché", "Market"], "Sicarus": ["Marché", "Market"],
+          "Gorgon": ["Marché", "Market"], "Machete": ["Marché", "Market"],
+          "Carmine Penta": ["Railjack : Derelict Freightlinkers (Pluton et Voile Proxima)", "Railjack: Derelict Freightlinkers (Pluto and Veil Proxima)"],
+          "Ax-52": ["Syndicat The Hex (rang 4, 30 000 de réputation)", "The Hex syndicate (rank 4, 30,000 standing)"],
+          "Shedu": ["Quête Erra (schéma) · pièces sur les Symbilysts", "Quest Erra (blueprint) · parts from Symbilysts"],
+          "Haalvu": ["Récompense Twitch (TennoCon 2026)", "Twitch drop (TennoCon 2026)"],
+          "Trumna": ["Loid, Necraloid rang 3 (Deimos)", "Loid, Necraloid rank 3 (Deimos)"],
+          "Sepulcrum": ["Loid, Necraloid rang 2 (Deimos)", "Loid, Necraloid rank 2 (Deimos)"],
+          "Vastilok": ["Baro Ki'Teer", "Baro Ki'Teer"], "Zylok": ["Baro Ki'Teer", "Baro Ki'Teer"],
+          "Mara Detron": ["Baro Ki'Teer", "Baro Ki'Teer"],
+          "Athodai": ["Railjack : missions de Vénus Proxima", "Railjack: Venus Proxima missions"],
+          "Detron": ["Chasseur Zanuka (apparaît pendant les missions Corpus)", "Zanuka Hunter (shows up during Corpus missions)"],
+          "Grimoire": ["Quête Murmures dans les murs, puis Bird 3 (Sanctum Anatomica)", "Quest Whispers in the Walls, then Bird 3 (Sanctum Anatomica)"]}
 
 
 SYNDICATS = {"Steel Meridian", "Arbiters of Hexis", "Cephalon Suda", "The Perrin Sequence", "Red Veil", "New Loka"}
