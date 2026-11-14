@@ -583,6 +583,8 @@
   .dir-baro { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; max-width: 1100px; }
   .dir-bo { border: 1px solid var(--line); padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
   .dir-bo span { color: var(--muted); white-space: nowrap; }
+  .res-recherche { width: 380px; margin: 0 0 10px; }
+  .res-grille.large { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
   .res-onglets button { padding: 6px 12px; }
   .res-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; max-width: 1200px; }
@@ -1439,7 +1441,9 @@ const T3 = {
     resPlus: "Aussi sur cette planète", resPlantes: "Plantes à cueillir", resMonde: m => `Monde ouvert : ${m}`,
     resGroupes: { minerais: "Minerais", gemmes: "Gemmes", fabriques: "Alliages et pierres taillées", plantes: "Plantes", poissons: "Poissons" },
     resRar: ["Commune", "Peu commune", "Rare", "Recherche"], resMeilleur: "Où farmer :", resStock: n => `Tu en as : ${n.toLocaleString("fr-FR")}`,
-    resPartout: "Partout", resConseils: "Conseils de farm", resPartoutTitre: "Ressources qu'on trouve partout",
+    resPartout: "Partout", resConseils: "Conseils de farm",
+    resRecherche: "Chercher une ressource (ex. Neurodes, Cellule Orokin)…", resResultats: (n, q) => `${n} résultat${n > 1 ? "s" : ""} pour « ${q} »`,
+    resAucun: "Aucune ressource trouvée.", resOu: "Où la trouver :", resMissions: "Missions conseillées :", resPartoutTitre: "Ressources qu'on trouve partout",
     resPartoutIntro: "Ces ressources ne dépendent pas d'une planète.",
     resConseilsTitre: "Farmer plus de ressources",
     resConseilsListe: [
@@ -1749,7 +1753,9 @@ const T3 = {
     resPlus: "Also on this planet", resPlantes: "Plants to gather", resMonde: m => `Open world: ${m}`,
     resGroupes: { minerais: "Ores", gemmes: "Gems", fabriques: "Alloys and cut gems", plantes: "Plants", poissons: "Fish" },
     resRar: ["Common", "Uncommon", "Rare", "Research"], resMeilleur: "Where to farm:", resStock: n => `You have: ${n.toLocaleString("en-US")}`,
-    resPartout: "Anywhere", resConseils: "Farming tips", resPartoutTitre: "Resources found anywhere",
+    resPartout: "Anywhere", resConseils: "Farming tips",
+    resRecherche: "Search a resource (e.g. Neurodes, Orokin Cell)…", resResultats: (n, q) => `${n} result${n > 1 ? "s" : ""} for "${q}"`,
+    resAucun: "No resource found.", resOu: "Where to find it:", resMissions: "Recommended missions:", resPartoutTitre: "Resources found anywhere",
     resPartoutIntro: "These resources don't depend on a planet.",
     resConseilsTitre: "Farming more resources",
     resConseilsListe: [
@@ -3278,7 +3284,7 @@ function rendreDirect() {
     `<p class="guide-note">${esc(t("dirSource"))}</p>`;
 }
 // Ressources : planète par planète (assets/ressources.json, tools/gen_ressources.py)
-var ressources = null, resSous = "earth";
+var ressources = null, resSous = "earth", resFiltre = "";
 try { resSous = localStorage.getItem("resSous") || "earth"; } catch (e) {}
 async function chargerRessources() {
   if (ressources) return;
@@ -3291,8 +3297,9 @@ function rendreRessources() {
   const L = o => lang === "fr" ? o.fr : o.en, S = o => o ? (lang === "fr" ? o[0] : o[1]) : "";
   const onglets = [...ressources.planetes.map(p => [p.k, L(p)]), ["partout", t("resPartout")], ["conseils", t("resConseils")]];
   if (!onglets.some(([k]) => k === resSous)) resSous = "earth";
-  const nav = `<nav class="guide-onglets res-onglets">` + onglets.map(([k, l]) =>
-    `<button type="button" data-res="${k}" class="${k === resSous ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
+  const nav = `<input type="search" id="resRecherche" class="guide-recherche res-recherche" placeholder="${esc(t("resRecherche"))}" value="${esc(resFiltre)}">
+    <nav class="guide-onglets res-onglets">` + onglets.map(([k, l]) =>
+    `<button type="button" data-res="${k}" class="${k === resSous && !resFiltre.trim() ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav><div id=\"resZone\">";
   const ligne = x => {
     const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
     return `<div class="res-c${n ? " a" : ""}">
@@ -3304,18 +3311,52 @@ function rendreRessources() {
   };
   const bloc = (titre, liste, note) => liste && liste.length
     ? `<div class="guide-section"><h2 class="info-titre">${esc(titre)}</h2>${note ? `<p class="muted res-note">${esc(note)}</p>` : ""}<div class="res-grille">${liste.map(ligne).join("")}</div></div>` : "";
+  if (resFiltre.trim()) return nav + resultatsRessources() + "</div>";
   if (resSous === "conseils")
     return nav + `<div class="guide-tete"><div><h1>${esc(t("resConseilsTitre"))}</h1></div></div><div class="guide-conseils">` +
-      t("resConseilsListe").map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${esc(txt)}</p></div></div>`).join("") + "</div>";
+      t("resConseilsListe").map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${esc(txt)}</p></div></div>`).join("") + "</div></div>";
   if (resSous === "partout")
-    return nav + `<div class="guide-tete"><div><h1>${esc(t("resPartoutTitre"))}</h1><p>${esc(t("resPartoutIntro"))}</p></div></div>` + bloc(t("resPartout"), ressources.partout);
+    return nav + `<div class="guide-tete"><div><h1>${esc(t("resPartoutTitre"))}</h1><p>${esc(t("resPartoutIntro"))}</p></div></div>` + bloc(t("resPartout"), ressources.partout) + "</div>";
   const p = ressources.planetes.find(x => x.k === resSous), m = p.monde;
   return nav + `<div class="guide-tete"><div><h1>${esc(t("resTitre", L(p)))}</h1><p>${esc(t("resIntro"))}</p></div></div>` +
     bloc(t("resRegion"), p.region, t("resRegionNote")) + bloc(t("resPlus"), p.plus) + bloc(t("resPlantes"), p.plantes) +
     (m ? `<div class="guide-section"><h2 class="info-titre res-monde">${esc(t("resMonde", L(m)))}</h2>` +
       Object.entries(t("resGroupes")).map(([k, titre]) => m[k] && m[k].length
         ? `<h3 class="res-gr">${esc(titre)} <small>${m[k].length}</small></h3><div class="res-grille">${m[k].map(ligne).join("")}</div>` : "").join("") + "</div>" : "") +
-    `<p class="guide-note">${esc(t("resSource"))}</p>`;
+    `<p class="guide-note">${esc(t("resSource"))}</p></div>`;
+}
+// Recherche dans toutes les planètes : une case par ressource, avec la liste des endroits où elle tombe
+function resIndex() {
+  if (ressources._index) return ressources._index;
+  const idx = {}, ajoute = (x, lieu) => {
+    const e = idx[x.id] = idx[x.id] || { x, lieux: [] };
+    if (!e.lieux.some(l => l[0] === lieu[0])) e.lieux.push(lieu);
+  };
+  ressources.planetes.forEach(p => {
+    ["region", "plus", "plantes"].forEach(k => (p[k] || []).forEach(x => ajoute(x, [p.fr, p.en])));
+    if (p.monde) Object.entries(p.monde).forEach(([k, v]) => Array.isArray(v) && v.forEach(x =>
+      ajoute(x, [`${p.monde.fr} (${p.fr})`, `${p.monde.en} (${p.en})`])));
+  });
+  (ressources.partout || []).forEach(x => ajoute(x, [t("resPartout"), t("resPartout")]));
+  return ressources._index = Object.values(idx);
+}
+function resultatsRessources() {
+  const q = resFiltre.trim().toLowerCase(), L = o => lang === "fr" ? o.fr : o.en, S = o => o ? (lang === "fr" ? o[0] : o[1]) : "";
+  const norm = x => x.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase(), nq = norm(q);
+  const res = resIndex().filter(({ x }) => norm(x.fr).includes(nq) || norm(x.en).includes(nq))
+    .sort((a, b) => norm(L(a.x)).indexOf(nq) - norm(L(b.x)).indexOf(nq) || L(a.x).localeCompare(L(b.x)));
+  if (!res.length) return `<p class="muted">${esc(t("resAucun"))}</p>`;
+  return `<p class="arm-compte">${esc(t("resResultats", res.length, resFiltre.trim()))}</p><div class="res-grille large">` + res.map(({ x, lieux }) => {
+    const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
+    return `<div class="res-c${n ? " a" : ""}">
+      <div class="res-ic">${x.i ? `<img src="https://browse.wf${esc(x.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
+      <b>${esc(L(x))}</b>
+      ${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}
+      ${n != null ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}
+      <span class="res-src"><small>${esc(t("resOu"))}</small> ${esc(lieux.map(S).join(", "))}</span>
+      ${x.s ? `<span class="res-src"><small>${esc(x.r != null ? t("resMissions") : t("resMeilleur"))}</small> ${esc(S(x.s))}</span>` : ""}
+      ${x.note ? `<span class="res-src"><em>${esc(S(x.note))}</em></span>` : ""}</div>`;
+  }).join("") + "</div>";
 }
 function rendreInfo() {
   if (!INFO_SOUS[infoGroupe]) infoGroupe = "jeu";
@@ -3430,7 +3471,7 @@ $("#infoContenu").addEventListener("click", e => {
   }
   const rs = e.target.closest("button[data-res]");
   if (rs) {
-    resSous = rs.dataset.res;
+    resSous = rs.dataset.res; resFiltre = "";
     try { localStorage.setItem("resSous", resSous); } catch (e) {}
     return rendreInfo();
   }
@@ -3454,6 +3495,14 @@ $("#infoContenu").addEventListener("click", e => {
 });
 $("#infoContenu").addEventListener("input", e => {
   if (e.target.id === "armRecherche") { armFiltre = e.target.value; return filtrerArmes(); }
+  if (e.target.id === "resRecherche") {
+    resFiltre = e.target.value;
+    const z = $("#resZone"); if (!z) return;
+    const tmp = document.createElement("div"); tmp.innerHTML = rendreRessources();
+    z.replaceWith(tmp.querySelector("#resZone"));
+    document.querySelectorAll("#infoContenu .res-onglets button").forEach(b => b.classList.toggle("on", !resFiltre.trim() && b.dataset.res === resSous));
+    return;
+  }
   if (e.target.id === "priRecherche") { priFiltre = e.target.value; return filtrerPrimes(); }
   if (e.target.id === "priCacher" || e.target.id === "priDispo") {
     if (e.target.id === "priCacher") priCacher = e.target.checked; else priDispo = e.target.checked;
