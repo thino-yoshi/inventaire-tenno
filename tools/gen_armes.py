@@ -304,6 +304,8 @@ def sources(i, chemin):
     return s
 
 
+# noms francais de la base WFCD, pour les armes plus recentes que les fichiers du jeu
+I18N_FR = load(WFCD / "i18n" / "fr.json") if (WFCD / "i18n" / "fr.json").exists() else {}
 armes = []
 sans = []
 for fichier, cat in CATS.items():
@@ -312,7 +314,7 @@ for fichier, cat in CATS.items():
             continue
         chemin = i["uniqueName"]
         e = w.get(chemin) or {}
-        nfr = (fr.get(e.get("name", ""), "") or i["name"]).replace("<ARCHWING> ", "").replace("<Archwing> ", "")
+        nfr = (fr.get(e.get("name", ""), "") or (I18N_FR.get(chemin) or {}).get("name") or i["name"]).replace("<ARCHWING> ", "").replace("<Archwing> ", "")
         nen = (en.get(e.get("name", ""), "") or i["name"]).replace("<ARCHWING> ", "").replace("<Archwing> ", "")
         s = sources(i, chemin)
         if not s or all("platine" in x[0] for x in s):

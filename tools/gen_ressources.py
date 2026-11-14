@@ -184,13 +184,15 @@ for i in load(WFCD / "Fish.json"):
                                                                           f"Fishing · sell or cut up at {PECHEUR[p][1]}"]})
 
 
-HORS_FICHIERS = {"Entropic Kuva": ("Kuva Entropique", "Entropic Kuva")}  # l'app le relie a l'inventaire par le nom anglais
+# trop recent pour les fichiers du jeu de l'outil : chemin, noms et icone pris dans la base WFCD
+HORS_FICHIERS = {"Entropic Kuva": ("/Lotus/Types/Gameplay/Zariman/Resources/EntropicKuvaItem", "Kuva Entropique", "Entropic Kuva")}
 
 
 def entree(nom, s=None):
     ch = par_nom.get(nom)
     if not ch and nom in HORS_FICHIERS:
-        return {"id": "", "fr": HORS_FICHIERS[nom][0], "en": HORS_FICHIERS[nom][1], "s": list(s)}
+        ch, f_, e_ = HORS_FICHIERS[nom]
+        return {"id": ch, "fr": f_, "en": e_, "s": list(s), "u": "https://cdn.warframestat.us/img/EntropicKuva.png"}
     if not ch:
         raise SystemExit(f"ressource introuvable : {nom}")
     f_, e_ = noms(ch, nom)

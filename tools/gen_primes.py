@@ -54,7 +54,11 @@ def nom_objet(chemin, i):
         if e:
             return (fr.get(e["name"], i["name"]).replace("<ARCHWING> ", ""),
                     en.get(e["name"], i["name"]).replace("<ARCHWING> ", ""))
-    return i["name"], i["name"]
+    f_ = (I18N_FR.get(chemin) or {}).get("name")  # plus recent que les fichiers du jeu : base WFCD
+    return f_ or i["name"], i["name"]
+
+
+I18N_FR = load(WFCD / "i18n" / "fr.json") if (WFCD / "i18n" / "fr.json").exists() else {}
 
 
 def nom_piece(chemin, objet_fr, objet_en):

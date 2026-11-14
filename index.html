@@ -3314,7 +3314,7 @@ function rendreRessources() {
   const ligne = x => {
     const n = prog.ok ? (prog.stock || {})[idRes(x)] || 0 : null;
     return `<div class="res-c${n ? " a" : ""}">
-      <div class="res-ic">${x.i ? `<img src="https://browse.wf${esc(x.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
+      <div class="res-ic">${x.i || x.u ? `<img src="${esc(x.i ? "https://browse.wf" + x.i : x.u)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
       <b>${esc(L(x))}</b>
       ${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}
       ${n != null ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}

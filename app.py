@@ -98,14 +98,14 @@ def save_json(path, obj):
 
 
 # ================================================================ donnees du jeu
-def fetch_data_file(fn, force=False):
-    path = DATA_DIR / fn
+def fetch_data_file(fn, force=False, base=None, local=None):
+    path = DATA_DIR / (local or fn)
     if path.exists() and not force and time.time() - path.stat().st_mtime < DATA_TTL:
         return path
     DATA_DIR.mkdir(parents=True, exist_ok=True)
     try:
         print(f"Telechargement de {fn}...")
-        r = requests.get(pi.DATA_URL + fn, timeout=120)
+        r = requests.get((base or pi.DATA_URL) + fn, timeout=120)
         r.raise_for_status()
         path.write_bytes(r.content)
     except requests.RequestException as e:
@@ -1247,6 +1247,37 @@ def owned_types(inv):
     return out
 
 
+WFCD_URL = "https://raw.githubusercontent.com/WFCD/warframe-items/master/data/json/"
+_wfcd = {}
+
+
+def wfcd_noms(lang):
+    """Ressources de la base WFCD (mise a jour plus vite que les fichiers du jeu qu'on utilise) :
+    {chemin: (nom, description, image)} dans la langue demandee, pour les objets d'une mise a jour recente."""
+    if lang in _wfcd:
+        return _wfcd[lang]
+    out = {}
+    try:
+        items = []
+        for f in ("Resources.json", "Fish.json"):
+            items += load_json(fetch_data_file(f, base=WFCD_URL, local="wfcd_" + f)) or []
+        tr = {}
+        if lang != "en":
+            tr = load_json(fetch_data_file(f"i18n/{lang}.json", base=WFCD_URL, local=f"wfcd_i18n_{lang}.json")) or {}
+        for i in items:
+            ch = i.get("uniqueName")
+            if not ch:
+                continue
+            t = tr.get(ch) or {}
+            img = i.get("imageName")
+            out[ch] = (t.get("name") or i.get("name") or "", (t.get("description") or i.get("description") or "").strip(),
+                       ("https://cdn.warframestat.us/img/" + img) if img else "", i.get("name") or "")
+    except Exception as e:
+        print("WFCD :", e)
+    _wfcd[lang] = out
+    return out
+
+
 def stock_info(inv, lang):
     """{chemin: {nom, desc, icone}} pour chaque ressource possedee (pas les reliques, schemas ni pieces Prime)."""
     out = {}
@@ -1258,12 +1289,17 @@ def stock_info(inv, lang):
             if not ch or (e.get("ItemCount") or 0) <= 0 or "/Projections/" in ch or "/Recipes/" in ch or "Prime" in ch:
                 continue
             r = g.ex["resources"].get(ch)
-            if not r:
-                continue
-            nom = tr.get(r.get("name", "")) or ch.rsplit("/", 1)[-1]
-            desc = tr.get(r.get("description", "")) or ""
-            out[ch] = {"nom": nom, "en": g.tr("en").get(r.get("name", "")) or nom,
-                       "desc": re.sub(r"<[^>]+>", "", desc).strip(), "icone": g.icon_url(ch) or ""}
+            if r:
+                nom = tr.get(r.get("name", "")) or ""
+                desc = tr.get(r.get("description", "")) or ""
+                en, icone = g.tr("en").get(r.get("name", "")) or nom, g.icon_url(ch) or ""
+            else:  # objet trop recent pour nos fichiers du jeu : base WFCD, sinon le nom tire du chemin
+                nom, desc, icone, en = wfcd_noms(lang).get(ch) or ("", "", "", "")
+            if not nom:
+                if not r and "/Gameplay/" not in ch and "/Items/" not in ch:
+                    continue  # pas une ressource (defis, boosters...)
+                nom = re.sub(r"(?<=[a-z])(?=[A-Z])", " ", re.sub(r"(Item|Resource)$", "", ch.rsplit("/", 1)[-1]))
+            out[ch] = {"nom": nom, "en": en or nom, "desc": re.sub(r"<[^>]+>", "", desc).strip(), "icone": icone}
     except Exception as ex:
         print("stock_info :", ex)
     return out
