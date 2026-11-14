@@ -120,6 +120,9 @@ EN_PLUS = {
                  "Galatea or Despina (Neptune): from Corpus Oxium Ospreys")],
     "Uranus": [("Tellurium", "Ophelia (Uranus), les missions Archwing et la Forteresse Kuva",
                 "Ophelia (Uranus), Archwing missions and the Kuva Fortress")],
+    # Update 44 (sept. 2026), plus recente que les fichiers du jeu de l'outil : nom fixe, chemin trouve par l'app
+    "Zariman": [("Entropic Kuva", "Sur les Eximus Entropiques du Zariman ; à échanger chez Cephalon Melica (Pic de Yuvan ou Chrysalith), notamment contre Narin",
+                 "From Entropic Eximus on the Zariman; trade it to Cephalon Melica (Yuvan's Peak or Chrysalith), e.g. for Narin")],
     "Kuva Fortress": [("Kuva", "Siphons et Inondations Kuva (missions marquées sur la carte), Taveuni (Forteresse Kuva)",
                        "Kuva Siphons and Floods (marked on the star chart), Taveuni (Kuva Fortress)")],
 }
@@ -181,8 +184,13 @@ for i in load(WFCD / "Fish.json"):
                                                                           f"Fishing · sell or cut up at {PECHEUR[p][1]}"]})
 
 
+HORS_FICHIERS = {"Entropic Kuva": ("Kuva Entropique", "Entropic Kuva")}  # l'app le relie a l'inventaire par le nom anglais
+
+
 def entree(nom, s=None):
     ch = par_nom.get(nom)
+    if not ch and nom in HORS_FICHIERS:
+        return {"id": "", "fr": HORS_FICHIERS[nom][0], "en": HORS_FICHIERS[nom][1], "s": list(s)}
     if not ch:
         raise SystemExit(f"ressource introuvable : {nom}")
     f_, e_ = noms(ch, nom)

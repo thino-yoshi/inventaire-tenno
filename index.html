@@ -583,6 +583,7 @@
   .dir-baro { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 6px; max-width: 1100px; }
   .dir-bo { border: 1px solid var(--line); padding: 6px 10px; display: flex; justify-content: space-between; gap: 8px; font-size: 13px; }
   .dir-bo span { color: var(--muted); white-space: nowrap; }
+  .res-desc { font-style: italic; }
   .res-recherche { width: 380px; margin: 0 0 10px; }
   .res-grille.large { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
   .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
@@ -1443,7 +1444,11 @@ const T3 = {
     resRar: ["Commune", "Peu commune", "Rare", "Recherche"], resMeilleur: "Où farmer :", resStock: n => `Tu en as : ${n.toLocaleString("fr-FR")}`,
     resPartout: "Partout", resConseils: "Conseils de farm",
     resRecherche: "Chercher une ressource (ex. Neurodes, Cellule Orokin)…", resResultats: (n, q) => `${n} résultat${n > 1 ? "s" : ""} pour « ${q} »`,
-    resAucun: "Aucune ressource trouvée.", resOu: "Où la trouver :", resMissions: "Missions conseillées :", resPartoutTitre: "Ressources qu'on trouve partout",
+    resAucun: "Aucune ressource trouvée.", resOu: "Où la trouver :", resMissions: "Missions conseillées :",
+    resInconnu: "Pas encore dans le guide (sûrement une ressource récente).", resDesc: "Description du jeu :",
+    resAutres: "Autres (ton inventaire)", resAutresTitre: "Les autres ressources de ton inventaire",
+    resAutresIntro: "Ressources que tu as, mais que le guide ne connaît pas encore (souvent celles d'une mise à jour récente). Le nom et la description viennent des fichiers du jeu.",
+    resAutresVide: "Rien de plus : toutes tes ressources sont dans le guide. (Lis le jeu dans l'onglet Inventaire pour qu'elles apparaissent ici.)", resPartoutTitre: "Ressources qu'on trouve partout",
     resPartoutIntro: "Ces ressources ne dépendent pas d'une planète.",
     resConseilsTitre: "Farmer plus de ressources",
     resConseilsListe: [
@@ -1541,7 +1546,8 @@ const T3 = {
         ["Gyre · Styanax · Jade", "Les Anges du Zariman, Brise-Voile, Les Ombres de Jade.", "Quête"],
         ["Qorvex · Dante", "Murmures dans les murs (Sanctum Anatomica).", "Quête"],
         ["Cyte-09 · Temple · Oraxia", "Après L'Hexagone (Höllvania et Duviri).", "Quête"],
-        ["Uriel · Sirius & Orion", "L'Ancienne Paix, Les Ombres de Jade : Constellations.", "Quête"]]],
+        ["Uriel · Sirius & Orion", "L'Ancienne Paix, Les Ombres de Jade : Constellations.", "Quête"],
+        ["Narin", "Zariman : schéma en Extermination ou Défense Mobile, pièces en Cascade, Inondation et Armageddon du Néant. Ou chez Cephalon Melica contre du Kuva Entropique (790 au total).", "Quête"]]],
       ["Autres sources", "Railjack, relais, marchands, fin de jeu", [
         ["Ash · Oberon", "Missions Railjack (Empyrée).", ""],
         ["Sevagoth", "Quête L'Appel du Tempestarii, composants dans les Tempêtes du Néant (Railjack).", "Quête"],
@@ -1755,7 +1761,11 @@ const T3 = {
     resRar: ["Common", "Uncommon", "Rare", "Research"], resMeilleur: "Where to farm:", resStock: n => `You have: ${n.toLocaleString("en-US")}`,
     resPartout: "Anywhere", resConseils: "Farming tips",
     resRecherche: "Search a resource (e.g. Neurodes, Orokin Cell)…", resResultats: (n, q) => `${n} result${n > 1 ? "s" : ""} for "${q}"`,
-    resAucun: "No resource found.", resOu: "Where to find it:", resMissions: "Recommended missions:", resPartoutTitre: "Resources found anywhere",
+    resAucun: "No resource found.", resOu: "Where to find it:", resMissions: "Recommended missions:",
+    resInconnu: "Not in the guide yet (probably a recent resource).", resDesc: "In-game description:",
+    resAutres: "Other (your inventory)", resAutresTitre: "Other resources in your inventory",
+    resAutresIntro: "Resources you have that the guide doesn't know yet (often from a recent update). The name and description come from the game files.",
+    resAutresVide: "Nothing more: all your resources are in the guide. (Read the game in the Inventory tab for them to show up here.)", resPartoutTitre: "Resources found anywhere",
     resPartoutIntro: "These resources don't depend on a planet.",
     resConseilsTitre: "Farming more resources",
     resConseilsListe: [
@@ -1853,7 +1863,8 @@ const T3 = {
         ["Gyre · Styanax · Jade", "Angels of the Zariman, Veilbreaker, Jade Shadows.", "Quest"],
         ["Qorvex · Dante", "Whispers in the Walls (Sanctum Anatomica).", "Quest"],
         ["Cyte-09 · Temple · Oraxia", "After The Hex (Höllvania and Duviri).", "Quest"],
-        ["Uriel · Sirius & Orion", "The Old Peace, Jade Shadows: Constellations.", "Quest"]]],
+        ["Uriel · Sirius & Orion", "The Old Peace, Jade Shadows: Constellations.", "Quest"],
+        ["Narin", "Zariman: blueprint from Exterminate or Mobile Defense, parts from Void Cascade, Void Flood and Void Armageddon. Or from Cephalon Melica for Entropic Kuva (790 in total).", "Quest"]]],
       ["Other sources", "Railjack, relays, vendors, endgame", [
         ["Ash · Oberon", "Railjack missions (Empyrean).", ""],
         ["Sevagoth", "Call of the Tempestarii quest, components from Void Storms (Railjack).", "Quest"],
@@ -3295,13 +3306,13 @@ async function chargerRessources() {
 function rendreRessources() {
   if (!ressources || !ressources.planetes.length) { chargerRessources(); return `<p class="muted">${esc(t("resChargement"))}</p>`; }
   const L = o => lang === "fr" ? o.fr : o.en, S = o => o ? (lang === "fr" ? o[0] : o[1]) : "";
-  const onglets = [...ressources.planetes.map(p => [p.k, L(p)]), ["partout", t("resPartout")], ["conseils", t("resConseils")]];
+  const onglets = [...ressources.planetes.map(p => [p.k, L(p)]), ["partout", t("resPartout")], ["autres", t("resAutres")], ["conseils", t("resConseils")]];
   if (!onglets.some(([k]) => k === resSous)) resSous = "earth";
   const nav = `<input type="search" id="resRecherche" class="guide-recherche res-recherche" placeholder="${esc(t("resRecherche"))}" value="${esc(resFiltre)}">
     <nav class="guide-onglets res-onglets">` + onglets.map(([k, l]) =>
     `<button type="button" data-res="${k}" class="${k === resSous && !resFiltre.trim() ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav><div id=\"resZone\">";
   const ligne = x => {
-    const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
+    const n = prog.ok ? (prog.stock || {})[idRes(x)] || 0 : null;
     return `<div class="res-c${n ? " a" : ""}">
       <div class="res-ic">${x.i ? `<img src="https://browse.wf${esc(x.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
       <b>${esc(L(x))}</b>
@@ -3312,6 +3323,11 @@ function rendreRessources() {
   const bloc = (titre, liste, note) => liste && liste.length
     ? `<div class="guide-section"><h2 class="info-titre">${esc(titre)}</h2>${note ? `<p class="muted res-note">${esc(note)}</p>` : ""}<div class="res-grille">${liste.map(ligne).join("")}</div></div>` : "";
   if (resFiltre.trim()) return nav + resultatsRessources() + "</div>";
+  if (resSous === "autres") {
+    const autres = resIndex().filter(e => e.inv).sort((a, b) => a.x.fr.localeCompare(b.x.fr));
+    return nav + `<div class="guide-tete"><div><h1>${esc(t("resAutresTitre"))}</h1><p>${esc(t("resAutresIntro"))}</p></div></div>` +
+      (autres.length ? `<div class="res-grille large">${autres.map(tuileRes).join("")}</div>` : `<p class="muted">${esc(t("resAutresVide"))}</p>`) + "</div>";
+  }
   if (resSous === "conseils")
     return nav + `<div class="guide-tete"><div><h1>${esc(t("resConseilsTitre"))}</h1></div></div><div class="guide-conseils">` +
       t("resConseilsListe").map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${esc(txt)}</p></div></div>`).join("") + "</div></div>";
@@ -3326,10 +3342,15 @@ function rendreRessources() {
     `<p class="guide-note">${esc(t("resSource"))}</p></div>`;
 }
 // Recherche dans toutes les planètes : une case par ressource, avec la liste des endroits où elle tombe
+// ressource ajoutée au guide sans chemin (trop récente pour nos fichiers) : on la retrouve dans l'inventaire par son nom anglais
+const idRes = x => x.id || ((Object.entries(prog.ok ? prog.stockInfo || {} : {}).find(([, v]) => v.en === x.en) || [""])[0]);
 function resIndex() {
-  if (ressources._index) return ressources._index;
+  const cle = prog.cle + "|" + Object.keys(prog.stockInfo || {}).length;
+  if (ressources._index && ressources._cle === cle) return ressources._index;
+  ressources._cle = cle;
   const idx = {}, ajoute = (x, lieu) => {
-    const e = idx[x.id] = idx[x.id] || { x, lieux: [] };
+    const k = idRes(x) || "nom:" + x.en;
+    const e = idx[k] = idx[k] || { x: x.id ? x : Object.assign({}, x, { id: idRes(x) }), lieux: [] };
     if (!e.lieux.some(l => l[0] === lieu[0])) e.lieux.push(lieu);
   };
   ressources.planetes.forEach(p => {
@@ -3338,6 +3359,11 @@ function resIndex() {
       ajoute(x, [`${p.monde.fr} (${p.fr})`, `${p.monde.en} (${p.en})`])));
   });
   (ressources.partout || []).forEach(x => ajoute(x, [t("resPartout"), t("resPartout")]));
+  // ressources de l'inventaire que le guide ne connaît pas : nom, description et icône des fichiers du jeu
+  Object.entries(prog.ok ? prog.stockInfo || {} : {}).forEach(([id, v]) => {
+    if (idx[id]) { idx[id].desc = v.desc; return; }
+    idx[id] = { x: { id, fr: v.nom, en: v.nom, u: v.icone }, lieux: [], desc: v.desc, inv: true };
+  });
   return ressources._index = Object.values(idx);
 }
 function resultatsRessources() {
@@ -3346,17 +3372,21 @@ function resultatsRessources() {
   const res = resIndex().filter(({ x }) => norm(x.fr).includes(nq) || norm(x.en).includes(nq))
     .sort((a, b) => norm(L(a.x)).indexOf(nq) - norm(L(b.x)).indexOf(nq) || L(a.x).localeCompare(L(b.x)));
   if (!res.length) return `<p class="muted">${esc(t("resAucun"))}</p>`;
-  return `<p class="arm-compte">${esc(t("resResultats", res.length, resFiltre.trim()))}</p><div class="res-grille large">` + res.map(({ x, lieux }) => {
-    const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
-    return `<div class="res-c${n ? " a" : ""}">
-      <div class="res-ic">${x.i ? `<img src="https://browse.wf${esc(x.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
-      <b>${esc(L(x))}</b>
-      ${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}
-      ${n != null ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}
-      <span class="res-src"><small>${esc(t("resOu"))}</small> ${esc(lieux.map(S).join(", "))}</span>
-      ${x.s ? `<span class="res-src"><small>${esc(x.r != null ? t("resMissions") : t("resMeilleur"))}</small> ${esc(S(x.s))}</span>` : ""}
-      ${x.note ? `<span class="res-src"><em>${esc(S(x.note))}</em></span>` : ""}</div>`;
-  }).join("") + "</div>";
+  return `<p class="arm-compte">${esc(t("resResultats", res.length, resFiltre.trim()))}</p><div class="res-grille large">` + res.map(tuileRes).join("") + "</div>";
+}
+function tuileRes({ x, lieux, desc }) {
+  const L = o => lang === "fr" ? o.fr : o.en, S = o => o ? (lang === "fr" ? o[0] : o[1]) : "";
+  const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null, img = x.i ? "https://browse.wf" + x.i : x.u;
+  return `<div class="res-c${n ? " a" : ""}">
+    ${img ? `<div class="res-ic"><img src="${esc(img)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true"></div>` : ""}
+    <b>${esc(L(x))}</b>
+    ${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}
+    ${n != null ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}
+    ${lieux.length ? `<span class="res-src"><small>${esc(t("resOu"))}</small> ${esc(lieux.map(S).join(", "))}</span>`
+      : `<span class="res-src"><small>${esc(t("resOu"))}</small> ${esc(t("resInconnu"))}</span>`}
+    ${x.s ? `<span class="res-src"><small>${esc(x.r != null ? t("resMissions") : t("resMeilleur"))}</small> ${esc(S(x.s))}</span>` : ""}
+    ${x.note ? `<span class="res-src"><em>${esc(S(x.note))}</em></span>` : ""}
+    ${!x.s && !lieux.length && desc ? `<span class="res-src res-desc"><small>${esc(t("resDesc"))}</small> ${esc(desc)}</span>` : ""}</div>`;
 }
 function rendreInfo() {
   if (!INFO_SOUS[infoGroupe]) infoGroupe = "jeu";

@@ -1247,6 +1247,28 @@ def owned_types(inv):
     return out
 
 
+def stock_info(inv, lang):
+    """{chemin: {nom, desc, icone}} pour chaque ressource possedee (pas les reliques, schemas ni pieces Prime)."""
+    out = {}
+    try:
+        g = game()
+        tr = g.tr(lang)
+        for e in inv.get("MiscItems") or []:
+            ch = e.get("ItemType") if isinstance(e, dict) else None
+            if not ch or (e.get("ItemCount") or 0) <= 0 or "/Projections/" in ch or "/Recipes/" in ch or "Prime" in ch:
+                continue
+            r = g.ex["resources"].get(ch)
+            if not r:
+                continue
+            nom = tr.get(r.get("name", "")) or ch.rsplit("/", 1)[-1]
+            desc = tr.get(r.get("description", "")) or ""
+            out[ch] = {"nom": nom, "en": g.tr("en").get(r.get("name", "")) or nom,
+                       "desc": re.sub(r"<[^>]+>", "", desc).strip(), "icone": g.icon_url(ch) or ""}
+    except Exception as ex:
+        print("stock_info :", ex)
+    return out
+
+
 def progression_view(lang):
     """Progression du joueur lue dans l'inventaire du jeu : rang de maitrise, quetes terminees,
     planetes ou au moins une mission est reussie, Warframes possedees (pour l'onglet Info / aide)."""
@@ -1303,6 +1325,9 @@ def progression_view(lang):
                               and "Prime" in (e.get("ItemType") or "") and (e.get("XP") or 0) > 0}
                              | {p for p in owned_types(inv) if "Prime" in p}),
             "pieces": {p: n for p, n in owned_types(inv).items() if "Prime" in p and n > 0},
+            # ressources de l'inventaire avec nom, description et icone tires des fichiers du jeu a jour :
+            # l'onglet Ressources montre aussi celles qu'il ne connait pas encore (nouvelle mise a jour)
+            "stockInfo": stock_info(inv, lang),
             # ressources en stock (onglet Ressources : « Tu en as : N »)
             "stock": {e["ItemType"]: int(e.get("ItemCount") or 0) for e in inv.get("MiscItems") or []
                       if isinstance(e, dict) and e.get("ItemType") and (e.get("ItemCount") or 0) > 0},
