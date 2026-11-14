@@ -545,6 +545,7 @@
   .guide-arc li.suite b { color: var(--gold); }
   .guide-frise li.fait .guide-num { border-color: var(--green); color: var(--green); }
   .wf-liste li.fait b { color: var(--green); }
+  .wf-liste i.eue { font-style: normal; color: var(--green); }
   .guide-badge.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
   .guide-badge.verrou { opacity: .8; }
   .prog-box { display: flex; gap: 0; max-width: 1000px; margin: -8px 0 24px; border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); background: var(--panel); }
@@ -2809,7 +2810,12 @@ function etatPlanete(i) {
   const ok = pl.some(x => (prog.planetes || []).includes(x));
   return `<span class="guide-badge ${ok ? "ok" : "verrou"}">${ok ? "✓ " + esc(t("wfDebloque")) : "🔒 " + esc(t("wfVerrou"))}</span>`;
 }
-const possedee = nom => prog.ok && nom.split(" · ").every(n => (prog.warframes || []).includes(n.toLowerCase()));
+// Warframe eue (possédée, ou maîtrisée puis vendue / donnée à l'Helminth) ; la version Prime compte aussi
+const eue = n => { const w = prog.warframes || [], x = n.toLowerCase(); return w.includes(x) || w.includes(x + " prime"); };
+const DEPART = ["Excalibur", "Mag", "Volt"];
+const possedee = (nom, i) => prog.ok && (i === 0 && /départ|starter/i.test(nom) ? DEPART.some(eue) : nom.split(" · ").every(eue));
+const nomsWarframes = nom => !prog.ok || nom.includes(" · ") === false ? esc(nom)
+  : nom.split(" · ").map(n => eue(n) ? `<i class="eue">✓ ${esc(n)}</i>` : esc(n)).join(" · ");
 // Débuter : sous-onglets Parcours | Warframes | Conseils
 var debSous = "parcours", wfFiltre = "";
 try { debSous = localStorage.getItem("debSous") || "parcours"; } catch (e) {}
@@ -2825,8 +2831,10 @@ function rendreWarframes() {
     <ol class="guide-frise wf-frise">` + t("wfEtapes").map(([etape, sous, frames], i) =>
       `<li class="wf-etape"><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
         <div class="guide-etape"><span class="guide-cat">${esc(sous)}</span><h3>${esc(etape)} ${etatPlanete(i)}</h3>
-        <ul class="wf-liste">` + frames.map(([nom, txt, badge]) =>
-          `<li data-n="${esc((nom + " " + txt).toLowerCase())}" class="${possedee(nom) ? "fait" : ""}"><b>${possedee(nom) ? "✓ " : ""}${esc(nom)}</b>${badgeGuide(badge)}<span>${esc(txt)}</span></li>`).join("") +
+        <ul class="wf-liste">` + frames.map(([nom, txt, badge], fi) => {
+          const ok = possedee(nom, fi);
+          return `<li data-n="${esc((nom + " " + txt).toLowerCase())}" class="${ok ? "fait" : ""}" title="${ok ? esc(t("wfPossede")) : ""}"><b>${ok ? "✓ " + esc(nom) : nomsWarframes(nom)}</b>${badgeGuide(badge)}<span>${esc(txt)}</span></li>`;
+        }).join("") +
         `</ul></div></li>`).join("") + `</ol>
     <p class="wf-vide muted" hidden>${esc(t("wfAucune"))}</p>
     <p class="guide-astuce">${t("wfCircuit")}</p>`;

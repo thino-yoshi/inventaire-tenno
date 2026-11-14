@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.4"
+VERSION = "1.13.5"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1196,12 +1196,16 @@ def progression_view(lang):
             noeuds += 1
             planetes.add((regions[m["Tag"]].get("systemName") or "").rsplit("/", 1)[-1])
     g = game()
+    # Warframes possedees, ou deja eues : de l'XP dans XPInfo reste meme apres l'avoir vendue
+    # ou donnee a l'Helminth (une Warframe maitrisee puis supprimee compte comme obtenue)
+    chemins = {e["ItemType"] for e in inv.get("Suits") or [] if isinstance(e, dict) and e.get("ItemType")}
+    chemins |= {e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict) and e.get("ItemType")
+                and (e.get("XP") or 0) > 0 and (g.ex["warframes"].get(e["ItemType"]) or {}).get("productCategory") == "Suits"}
     frames = set()
-    for e in inv.get("Suits") or []:
-        if isinstance(e, dict) and e.get("ItemType"):
-            n = g.name(e["ItemType"], lang)
-            if n:
-                frames.add(n.lower())
+    for path in chemins:
+        n = g.name(path, lang)
+        if n:
+            frames.add(n.lower())
     rang = inv.get("PlayerLevel")
     return {"ok": True, "rang": rang if isinstance(rang, int) else None, "quetes": quetes,
             "planetes": sorted(p for p in planetes if p), "noeuds": noeuds, "warframes": sorted(frames)}
