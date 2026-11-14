@@ -33,6 +33,11 @@ INFO_RE = re.compile(r"VoidProjections: Client got reward info from (\S+)")   # 
 ALL_MARK = "VoidProjections: Client has reward info for all players now"
 OPEN_MARK = "ProjectionRewardChoice.lua: Relic rewards initialized"
 CLOSE_MARK = "ProjectionRewardChoice.lua: Relic reward screen shut down"
+# Le vrai ecran recoit les recompenses ("Got rewards") ; en mission infinie, le jeu ouvre aussi ~30 s
+# plus tard un ecran FANTOME (sans cartes) qu'il referme de force 5 s apres ("force closed").
+# On ne lit donc l'ecran qu'une fois les recompenses recues, jamais a la simple ouverture.
+GOT_MARK = "ProjectionRewardChoice.lua: Got rewards"
+FORCE_MARK = "ProjectionRewardChoice.lua: Reward choice force closed"
 SURE, DOUTE = 0.8, 0.62    # score de lecture : sur / douteux (carte « ? ») / pas une carte
 SHOW_SECONDS = 16          # le choix dure 15 s
 FICHE_SECONDS = 8          # prix affiches sur une fiche de relique (touche Alt + A)
@@ -228,6 +233,42 @@ def ocr(image_path, lang="fr-FR"):
 ocr.last_info = ""
 
 
+def first_word(s):
+    return next((w for w in s.split() if len(w) >= 3 and w.isalpha()), "")
+
+
+def same_first_word(read, name):
+    """Le premier mot lu ressemble-t-il au premier mot du nom ? (tolere les fautes d'OCR)"""
+    a, b = first_word(read), first_word(name)
+    if not a or not b:
+        return True
+    return a.startswith(b) or b.startswith(a) or difflib.SequenceMatcher(None, a, b).ratio() >= 0.7
+
+
+PIECES_FR = {"Stock": "Crosse", "Barrel": "Canon", "Receiver": "Culasse", "Blade": "Lame", "Handle": "Manche",
+             "Grip": "Prise", "String": "Corde", "Link": "Lien", "Guard": "Garde", "Hilt": "Poignée",
+             "Head": "Tête", "Pouch": "Poche", "Stars": "Étoiles", "Disc": "Disque", "Gauntlet": "Gantelet",
+             "Chassis": "Châssis", "Neuroptics": "Neuroptiques", "Systems": "Systèmes", "Harness": "Harnais",
+             "Wings": "Ailes", "Carapace": "Carapace", "Cerebrum": "Cerveau"}
+
+
+def name_from_path(path, lang):
+    """Nom lisible d'un objet absent des donnees (trop recent), tire de son chemin :
+    .../SteflosPrimeStock -> « Steflos Prime - Crosse » (fr) / « Steflos Prime Stock » (en)."""
+    last = path.rsplit("/", 1)[-1]
+    schema = last.endswith("Blueprint")
+    words = re.findall(r"[A-Z][a-z]+|[A-Z]+(?![a-z])|\d+", last[:-9] if schema else last)
+    if not words:
+        return None
+    if lang == "fr":
+        if len(words) > 1 and words[-1] in PIECES_FR:
+            nom = " ".join(words[:-1]) + " - " + PIECES_FR[words[-1]]
+        else:
+            nom = " ".join(words)
+        return nom + (" (Schéma)" if schema else "")
+    return " ".join(words) + (" Blueprint" if schema else "")
+
+
 def columns(lines, width):
     """Regroupe les lignes lues par carte de recompense, selon leur position reelle a l'ecran :
     les lignes d'un meme nom sont centrees au meme endroit, les cartes sont espacees.
@@ -267,6 +308,7 @@ class RewardOverlay:
         self.last = None          # dernier resultat (pour l'interface)
         self.log_dir = None       # dossier de l'app : overlay.log + derniere capture lue
         self.ecran = 0            # numero de l'ecran de recompenses en cours (annule les anciens)
+        self.pending = 0          # ecran ouvert mais recompenses pas encore recues (0 = aucun)
         self.index = {}           # langue -> [(chemin, noms normalises)] de TOUTES les recompenses
         self.rect_cache = (0, None)
         self.players = set()      # joueurs de l'ecran en cours (solo = 1)
@@ -331,6 +373,8 @@ class RewardOverlay:
         if m:
             self.known.append(m.group(2).replace("/StoreItems/", "/", 1))
             self.players.add(m.group(1))
+            if self.pending:  # secours si "Got rewards" changeait de texte un jour
+                threading.Timer(1.0, self.start_scan, args=(self.pending,)).start()
             return
         m = INFO_RE.search(line)
         if m:
@@ -342,20 +386,36 @@ class RewardOverlay:
                 self.journal_only = self.ecran
                 threading.Thread(target=self.show_solo, args=(self.ecran,), daemon=True).start()
             return
+        if GOT_MARK in line:
+            self.start_scan(self.pending)
+            return
+        if FORCE_MARK in line:
+            if self.pending:  # ecran fantome (mission infinie) : aucune carte, on ne lit rien
+                self.log("  ecran sans recompenses (ferme par le jeu) : ignore")
+                self.pending = 0
+            return
         if CLOSE_MARK in line:
+            self.pending = 0
             self.finish(self.ecran)
             return
         if OPEN_MARK in line:
             if not self.enabled:
                 self.log("ecran de recompenses detecte, mais l'overlay est desactive")
                 return
-            squad = [p.rsplit("/", 1)[-1] for p, t in self.relics.items() if time.time() - t < RELIC_MEMORY]
-            self.log(f"ecran de recompenses detecte ; reliques de l'escouade vues : {squad or 'aucune'}")
             self.known = []
             self.players = set()
-            self.last = None
             self.ecran += 1
-            threading.Thread(target=self.scan, args=(self.ecran,), daemon=True).start()
+            self.pending = self.ecran  # la lecture attend "Got rewards"
+
+    def start_scan(self, ecran):
+        """Lance la lecture de l'ecran une seule fois, quand le jeu a donne les recompenses."""
+        if not ecran or ecran != self.pending or ecran != self.ecran:
+            return
+        self.pending = 0
+        squad = [p.rsplit("/", 1)[-1] for p, t in self.relics.items() if time.time() - t < RELIC_MEMORY]
+        self.log(f"ecran de recompenses detecte ; reliques de l'escouade vues : {squad or 'aucune'}")
+        self.last = None
+        threading.Thread(target=self.scan, args=(ecran,), daemon=True).start()
 
     # ---------------------------------------------------------------- recompenses possibles
     def reward_paths(self, relics):
@@ -390,7 +450,7 @@ class RewardOverlay:
         t = norm(text)
         if len(t) < 4:
             return None, 0
-        best, score = None, 0
+        best, score, best_name = None, 0, ""
         sm = difflib.SequenceMatcher(None, "", t)  # le texte lu est compare a chaque nom
         for p, names in cands:
             bonus = 0.04 if p in likely else 0  # a egalite, une recompense des reliques vues gagne
@@ -400,7 +460,11 @@ class RewardOverlay:
                     continue
                 s = sm.ratio() + bonus
                 if s > score:
-                    best, score = p, s
+                    best, score, best_name = p, s, n
+        # meme fin de nom mais autre arme (« Steflos Prime - Crosse » ≠ « Tenora Prime - Crosse ») :
+        # si le premier mot ne colle pas, la lecture reste douteuse (« ? ») au lieu d'un mauvais prix
+        if best and score >= SURE and not same_first_word(t, best_name):
+            score = SURE - 0.01
         return best, min(score, 1.0)
 
     # ---------------------------------------------------------------- capture + OCR
@@ -646,7 +710,8 @@ class RewardOverlay:
         cands, likely, squad = self.candidates(lang)
         rewards = []
         own = self.known[0] if self.known else None
-        own_names = {norm(self.app.game().name(own, l)) for l in {lang, "en"} if own and self.app.game().name(own, l)}
+        own_names = {norm(self.app.game().name(own, l) or name_from_path(own, l)) for l in {lang, "en"} if own}
+        own_names.discard("")
         for col in columns(lines, W):
             # le meilleur morceau de texte de la carte (le nom), sans le pseudo du joueur en dessous
             path, score, used = None, 0, None
@@ -700,6 +765,9 @@ class RewardOverlay:
         app = self.app
         g, cat = app.game(), app.catalog()
         en = g.name(path, "en")
+        inconnu = not en and not g.name(path, lang)  # objet plus recent que nos donnees du jeu
+        if inconnu:
+            en = name_from_path(path, "en")
         slug = cat.find(path, en)
         price = None
         if slug and rapide:
@@ -724,7 +792,8 @@ class RewardOverlay:
                 info = app.overlay_set_info(path, lang)
             except Exception:
                 info = {"possede": None, "pieces": None}
-        out = {"nom": g.name(path, lang) or en, "prix": price, "ducats": ducats,
+        out = {"nom": g.name(path, lang) or (name_from_path(path, lang) if inconnu else en) or "?",
+               "inconnu": inconnu, "prix": price, "ducats": ducats,
                "image": self._images.get(key), "_slug": slug, "_key": key,
                "possede": info.get("possede"), "pieces": info.get("pieces")}
         if rapide:
@@ -812,7 +881,7 @@ class OverlayWindow:
                                                 style | 0x80000 | 0x20 | 0x80 | 0x8000000)
 
         GOLD, PLAT, TEXT, MUTED, PANEL, BORDER = "#c9a96e", "#7fd4e6", "#ece6d6", "#8d8878", "#0e131e", "#3a3a40"
-        GREEN, RED = "#5cc98a", "#e06c6c"
+        GREEN, RED, ORANGE = "#5cc98a", "#e06c6c", "#f0a030"
         keep = []  # references des images (sinon tkinter les efface)
 
         def icon(name, size):
@@ -905,6 +974,8 @@ class OverlayWindow:
                     parts.append(("platine", str(r["prix"]), PLAT, int(30 * s)))
                 if r["ducats"]:
                     parts.append(("ducat", str(r["ducats"]), GOLD, int(21 * s)))
+                if r.get("inconnu") and r["prix"] is None:  # objet trop recent : on le dit clairement
+                    parts.append((None, "⚠ objet récent : prix inconnu", ORANGE, int(15 * s)))
                 if not parts:
                     parts.append((None, "nom illisible" if r.get("douteux") else "non vendable", MUTED, int(15 * s)))
                 ids, x = [], 0
