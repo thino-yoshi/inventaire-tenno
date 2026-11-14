@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.5"
+VERSION = "1.13.6"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1190,11 +1190,16 @@ def progression_view(lang):
         regions = load_json(fetch_data_file("ExportRegions.json")) or {}
     except Exception:
         regions = {}
-    planetes, noeuds = set(), 0
+    planetes, noeuds, jonctions = set(), 0, []
     for m in inv.get("Missions") or []:
         if isinstance(m, dict) and m.get("Tag") in regions and int(m.get("Completes") or 0) > 0:
             noeuds += 1
-            planetes.add((regions[m["Tag"]].get("systemName") or "").rsplit("/", 1)[-1])
+            reg = regions[m["Tag"]]
+            planetes.add((reg.get("systemName") or "").rsplit("/", 1)[-1].replace("SolarMapDeimosName", "Deimos"))
+            if reg.get("missionType") == "MT_JUNCTION":  # ex. EarthToVenusJunction : ouvre aussi Venus
+                jonctions.append(m["Tag"])
+                planetes.add(m["Tag"].split("To", 1)[-1].replace("Junction", ""))
+    nb_jonctions = sum(1 for r in regions.values() if r.get("missionType") == "MT_JUNCTION")
     g = game()
     # Warframes possedees, ou deja eues : de l'XP dans XPInfo reste meme apres l'avoir vendue
     # ou donnee a l'Helminth (une Warframe maitrisee puis supprimee compte comme obtenue)
@@ -1208,7 +1213,13 @@ def progression_view(lang):
             frames.add(n.lower())
     rang = inv.get("PlayerLevel")
     return {"ok": True, "rang": rang if isinstance(rang, int) else None, "quetes": quetes,
-            "planetes": sorted(p for p in planetes if p), "noeuds": noeuds, "warframes": sorted(frames)}
+            "planetes": sorted(p for p in planetes if p), "noeuds": noeuds, "warframes": sorted(frames),
+            "jonctions": sorted(jonctions), "nb_jonctions": nb_jonctions,
+            "clan": bool(inv.get("GuildId")), "syndicat": bool(inv.get("SupportedSyndicate")),
+            "focus": bool(inv.get("FocusAbility")),
+            # objet Prime deja eu (schema, piece, Warframe ou arme) : vient des reliques ou d'un echange
+            "prime": any("Prime" in p for p in owned_types(inv)) or any(
+                "Prime" in (e.get("ItemType") or "") for e in inv.get("XPInfo") or [] if isinstance(e, dict))}
 
 
 COLLECTION_TYPES = {  # categorie du jeu -> onglet de la collection

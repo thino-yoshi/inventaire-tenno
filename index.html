@@ -532,6 +532,9 @@
   .con-avant b { color: var(--gold); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
   .con-avant ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
   .con-avant li::before { content: "☐ "; color: var(--gold); }
+  .con-avant li.ok { color: var(--green); }
+  .con-avant li.ok::before { content: "☑ "; color: var(--green); }
+  .guide-etape h3 .guide-badge { margin-left: 8px; }
   .con-armes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .guide-arc { position: relative; overflow: hidden; }
   .guide-arc.masque ol { filter: blur(6px); user-select: none; pointer-events: none; opacity: .6; }
@@ -1404,24 +1407,24 @@ const T3 = {
         ["Fortuna et Solaris United (Vénus)", "En arrivant sur Vénus, termine le nœud <b>Unda</b> pour voir <b>Fortuna</b>. La quête <b>Vox Solaris</b> démarre à ta première visite. Fais ensuite les primes d'<b>Eudico</b> pour la réputation <b>Solaris United</b>."],
         ["Monte tes mods de départ", "Le Professeur te donne les mods de base : <b>Vitalité</b>, <b>Redirection</b>, et un mod de dégâts par arme. Monte-les avec de l'<b>Endo</b> avant d'en chercher d'autres."],
         ["Garde ton platine", "Les 50 platines de départ servent aux <b>emplacements</b> de Warframes et d'armes. Le reste se gagne en revendant des pièces Prime."]],
-        ["Le Professeur terminé", "Un clan rejoint", "Rhino construit", "Jonction de Mercure réussie"]],
+        [["Le Professeur terminé", "professeur"], ["Un clan rejoint", "clan"], ["Rhino obtenu", "rhino"], ["Jonction de Mercure réussie", "mercure"]]],
       ["Phase 2", "De Mars à Saturne · rangs de maîtrise 3 à 8", [
         ["Choisis un syndicat de faction", "Dès le <b>rang de maîtrise 3</b>, tu peux t'engager auprès d'un des six syndicats des relais. Ils ont des alliés et des ennemis : <b>Steel Meridian, Arbiters of Hexis et Cephalon Suda</b> s'entendent, tout comme <b>Red Veil, New Loka et The Perrin Sequence</b>. Ils vendent des mods d'augmentation et des armes."],
         ["Rends visite à Cephalon Simaris", "Dans n'importe quel <b>relais</b>. Il vend les scanners de synthèse (5 000 crédits les 25). Les quêtes Rêves Volés puis La Nouvelle Étrange ouvrent ses tâches quotidiennes et l'Onslaught du Sanctuaire."],
         ["Tes premières reliques", "Ouvre tes reliques dans les <b>fissures du Néant</b> : c'est la première vraie source de platine. L'overlay de Lotus Desk affiche le prix de chaque récompense."],
         ["Deimos et l'Helminth", "Cœur de Deimos ouvre la réputation <b>Entrati</b>. Au rang Entrati 3 et au <b>rang de maîtrise 8</b>, Son vend le segment Helminth (15 000 de réputation), qui permet d'échanger des pouvoirs entre Warframes."],
         ["Le plafond de réputation", "La réputation des syndicats de faction est limitée chaque jour : <b>16 000 + 500 par rang de maîtrise</b>. Monter de rang permet d'en gagner plus."]],
-        ["Rang de maîtrise 3 et un syndicat choisi", "Premières reliques ouvertes", "Cœur de Deimos terminé"]],
+        [["Rang de maîtrise 3 et un syndicat choisi", "syndicat"], ["Premières reliques ouvertes", "reliques"], ["Cœur de Deimos terminé", "deimos"]]],
       ["Phase 3", "Uranus à Sedna · Le Second Rêve", [
         ["L'Opérateur et le Focus", "<b>Le Second Rêve</b> débloque l'Opérateur et les écoles de Focus. C'est un tournant du jeu : ne passe pas à côté."],
         ["Duviri et le Circuit", "Après <b>Le Paradoxe Duviri</b>, le Circuit propose chaque semaine trois Warframes au choix, avec remise à zéro le lundi à 0 h UTC."],
         ["La Forteresse Kuva", "<b>La Guerre Intérieure</b> ouvre la Forteresse Kuva et les Liches Kuva, avec des armes très puissantes."],
         ["Ton Railjack", "<b>Marée Montante</b> te donne ton propre vaisseau Railjack, utile pour d'autres quêtes et plusieurs Warframes."]],
-        ["Le Second Rêve et La Guerre Intérieure terminés", "Une école de Focus choisie"]],
+        [["Le Second Rêve et La Guerre Intérieure terminés", "histoire2"], ["Une école de Focus choisie", "focus"]]],
       ["Phase 4", "Après l'histoire · la fin de jeu", [
         ["La Route d'Acier", "Termine tous les nœuds de la Carte céleste (sauf les deux assassinats d'Éris), puis parle à <b>Teshin</b> : la Route d'Acier s'ouvre, avec des ennemis de niveau 100 et plus. Vay Hek (rang de maîtrise 5) fait partie des nœuds à finir."],
         ["Et ensuite", "Arbitrages, Archontes, Zariman, Railjack… Le reste de l'histoire continue dans la liste du sous-onglet Parcours."]],
-        []]],
+        [["Toutes les Jonctions de la Carte céleste réussies", "jonctions"]]]],
     conArmesTitre: "Armes à viser au début",
     conArmesNote: "Une petite sélection facile à obtenir. Le rang indiqué est le rang de maîtrise nécessaire.",
     conArmes: [
@@ -1429,6 +1432,7 @@ const T3 = {
       ["Tonkor", "Lance-grenades", "Marché", "Rang 5"],
       ["Vaykor Hek", "Fusil à pompe", "Steel Meridian (syndicat)", ""],
       ["Ignis Wraith", "Lance-flammes", "Dojo de clan", "Rang 9"]],
+    progJonctions: (n, t) => `${n} / ${t} Jonctions`, progHistoire: (n, t) => `${n} / ${t} quêtes`, progRangBadge: r => `Rang ${r}`, progClanOk: "Clan rejoint",
     progTitre: "Ta progression", progRang: "Rang de maîtrise", progQuetes: "Quêtes terminées", progProchaine: "Prochaine quête",
     progAucune: "Lance Warframe : l'appli lira ta progression (rang, quêtes, planètes) et cochera ce que tu as déjà fait.",
     progFini: "Toute l'histoire est terminée !",
@@ -1662,24 +1666,24 @@ const T3 = {
         ["Fortuna and Solaris United (Venus)", "On Venus, finish the <b>Unda</b> node to see <b>Fortuna</b>. The <b>Vox Solaris</b> quest starts on your first visit. Then do <b>Eudico</b>'s bounties for <b>Solaris United</b> standing."],
         ["Level up your starting mods", "The Teacher gives you the basic mods: <b>Vitality</b>, <b>Redirection</b>, and a damage mod per weapon. Upgrade them with <b>Endo</b> before looking for others."],
         ["Keep your platinum", "Your starting 50 platinum is for Warframe and weapon <b>slots</b>. More can be earned by selling Prime parts."]],
-        ["The Teacher completed", "Joined a clan", "Rhino built", "Mercury Junction cleared"]],
+        [["The Teacher completed", "professeur"], ["Joined a clan", "clan"], ["Rhino obtained", "rhino"], ["Mercury Junction cleared", "mercure"]]],
       ["Phase 2", "Mars to Saturn · mastery ranks 3 to 8", [
         ["Pick a faction syndicate", "From <b>mastery rank 3</b>, you can pledge to one of the six relay syndicates. They have allies and enemies: <b>Steel Meridian, Arbiters of Hexis and Cephalon Suda</b> get along, as do <b>Red Veil, New Loka and The Perrin Sequence</b>. They sell augment mods and weapons."],
         ["Visit Cephalon Simaris", "In any <b>relay</b>. He sells Synthesis Scanners (5,000 credits for 25). The Stolen Dreams then The New Strange quests open his daily tasks and Sanctuary Onslaught."],
         ["Your first relics", "Open your relics in <b>Void Fissures</b>: it's the first real source of platinum. The Lotus Desk overlay shows the price of each reward."],
         ["Deimos and the Helminth", "Heart of Deimos opens <b>Entrati</b> standing. At Entrati rank 3 and <b>mastery rank 8</b>, Son sells the Helminth segment (15,000 standing), which lets you swap abilities between Warframes."],
         ["The standing cap", "Faction syndicate standing is capped each day: <b>16,000 + 500 per mastery rank</b>. Ranking up lets you earn more."]],
-        ["Mastery rank 3 and a syndicate picked", "First relics opened", "Heart of Deimos completed"]],
+        [["Mastery rank 3 and a syndicate picked", "syndicat"], ["First relics opened", "reliques"], ["Heart of Deimos completed", "deimos"]]],
       ["Phase 3", "Uranus to Sedna · The Second Dream", [
         ["The Operator and Focus", "<b>The Second Dream</b> unlocks the Operator and Focus schools. It's a turning point: don't miss it."],
         ["Duviri and The Circuit", "After <b>The Duviri Paradox</b>, The Circuit offers three Warframes to pick from every week, resetting on Monday at 0:00 UTC."],
         ["The Kuva Fortress", "<b>The War Within</b> opens the Kuva Fortress and Kuva Liches, with very strong weapons."],
         ["Your Railjack", "<b>Rising Tide</b> gives you your own Railjack ship, useful for other quests and several Warframes."]],
-        ["The Second Dream and The War Within completed", "A Focus school picked"]],
+        [["The Second Dream and The War Within completed", "histoire2"], ["A Focus school picked", "focus"]]],
       ["Phase 4", "After the story · endgame", [
         ["The Steel Path", "Finish every Star Chart node (except the two Eris assassinations), then talk to <b>Teshin</b>: the Steel Path opens, with level 100+ enemies. Vay Hek (mastery rank 5) is one of the nodes to clear."],
         ["And then", "Arbitrations, Archons, Zariman, Railjack… The rest of the story continues in the Path tab list."]],
-        []]],
+        [["Every Star Chart Junction cleared", "jonctions"]]]],
     conArmesTitre: "Weapons to aim for early",
     conArmesNote: "A small selection that is easy to get. The rank shown is the mastery rank required.",
     conArmes: [
@@ -1687,6 +1691,7 @@ const T3 = {
       ["Tonkor", "Grenade launcher", "Market", "Rank 5"],
       ["Vaykor Hek", "Shotgun", "Steel Meridian (syndicate)", ""],
       ["Ignis Wraith", "Flamethrower", "Clan Dojo", "Rank 9"]],
+    progJonctions: (n, t) => `${n} / ${t} Junctions`, progHistoire: (n, t) => `${n} / ${t} quests`, progRangBadge: r => `Rank ${r}`, progClanOk: "In a clan",
     progTitre: "Your progress", progRang: "Mastery rank", progQuetes: "Quests completed", progProchaine: "Next quest",
     progAucune: "Start Warframe: the app will read your progress (rank, quests, planets) and tick what you've already done.",
     progFini: "The whole story is completed!",
@@ -2768,7 +2773,33 @@ function queteFaite(cle) {
   const debut = ["NewPlayerQuest/NewPlayerQuestKeyChain", "VorsPrize/VorsPrizeQuestKeyChain", "ModQuest/ModQuestKeyChain"];
   return (debut.includes(cle) || !(cle in prog.quetes)) && ordreQuetes().indexOf(cle) < derniereFaite();
 }
-const etapeFaite = i => queteFaite(["NewPlayerQuest/NewPlayerQuestKeyChain", "VorsPrize/VorsPrizeQuestKeyChain", "ModQuest/ModQuestKeyChain"][i]);
+const jonctionsFaites = () => (prog.jonctions || []).length;
+const toutesJonctions = () => prog.ok && prog.nb_jonctions > 0 && jonctionsFaites() >= prog.nb_jonctions;
+function etapeFaite(i) {  // 01-03 quêtes, 04 Jonctions, 05 histoire, 06 rang de maîtrise (8 : fin du début), 07 clan
+  if (!prog.ok) return false;
+  if (i < 3) return queteFaite(["NewPlayerQuest/NewPlayerQuestKeyChain", "VorsPrize/VorsPrizeQuestKeyChain", "ModQuest/ModQuestKeyChain"][i]);
+  if (i === 3) return toutesJonctions();
+  if (i === 4) return !prochaineQuete();
+  if (i === 5) return (prog.rang || 0) >= 8;
+  if (i === 6) return !!prog.clan;
+  return false;
+}
+function etatEtape(i) {  // petit badge d'avancement sur les étapes 04 à 06
+  if (!prog.ok) return "";
+  const toutes = ordreQuetes(), faites = toutes.filter(queteFaite).length;
+  const txt = i === 3 ? t("progJonctions", jonctionsFaites(), prog.nb_jonctions || 13)
+    : i === 4 ? t("progHistoire", faites, toutes.length) : i === 5 ? t("progRangBadge", prog.rang ?? "?")
+    : i === 6 ? (prog.clan ? t("progClanOk") : "") : "";
+  return txt ? ` <span class="guide-badge ${etapeFaite(i) ? "ok" : "rang"}">${esc(txt)}</span>` : "";
+}
+// listes « avant de passer à la suite » des Conseils
+const CHECKS = {
+  professeur: () => queteFaite("ModQuest/ModQuestKeyChain"), clan: () => !!prog.clan, rhino: () => eue("Rhino"),
+  mercure: () => (prog.jonctions || []).includes("VenusToMercuryJunction"),
+  syndicat: () => (prog.rang || 0) >= 3 && !!prog.syndicat, deimos: () => queteFaite("InfestedMicroplanetQuest/InfestedMicroplanetQuestKeyChain"),
+  histoire2: () => queteFaite("OrokinMoonQuest/OrokinMoonQuestKeyChain") && queteFaite("WarWithinQuest/WarWithinQuestKeyChain"),
+  focus: () => !!prog.focus, reliques: () => !!prog.prime, jonctions: toutesJonctions };
+const checkConseil = cle => prog.ok && CHECKS[cle] ? CHECKS[cle]() : null;
 function prochaineQuete() {  // [chapitre, quête] : première quête pas faite après la dernière quête terminée
   if (!prog.ok) return null;
   const arcs = t("debArcs"), o = ordreQuetes(), d = derniereFaite();
@@ -2856,7 +2887,8 @@ function rendreConseils() {
         <div class="guide-conseils">` + conseils.map(([ti, txt]) =>
           `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${txt}</p></div></div>`).join("") + `</div>` +
         (liste.length ? `<div class="con-avant"><b>${esc(t("conAvant"))}</b><ul>` +
-          liste.map(x => `<li>${esc(x)}</li>`).join("") + "</ul></div>" : "") + `</div>`).join("") +
+          liste.map(([x, cle]) => { const ok = checkConseil(cle);
+            return `<li class="${ok ? "ok" : ""}">${esc(x)}</li>`; }).join("") + "</ul></div>" : "") + `</div>`).join("") +
     `<div class="guide-section"><h2 class="info-titre">${esc(t("conArmesTitre"))}</h2>
       <div class="con-armes">` + t("conArmes").map(([nom, type, ou, rang]) =>
         `<div class="guide-conseil sans-ic"><div><h3>${esc(nom)} ${badgeGuide(rang)}</h3><p>${esc(type)} · ${esc(ou)}</p></div></div>`).join("") +
@@ -2892,7 +2924,7 @@ function rendreInfo() {
       <div class="guide-section"><h2 class="info-titre">${esc(t("debEtapesTitre"))}</h2>
       <ol class="guide-frise">` + t("debEtapes").map(([cat, titre, txt], i) =>
         `<li class="${etapeFaite(i) ? "fait" : ""}"><span class="guide-num">${etapeFaite(i) ? "✓" : String(i + 1).padStart(2, "0")}</span>
-          <div class="guide-etape"><span class="guide-cat">${esc(cat)}</span><h3>${esc(titre)}</h3><p>${txt}</p></div></li>`).join("") + `</ol></div>
+          <div class="guide-etape"><span class="guide-cat">${esc(cat)}</span><h3>${esc(titre)}${etatEtape(i)}</h3><p>${txt}</p></div></li>`).join("") + `</ol></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debArcsTitre"))}</h2>
       <div class="guide-arcs">` + t("debArcs").map(([arc, quetes], ai) => {
         const vu = arcVisible(ai), prochaine = prochaineQuete();
