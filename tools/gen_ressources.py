@@ -210,7 +210,26 @@ for p, liste in PLANETES:
                       **{k: sorted(v, key=lambda x: x["fr"]) for k, v in monde[p].items()}}
     sortie.append(d)
 
+def icone(ch):
+    for c in (ch, ch + "Large", ch + "Medium", ch + "Small"):
+        if (res.get(c) or {}).get("icon"):
+            return res[c]["icon"]
+    return ""
+
+
+def avec_icones(liste):
+    for x in liste:
+        x["i"] = icone(x["id"])
+
+
+for p in sortie:
+    for k in ("region", "plus", "plantes"):
+        avec_icones(p[k])
+    for k, v in (p.get("monde") or {}).items():
+        if isinstance(v, list):
+            avec_icones(v)
 data = {"planetes": sortie, "partout": [entree(n, (f, e)) for n, f, e in PARTOUT]}
+avec_icones(data["partout"])
 OUT.write_text(json.dumps(data, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")
 print(f"{len(sortie)} planètes -> {OUT} ({OUT.stat().st_size // 1024} Ko)")
 for p in sortie:

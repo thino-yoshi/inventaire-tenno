@@ -561,15 +561,17 @@
   .arm-src a { font-size: 12px; color: var(--gold); }
   .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
   .res-onglets button { padding: 6px 12px; }
-  .res-liste { max-width: 1100px; }
-  .res-l { display: grid; grid-template-columns: minmax(170px, 230px) 110px 1fr 150px; gap: 10px; align-items: baseline;
-           padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
-  .res-l:hover { background: var(--panel); }
-  .res-l b { color: var(--text); font-weight: 600; }
-  .res-src { color: var(--muted); font-size: 12px; }
-  .res-src small { color: var(--gold); letter-spacing: .5px; margin-right: 4px; }
-  .res-src em { display: block; font-style: normal; color: var(--gold); margin-top: 2px; }
-  .res-stock { font-size: 12px; color: var(--muted); text-align: right; }
+  .res-grille { display: grid; grid-template-columns: repeat(auto-fill, minmax(190px, 1fr)); gap: 10px; max-width: 1200px; }
+  .res-c { display: flex; flex-direction: column; align-items: center; text-align: center; gap: 5px;
+           border: 1px solid var(--line); background: var(--panel); padding: 12px 10px; font-size: 13px; }
+  .res-c.a { border-color: color-mix(in srgb, var(--green) 40%, var(--line)); }
+  .res-ic { width: 64px; height: 64px; display: flex; align-items: center; justify-content: center; }
+  .res-ic img { max-width: 64px; max-height: 64px; }
+  .res-c b { color: var(--text); font-weight: 600; font-size: 14px; }
+  .res-src { color: var(--muted); font-size: 12px; line-height: 1.45; }
+  .res-src small { display: block; color: var(--gold); letter-spacing: .5px; }
+  .res-src em { display: block; font-style: normal; color: var(--gold); margin-top: 3px; }
+  .res-stock { font-size: 12px; color: var(--muted); }
   .res-stock.ok { color: var(--green); }
   .res-rar { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); }
   .res-rar.r1 { color: var(--text); }
@@ -3177,13 +3179,15 @@ function rendreRessources() {
     `<button type="button" data-res="${k}" class="${k === resSous ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
   const ligne = x => {
     const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
-    return `<div class="res-l"><b>${esc(L(x))}</b>
-      <span>${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}</span>
-      <span class="res-src">${x.s ? `<small>${esc(t("resMeilleur"))}</small> ${esc(S(x.s))}` : ""}${x.note ? `<em>${esc(S(x.note))}</em>` : ""}</span>
-      <span class="res-stock${n ? " ok" : ""}">${n != null ? esc(t("resStock", n)) : ""}</span></div>`;
+    return `<div class="res-c${n ? " a" : ""}">
+      <div class="res-ic">${x.i ? `<img src="https://browse.wf${esc(x.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true">` : ""}</div>
+      <b>${esc(L(x))}</b>
+      ${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}
+      ${n != null ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}
+      <span class="res-src">${x.s ? `<small>${esc(t("resMeilleur"))}</small> ${esc(S(x.s))}` : ""}${x.note ? `<em>${esc(S(x.note))}</em>` : ""}</span></div>`;
   };
   const bloc = (titre, liste, note) => liste && liste.length
-    ? `<div class="guide-section"><h2 class="info-titre">${esc(titre)}</h2>${note ? `<p class="muted res-note">${esc(note)}</p>` : ""}<div class="res-liste">${liste.map(ligne).join("")}</div></div>` : "";
+    ? `<div class="guide-section"><h2 class="info-titre">${esc(titre)}</h2>${note ? `<p class="muted res-note">${esc(note)}</p>` : ""}<div class="res-grille">${liste.map(ligne).join("")}</div></div>` : "";
   if (resSous === "conseils")
     return nav + `<div class="guide-tete"><div><h1>${esc(t("resConseilsTitre"))}</h1></div></div><div class="guide-conseils">` +
       t("resConseilsListe").map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${esc(txt)}</p></div></div>`).join("") + "</div>";
@@ -3194,7 +3198,7 @@ function rendreRessources() {
     bloc(t("resRegion"), p.region, t("resRegionNote")) + bloc(t("resPlus"), p.plus) + bloc(t("resPlantes"), p.plantes) +
     (m ? `<div class="guide-section"><h2 class="info-titre res-monde">${esc(t("resMonde", L(m)))}</h2>` +
       Object.entries(t("resGroupes")).map(([k, titre]) => m[k] && m[k].length
-        ? `<h3 class="res-gr">${esc(titre)} <small>${m[k].length}</small></h3><div class="res-liste">${m[k].map(ligne).join("")}</div>` : "").join("") + "</div>" : "") +
+        ? `<h3 class="res-gr">${esc(titre)} <small>${m[k].length}</small></h3><div class="res-grille">${m[k].map(ligne).join("")}</div>` : "").join("") + "</div>" : "") +
     `<p class="guide-note">${esc(t("resSource"))}</p>`;
 }
 function rendreInfo() {
