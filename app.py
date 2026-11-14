@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.14.0"
+VERSION = "1.14.1"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1206,12 +1206,15 @@ def progression_view(lang):
     chemins = {e["ItemType"] for e in inv.get("Suits") or [] if isinstance(e, dict) and e.get("ItemType")}
     chemins |= {e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict) and e.get("ItemType")
                 and (e.get("XP") or 0) > 0 and (g.ex["warframes"].get(e["ItemType"]) or {}).get("productCategory") == "Suits"}
-    # armes possedees ou deja eues (XP gardee apres une vente) : principales, secondaires, melee
-    armes = {e["ItemType"] for k in ("LongGuns", "Pistols", "Melee") for e in inv.get(k) or []
-             if isinstance(e, dict) and e.get("ItemType")}
+    # armes, compagnons et Archwings possedes ou deja eus (XP gardee apres une vente) ; pour les
+    # compagnons modulaires (MOA, molosses, Predasites...), la piece principale porte l'identifiant
+    ARSENAL = ("LongGuns", "Pistols", "Melee", "Sentinels", "SentinelWeapons", "KubrowPets", "MoaPets",
+               "SpaceSuits", "SpaceGuns", "SpaceMelee")
+    armes = {e["ItemType"] for k in ARSENAL for e in inv.get(k) or [] if isinstance(e, dict) and e.get("ItemType")}
+    armes |= {m for k in ARSENAL for e in inv.get(k) or [] if isinstance(e, dict)
+              for m in e.get("ModularParts") or [] if isinstance(m, str)}
     armes |= {e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict) and e.get("ItemType")
-              and (e.get("XP") or 0) > 0 and (g.ex["weapons"].get(e["ItemType"]) or {}).get("productCategory")
-              in ("LongGuns", "Pistols", "Melee")}
+              and (e.get("XP") or 0) > 0}
     frames = set()
     for path in chemins:
         n = g.name(path, lang)

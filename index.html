@@ -1391,7 +1391,10 @@ const T3 = {
     nvTitre: "Quoi de neuf ?", nvSur: v => `Mise à jour installée : version ${v}`, nvSous: (a, n) => `Depuis ta version ${a} : ${n} nouveauté(s).`,
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
-    arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"]],
+    arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
+    armTitres: { compagnon: "Tous les compagnons, et où les obtenir", archwing: "Toutes les Archwings et leurs armes, et où les obtenir" },
+    armIntros: { compagnon: "Sentinelles, Kubrows, Kavats, MOA, molosses, Prédasites et Vulpaphylas, plus les armes de sentinelle. Chacun donne de la maîtrise. Les versions Prime sont dans l'onglet Prime.",
+      archwing: "Les Archwings (débloquées par la quête L'Archwing), leurs arch-fusils et leurs arch-mêlées. Chacune donne de la maîtrise. Les versions Prime sont dans l'onglet Prime." },
     priOnglets: [["warframe", "Warframes Prime"], ["primaire", "Principales"], ["secondaire", "Secondaires"], ["melee", "Mêlée"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
     priTitre: "Tous les Prime, et les reliques où trouver chaque pièce",
     priIntro: "Une version Prime est plus forte que la normale et donne aussi de la maîtrise. Ses pièces tombent des reliques du Néant, qu'on ouvre dans les fissures. Une relique « retirée » ne tombe plus en mission : il reste les échanges entre joueurs ou Varzia (Prime Resurgence, au Relais Maroo's Bazaar) quand l'objet revient dans sa boutique.",
@@ -1667,7 +1670,10 @@ const T3 = {
     nvTitre: "What's new?", nvSur: v => `Update installed: version ${v}`, nvSous: (a, n) => `Since your version ${a}: ${n} update(s).`,
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
-    arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"]],
+    arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
+    armTitres: { compagnon: "Every companion, and where to get it", archwing: "Every Archwing and its weapons, and where to get them" },
+    armIntros: { compagnon: "Sentinels, Kubrows, Kavats, MOAs, hounds, Predasites and Vulpaphylas, plus sentinel weapons. Each one gives mastery. Prime versions are in the Prime tab.",
+      archwing: "Archwings (unlocked by The Archwing quest), their arch-guns and arch-melee weapons. Each one gives mastery. Prime versions are in the Prime tab." },
     priOnglets: [["warframe", "Prime Warframes"], ["primaire", "Primary"], ["secondaire", "Secondary"], ["melee", "Melee"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
     priTitre: "Every Prime, and the relics each part comes from",
     priIntro: "A Prime version is stronger than the normal one and also gives mastery. Its parts drop from Void Relics, opened in fissures. A \"vaulted\" relic no longer drops in missions: what's left is trading with players, or Varzia (Prime Resurgence, at the Maroo's Bazaar relay) when the item is back in her shop.",
@@ -2950,20 +2956,21 @@ async function chargerArmes() {
   armes = [];
   // les armes Prime auront leur propre catégorie : ici, seulement les armes normales
   try { armes = (await (await fetch("/assets/armes.json")).json()).filter(a => !a.prime); } catch (e) { armes = []; }
-  if (page === "info" && infoSous.jeu === "arsenal" && arsSous === "armes") rendreInfo();
+  if (page === "info" && infoSous.jeu === "arsenal" && arsSous !== "warframes") rendreInfo();
 }
 const armeEue = a => prog.ok && (prog.armes || []).includes(a.id);
-function rendreArmes() {
+function rendreArmes(seule) {  // seule = "compagnon" ou "archwing" : une seule catégorie, sans sous-onglets
   if (!armes || !armes.length) { chargerArmes(); return `<p class="muted">${esc(t("armChargement"))}</p>`; }
   if (!t("armSous").some(([k]) => k === armSous)) armSous = "primaire";
-  const liste = armes.filter(a => a.c === armSous), nEues = liste.filter(armeEue).length;
+  const cat = seule || armSous;
+  const liste = armes.filter(a => a.c === cat), nEues = liste.filter(armeEue).length;
   const parRang = {};
   liste.forEach(a => (parRang[a.mr] = parRang[a.mr] || []).push(a));
-  return `<div class="guide-tete"><div><h1>${esc(t("armTitre"))}</h1><p>${esc(t("armIntro"))}</p></div>
+  return `<div class="guide-tete"><div><h1>${esc(seule ? t("armTitres")[seule] : t("armTitre"))}</h1><p>${esc(seule ? t("armIntros")[seule] : t("armIntro"))}</p></div>
       <div class="arm-outils"><input type="search" id="armRecherche" class="guide-recherche" placeholder="${esc(t("armRecherche"))}" value="${esc(armFiltre)}">
       ${prog.ok ? `<label class="auto"><input type="checkbox" id="armCacher"${armCacher ? " checked" : ""}> ${esc(t("armCacher"))}</label>` : ""}</div></div>
-    <nav class="guide-onglets arm-onglets">` + t("armSous").map(([k, l]) =>
-      `<button type="button" data-arm="${k}" class="${k === armSous ? "on" : ""}">${esc(l)} <small>${armes.filter(a => a.c === k).length}</small></button>`).join("") + `</nav>
+    ${seule ? "" : `<nav class="guide-onglets arm-onglets">` + t("armSous").map(([k, l]) =>
+      `<button type="button" data-arm="${k}" class="${k === armSous ? "on" : ""}">${esc(l)} <small>${armes.filter(a => a.c === k).length}</small></button>`).join("") + `</nav>`}
     ${prog.ok ? `<p class="arm-compte">${esc(t("armEues", nEues, liste.length))}</p>` : ""}
     <div class="arm-liste">` + Object.keys(parRang).sort((x, y) => x - y).map(r =>
       `<div class="arm-groupe"><h2 class="info-titre">${esc(t("armRang", r))}</h2>` + parRang[r].map(a => {
@@ -3117,8 +3124,8 @@ function rendreInfo() {
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
   if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
-  if (infoGroupe === "jeu" && s === "arsenal" && navArsenal() && arsSous === "armes") {
-    c.innerHTML = navArsenal() + rendreArmes();
+  if (infoGroupe === "jeu" && s === "arsenal" && navArsenal() && arsSous !== "warframes") {
+    c.innerHTML = navArsenal() + rendreArmes(arsSous === "armes" ? null : arsSous);
     filtrerArmes();
   } else if (infoGroupe === "jeu" && s === "arsenal") {
     c.innerHTML = navArsenal() + rendreWarframes();

@@ -20,6 +20,8 @@ def load(p):
 
 
 w = load(EXP / "ExportWeapons.json")
+w.update(load(EXP / "ExportSentinels.json"))
+w.update(load(EXP / "ExportWarframes.json"))  # Archwings
 recipes = load(EXP / "ExportRecipes.json")
 dojo = load(EXP / "ExportDojoRecipes.json")
 vendors = load(EXP / "ExportVendors.json")
@@ -147,8 +149,12 @@ for vk, vv in vendors.items():
 TYPES = {"Rifle": ("Fusil", "Rifle"), "Shotgun": ("Fusil à pompe", "Shotgun"), "Bow": ("Arc", "Bow"),
          "Sniper": ("Fusil de précision", "Sniper rifle"), "Launcher": ("Lanceur", "Launcher"),
          "Pistol": ("Pistolet", "Pistol"), "Dual Pistols": ("Pistolets doubles", "Dual pistols"),
-         "Throwing": ("Arme de lancer", "Throwing weapon"), "Melee": ("Mêlée", "Melee")}
-CATS = {"Primary": "primaire", "Secondary": "secondaire", "Melee": "melee"}
+         "Throwing": ("Arme de lancer", "Throwing weapon"), "Melee": ("Mêlée", "Melee"),
+         "Sentinel": ("Sentinelle", "Sentinel"), "Pets": ("Animal", "Pet"), "Companion Weapon": ("Arme de compagnon", "Companion weapon"),
+         "Archwing": ("Archwing", "Archwing"), "Arch-Gun": ("Arch-fusil", "Arch-gun"), "Arch-Melee": ("Arch-mêlée", "Arch-melee")}
+CATS = {"Primary": "primaire", "Secondary": "secondaire", "Melee": "melee",
+        "Sentinels": "compagnon", "Pets": "compagnon", "SentinelWeapons": "compagnon",
+        "Archwing": "archwing", "Arch-Gun": "archwing", "Arch-Melee": "archwing"}
 
 
 # sources sures ajoutees a la main (absentes des donnees)
@@ -159,6 +165,17 @@ TESHIN = ["Grotte de Teshin (Duviri), contre des Pathos Clamps", "Teshin's Cave 
 GHOUL = ["Ghouls Auger et Devourer (primes Ghoul, Plaines d'Eidolon)", "Ghoul Augers and Devourers (Ghoul bounties, Plains of Eidolon)"]
 MELICA = ["Cephalon Melica (Chrysalith, Zariman), contre du Kuva Entropique", "Cephalon Melica (Chrysalith, Zariman), for Entropic Kuva"]
 PERTURB_UR = ["Démolisseurs en Perturbation sur Ur (Uranus)", "Demolishers in Disruption on Ur (Uranus)"]
+KUBROW = ["Œuf de Kubrow (tanières sur Terre) + Incubateur (quête Hurlement du Kubrow) : type au hasard",
+          "Kubrow egg (dens on Earth) + Incubator (quest Howl of the Kubrow): random breed"]
+KAVAT = ["Codes génétiques des Kavats sauvages (Derelict Orokin) + Incubateur : type au hasard",
+         "Genetic codes from feral Kavats (Orokin Derelict) + Incubator: random breed"]
+MOA = ["Legs (Fortuna) : MOA modulaire, contre de la réputation Solaris United", "Legs (Fortuna): modular MOA, for Solaris United standing"]
+HOUND = ["Pièces sur les molosses des Sœurs de Parvos, à assembler chez Legs (Fortuna)",
+         "Parts from the Sisters of Parvos' hounds, assembled at Legs (Fortuna)"]
+HOUND_ARME = ["Fait partie d'un molosse (Sœurs de Parvos, assemblé chez Legs)", "Part of a hound (Sisters of Parvos, assembled at Legs)"]
+SON = lambda f, e=None: [f"{f} affaibli capturé au fusil tranquillisant (Faille Cambion), puis Son (Nécralisk)",
+                         f"Weakened {e or f} caught with the Tranq Rifle (Cambion Drift), then Son (Necralisk)"]
+AVEC = lambda n: [f"Livrée avec la sentinelle {n}", f"Comes with the {n} sentinel"]
 MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati": ["Quête Le Sacrifice", "Quest The Sacrifice"],
           "Dread": STALKER, "Despair": STALKER, "Hate": STALKER,
           "Brakk": ["Les Trois Grustrag (attaque pendant les missions)", "The Grustrag Three (attack during missions)"],
@@ -206,7 +223,32 @@ MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati":
           "Korrudo": ["Tusk Thumper Bull et Doma (Plaines d'Eidolon)", "Tusk Thumper Bull and Doma (Plains of Eidolon)"],
           "Twin Kohmak": ["Kela De Thaym (Merrow, Sedna)", "Kela De Thaym (Merrow, Sedna)"],
           "Nunchasa": MELICA, "Aksondol": MELICA,
-          "Vericres": ["Baro Ki'Teer", "Baro Ki'Teer"]}
+          "Vericres": ["Baro Ki'Teer", "Baro Ki'Teer"],
+          # compagnons et Archwings (verifies nov. 2026)
+          **{n: ["Marché : schéma contre des crédits", "Market: blueprint for credits"] for n in ("Carrier", "Dethcube", "Shade", "Wyrm")},
+          "Diriga": ["Marché : schéma pour 100 000 crédits", "Market: blueprint for 100,000 credits"],
+          "Taxon": ["Jonction Vénus (Terre), ou Marché : schéma pour 5 000 crédits", "Venus Junction (Earth), or Market: blueprint for 5,000 credits"],
+          "Oxylus": ["The Business (Fortuna), rang 5 Solaris United : 20 000 de réputation", "The Business (Fortuna), Solaris United rank 5: 20,000 standing"],
+          **{n: KUBROW for n in ("Chesa Kubrow", "Huras Kubrow", "Raksa Kubrow", "Sahasa Kubrow", "Sunika Kubrow")},
+          **{n: KAVAT for n in ("Adarza Kavat", "Smeeta Kavat")},
+          "Helminth Charger": ["Incubateur : œuf de Kubrow + kyste Helminth mûr sur une Warframe (« drainer le kyste »)",
+                               "Incubator: Kubrow egg + a fully grown Helminth cyst on a Warframe (\"drain cyst\")"],
+          **{n: MOA for n in ("Lambeo Moa", "Nychus Moa", "Oloro Moa", "Para Moa")},
+          **{n: HOUND for n in ("Bhaira Hound", "Dorma Hound", "Hec Hound")},
+          **{n: HOUND_ARME for n in ("Akaten", "Batoten", "Lacerten")},
+          **{n: SON("Vulpaphyla") for n in ("Crescent Vulpaphyla", "Panzer Vulpaphyla", "Sly Vulpaphyla")},
+          **{n: SON("Prédasite", "Predasite") for n in ("Medjay Predasite", "Pharaoh Predasite", "Vizier Predasite")},
+          "Laser Rifle": AVEC("Wyrm"), "Burst Laser": AVEC("Shade"), "Deconstructor": AVEC("Helios"),
+          "Deth Machine Rifle": AVEC("Dethcube"), "Stinger": AVEC("Djinn"), "Sweeper": AVEC("Carrier"),
+          "Verglas": AVEC("Nautilus"), "Vulklok": AVEC("Diriga"), "Artax": AVEC("Taxon"), "Multron": AVEC("Oxylus"),
+          "Helstrum": ["Legs (Fortuna), rang 5 Solaris United : 10 000 de réputation", "Legs (Fortuna), Solaris United rank 5: 10,000 standing"],
+          **{n: ["Legs (Fortuna), contre de la réputation Solaris United", "Legs (Fortuna), for Solaris United standing"] for n in ("Cryotra", "Tazicor", "Vulcax")},
+          "Cortege": ["Loid, Necraloid rang 3 (Deimos) : 8 000 de réputation", "Loid, Necraloid rank 3 (Deimos): 8,000 standing"],
+          "Morgha": ["Loid, Necraloid rang 3 (Deimos)", "Loid, Necraloid rank 3 (Deimos)"],
+          "Mausolon": ["Livré avec chaque Necramech construit", "Comes with every Necramech you build"],
+          "Imperator": ["Marché : schéma contre des crédits", "Market: blueprint for credits"],
+          "Veritux": ["Marché : schéma contre des crédits", "Market: blueprint for credits"],
+          "Arbucep": ["Nightcap, dans Les Tréfonds sous la Vallée Orbis (Fortuna)", "Nightcap, in the Vallis Undermind (Fortuna)"]}
 
 
 SYNDICATS = {"Steel Meridian", "Arbiters of Hexis", "Cephalon Suda", "The Perrin Sequence", "Red Veil", "New Loka"}
@@ -215,7 +257,7 @@ RANGS = {"General": "Général", "Exalted": "Exalté", "Maxim": "Maxime", "Geniu
 
 
 def sources(i, chemin):
-    nom = i["name"]
+    nom = i["name"].replace("<ARCHWING> ", "")
     s = [list(MANUEL[nom])] if nom in MANUEL else []
     q = quete_de.get(chemin)
     if q:
@@ -270,8 +312,8 @@ for fichier, cat in CATS.items():
             continue
         chemin = i["uniqueName"]
         e = w.get(chemin) or {}
-        nfr = fr.get(e.get("name", ""), "") or i["name"]
-        nen = en.get(e.get("name", ""), "") or i["name"]
+        nfr = (fr.get(e.get("name", ""), "") or i["name"]).replace("<ARCHWING> ", "").replace("<Archwing> ", "")
+        nen = (en.get(e.get("name", ""), "") or i["name"]).replace("<ARCHWING> ", "").replace("<Archwing> ", "")
         s = sources(i, chemin)
         if not s or all("platine" in x[0] for x in s):
             sans.append(i["name"])
