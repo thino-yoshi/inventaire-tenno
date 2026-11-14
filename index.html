@@ -994,7 +994,6 @@
     <button type="button" data-i="debuter" data-t="iDebuter"></button>
     <button type="button" data-i="arsenal" data-t="iArsenal"></button>
     <button type="button" data-i="prime" data-t="iPrime"></button>
-    <button type="button" data-i="reliques" data-t="iReliques"></button>
     <button type="button" data-i="ressources" data-t="iRessources"></button>
     <button type="button" data-i="direct" data-t="iDirect"></button>
   </nav>
@@ -1385,7 +1384,7 @@ const T3 = {
     pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presCo: "● Connecté", presNonCo: "Non connecté",
     presBtnTip: "Connecté : tu apparais « en jeu » sur Warframe Market tant que Warframe tourne (les acheteurs te contactent).\nNon connecté : tu es invisible, tu joues tranquille. Ton choix est gardé même après un redémarrage.",
     infoJeuSub: "Le jeu : bases, reliques, ressources, en direct", infoAppSub: "L'application : guide, astuces, problèmes, signaler",
-    iDebuter: "Débuter", iArsenal: "Arsenal", iPrime: "Prime", iReliques: "Reliques et fissures", iRessources: "Ressources", iDirect: "En direct",
+    iDebuter: "Débuter", iArsenal: "Arsenal", iPrime: "Prime", iRessources: "Ressources", iDirect: "En direct",
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     nvTitre: "Quoi de neuf ?", nvSur: v => `Mise à jour installée : version ${v}`, nvSous: (a, n) => `Depuis ta version ${a} : ${n} nouveauté(s).`,
@@ -1664,7 +1663,7 @@ const T3 = {
     pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presCo: "● Online", presNonCo: "Offline",
     presBtnTip: "Online: you show as “in game” on Warframe Market while Warframe is running (buyers can contact you).\nOffline: you are invisible and play in peace. Your choice is kept after a restart.",
     infoJeuSub: "The game: basics, relics, resources, live", infoAppSub: "The app: guide, tips, problems, report",
-    iDebuter: "Getting started", iArsenal: "Arsenal", iPrime: "Prime", iReliques: "Relics & fissures", iRessources: "Resources", iDirect: "Live",
+    iDebuter: "Getting started", iArsenal: "Arsenal", iPrime: "Prime", iRessources: "Resources", iDirect: "Live",
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     nvTitre: "What's new?", nvSur: v => `Update installed: version ${v}`, nvSous: (a, n) => `Since your version ${a}: ${n} update(s).`,
@@ -2846,7 +2845,7 @@ function montrerPage(p) {
 // ---------------------------------------------------------------- onglet Info / aide
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
-const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
 // Progression du joueur (lue dans le jeu) : quêtes faites, planètes, rang de maîtrise
 var prog = { ok: false, cle: "", charge: false }, spoilRevele = [];
 try { spoilRevele = JSON.parse(localStorage.getItem("spoilRevele")) || []; } catch (e) {}
