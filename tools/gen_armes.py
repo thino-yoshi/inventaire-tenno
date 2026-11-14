@@ -279,7 +279,7 @@ for fichier, cat in CATS.items():
         armes.append({"id": chemin, "fr": nfr.title() if nfr.isupper() else nfr, "en": nen.title() if nen.isupper() else nen,
                       "c": cat, "tfr": tfr, "ten": ten, "mr": i.get("masteryReq") or 0,
                       "s": s, "w": i.get("wikiaUrl") or "",
-                      "lien": all("platine" in x[0] for x in s)})
+                      "lien": all("platine" in x[0] for x in s), "prime": bool(i.get("isPrime"))})
 
 armes.sort(key=lambda a: (a["c"], a["mr"], a["en"].lower()))
 OUT.write_text(json.dumps(armes, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

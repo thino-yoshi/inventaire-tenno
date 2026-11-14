@@ -2882,7 +2882,8 @@ try { armSous = localStorage.getItem("armSous") || "primaire"; armCacher = local
 async function chargerArmes() {
   if (armes) return;
   armes = [];
-  try { armes = await (await fetch("/assets/armes.json")).json(); } catch (e) { armes = []; }
+  // les armes Prime auront leur propre catégorie : ici, seulement les armes normales
+  try { armes = (await (await fetch("/assets/armes.json")).json()).filter(a => !a.prime); } catch (e) { armes = []; }
   if (page === "info" && debSous === "armes") rendreInfo();
 }
 const armeEue = a => prog.ok && (prog.armes || []).includes(a.id);
