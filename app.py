@@ -1232,6 +1232,9 @@ def progression_view(lang):
                               and "Prime" in (e.get("ItemType") or "") and (e.get("XP") or 0) > 0}
                              | {p for p in owned_types(inv) if "Prime" in p}),
             "pieces": {p: n for p, n in owned_types(inv).items() if "Prime" in p and n > 0},
+            # ressources en stock (onglet Ressources : « Tu en as : N »)
+            "stock": {e["ItemType"]: int(e.get("ItemCount") or 0) for e in inv.get("MiscItems") or []
+                      if isinstance(e, dict) and e.get("ItemType") and (e.get("ItemCount") or 0) > 0},
             "prime": any("Prime" in p for p in owned_types(inv)) or any(
                 "Prime" in (e.get("ItemType") or "") for e in inv.get("XPInfo") or [] if isinstance(e, dict))}
 

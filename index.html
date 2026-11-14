@@ -559,6 +559,25 @@
   .arm-src { display: flex; flex-wrap: wrap; gap: 4px 6px; }
   .arm-s { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; }
   .arm-src a { font-size: 12px; color: var(--gold); }
+  .res-onglets { flex-wrap: wrap; margin-bottom: 14px; }
+  .res-onglets button { padding: 6px 12px; }
+  .res-liste { max-width: 1100px; }
+  .res-l { display: grid; grid-template-columns: minmax(170px, 230px) 110px 1fr 150px; gap: 10px; align-items: baseline;
+           padding: 7px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .res-l:hover { background: var(--panel); }
+  .res-l b { color: var(--text); font-weight: 600; }
+  .res-src { color: var(--muted); font-size: 12px; }
+  .res-src small { color: var(--gold); letter-spacing: .5px; margin-right: 4px; }
+  .res-src em { display: block; font-style: normal; color: var(--gold); margin-top: 2px; }
+  .res-stock { font-size: 12px; color: var(--muted); text-align: right; }
+  .res-stock.ok { color: var(--green); }
+  .res-rar { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); }
+  .res-rar.r1 { color: var(--text); }
+  .res-rar.r2 { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
+  .res-rar.r3 { color: #8fb4ff; }
+  .res-note { margin: -4px 0 8px; font-size: 12px; }
+  .res-gr { font-size: 13px; letter-spacing: 1px; text-transform: uppercase; color: var(--gold); margin: 16px 0 4px; font-weight: 600; }
+  .res-gr small { color: var(--muted); margin-left: 4px; }
   .pri-outils { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 0 0 14px; }
   .pri-outils .guide-recherche { width: 340px; }
   .pri-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; max-width: 1200px; }
@@ -1388,6 +1407,23 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     nvTitre: "Quoi de neuf ?", nvSur: v => `Mise à jour installée : version ${v}`, nvSous: (a, n) => `Depuis ta version ${a} : ${n} nouveauté(s).`,
+    resTitre: p => `Ressources : ${p}`,
+    resIntro: "Ce que tu peux trouver sur cette planète : ce que lâchent les ennemis et les caisses, ce qui se cueille, et le monde ouvert s'il y en a un. Pour chaque ressource, le meilleur endroit pour la farmer (parfois sur une autre planète).",
+    resRegion: "Ressources de la planète", resRegionNote: "Les ennemis et les caisses de n'importe quelle mission de la planète peuvent les lâcher.",
+    resPlus: "Aussi sur cette planète", resPlantes: "Plantes à cueillir", resMonde: m => `Monde ouvert : ${m}`,
+    resGroupes: { minerais: "Minerais", gemmes: "Gemmes", fabriques: "Alliages et pierres taillées", plantes: "Plantes", poissons: "Poissons" },
+    resRar: ["Commune", "Peu commune", "Rare", "Recherche"], resMeilleur: "Où farmer :", resStock: n => `Tu en as : ${n.toLocaleString("fr-FR")}`,
+    resPartout: "Partout", resConseils: "Conseils de farm", resPartoutTitre: "Ressources qu'on trouve partout",
+    resPartoutIntro: "Ces ressources ne dépendent pas d'une planète.",
+    resConseilsTitre: "Farmer plus de ressources",
+    resConseilsListe: [
+      ["Booster de ressources", "Double la quantité de ressources ramassées (Marché, récompenses de connexion, Nightwave). Le booster de chance de ressources, lui, double les chances de drop."],
+      ["La Voie de l'Acier", "Une fois débloquée, les ennemis y lâchent plus souvent des ressources."],
+      ["Smeeta Kavat", "Sa capacité Charme peut doubler d'un coup ce que tu ramasses."],
+      ["Nekros", "Sa capacité Profanation fait relooter les corps des ennemis : plus de ressources par mission."],
+      ["Extracteurs", "Sur une planète où tu as fini toutes les missions, un Extracteur ramasse ses ressources tout seul pendant que tu fais autre chose."],
+      ["Missions longues", "Survie, Défense et Excavation donnent beaucoup d'ennemis et de caisses : idéal pour les ressources rares."]],
+    resChargement: "Chargement des ressources…", resSource: "Planètes et meilleurs endroits : wiki officiel de Warframe ; mondes ouverts : fichiers du jeu et base WFCD.",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
@@ -1667,6 +1703,23 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     nvTitre: "What's new?", nvSur: v => `Update installed: version ${v}`, nvSous: (a, n) => `Since your version ${a}: ${n} update(s).`,
+    resTitre: p => `Resources: ${p}`,
+    resIntro: "What you can find on this planet: what enemies and containers drop, what can be gathered, and the open world if there is one. For each resource, the best place to farm it (sometimes on another planet).",
+    resRegion: "Planet resources", resRegionNote: "Enemies and containers in any mission on the planet can drop them.",
+    resPlus: "Also on this planet", resPlantes: "Plants to gather", resMonde: m => `Open world: ${m}`,
+    resGroupes: { minerais: "Ores", gemmes: "Gems", fabriques: "Alloys and cut gems", plantes: "Plants", poissons: "Fish" },
+    resRar: ["Common", "Uncommon", "Rare", "Research"], resMeilleur: "Where to farm:", resStock: n => `You have: ${n.toLocaleString("en-US")}`,
+    resPartout: "Anywhere", resConseils: "Farming tips", resPartoutTitre: "Resources found anywhere",
+    resPartoutIntro: "These resources don't depend on a planet.",
+    resConseilsTitre: "Farming more resources",
+    resConseilsListe: [
+      ["Resource Booster", "Doubles the amount of resources picked up (Market, login rewards, Nightwave). The Resource Drop Chance Booster doubles drop chances instead."],
+      ["The Steel Path", "Once unlocked, enemies there drop resources more often."],
+      ["Smeeta Kavat", "Its Charm ability can double what you pick up for a while."],
+      ["Nekros", "His Desecrate ability re-loots enemy corpses: more resources per mission."],
+      ["Extractors", "On a planet where you finished every mission, an Extractor gathers its resources by itself while you do something else."],
+      ["Long missions", "Survival, Defense and Excavation give lots of enemies and containers: great for rare resources."]],
+    resChargement: "Loading resources…", resSource: "Planets and best places: official Warframe wiki; open worlds: game files and the WFCD database.",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
@@ -3106,6 +3159,44 @@ function rendreConseils() {
         `<div class="guide-conseil sans-ic"><div><h3>${esc(nom)} ${badgeGuide(rang)}</h3><p>${esc(type)} · ${esc(ou)}</p></div></div>`).join("") +
       `</div><p class="guide-note">${esc(t("conArmesNote"))}</p></div>`;
 }
+// Ressources : planète par planète (assets/ressources.json, tools/gen_ressources.py)
+var ressources = null, resSous = "earth";
+try { resSous = localStorage.getItem("resSous") || "earth"; } catch (e) {}
+async function chargerRessources() {
+  if (ressources) return;
+  ressources = { planetes: [], partout: [] };
+  try { ressources = await (await fetch("/assets/ressources.json")).json(); } catch (e) {}
+  if (page === "info" && infoSous.jeu === "ressources") rendreInfo();
+}
+function rendreRessources() {
+  if (!ressources || !ressources.planetes.length) { chargerRessources(); return `<p class="muted">${esc(t("resChargement"))}</p>`; }
+  const L = o => lang === "fr" ? o.fr : o.en, S = o => o ? (lang === "fr" ? o[0] : o[1]) : "";
+  const onglets = [...ressources.planetes.map(p => [p.k, L(p)]), ["partout", t("resPartout")], ["conseils", t("resConseils")]];
+  if (!onglets.some(([k]) => k === resSous)) resSous = "earth";
+  const nav = `<nav class="guide-onglets res-onglets">` + onglets.map(([k, l]) =>
+    `<button type="button" data-res="${k}" class="${k === resSous ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
+  const ligne = x => {
+    const n = prog.ok ? (prog.stock || {})[x.id] || 0 : null;
+    return `<div class="res-l"><b>${esc(L(x))}</b>
+      <span>${x.r != null ? `<span class="res-rar r${x.r}">${esc(t("resRar")[x.r])}</span>` : ""}</span>
+      <span class="res-src">${x.s ? `<small>${esc(t("resMeilleur"))}</small> ${esc(S(x.s))}` : ""}${x.note ? `<em>${esc(S(x.note))}</em>` : ""}</span>
+      <span class="res-stock${n ? " ok" : ""}">${n != null ? esc(t("resStock", n)) : ""}</span></div>`;
+  };
+  const bloc = (titre, liste, note) => liste && liste.length
+    ? `<div class="guide-section"><h2 class="info-titre">${esc(titre)}</h2>${note ? `<p class="muted res-note">${esc(note)}</p>` : ""}<div class="res-liste">${liste.map(ligne).join("")}</div></div>` : "";
+  if (resSous === "conseils")
+    return nav + `<div class="guide-tete"><div><h1>${esc(t("resConseilsTitre"))}</h1></div></div><div class="guide-conseils">` +
+      t("resConseilsListe").map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${esc(txt)}</p></div></div>`).join("") + "</div>";
+  if (resSous === "partout")
+    return nav + `<div class="guide-tete"><div><h1>${esc(t("resPartoutTitre"))}</h1><p>${esc(t("resPartoutIntro"))}</p></div></div>` + bloc(t("resPartout"), ressources.partout);
+  const p = ressources.planetes.find(x => x.k === resSous), m = p.monde;
+  return nav + `<div class="guide-tete"><div><h1>${esc(t("resTitre", L(p)))}</h1><p>${esc(t("resIntro"))}</p></div></div>` +
+    bloc(t("resRegion"), p.region, t("resRegionNote")) + bloc(t("resPlus"), p.plus) + bloc(t("resPlantes"), p.plantes) +
+    (m ? `<div class="guide-section"><h2 class="info-titre res-monde">${esc(t("resMonde", L(m)))}</h2>` +
+      Object.entries(t("resGroupes")).map(([k, titre]) => m[k] && m[k].length
+        ? `<h3 class="res-gr">${esc(titre)} <small>${m[k].length}</small></h3><div class="res-liste">${m[k].map(ligne).join("")}</div>` : "").join("") + "</div>" : "") +
+    `<p class="guide-note">${esc(t("resSource"))}</p>`;
+}
 function rendreInfo() {
   if (!INFO_SOUS[infoGroupe]) infoGroupe = "jeu";
   if (infoSous.app === "signaler" && !infoSupport) infoSous.app = "guide";
@@ -3122,13 +3213,15 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
-  if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
+  if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime", "ressources"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
   if (infoGroupe === "jeu" && s === "arsenal" && navArsenal() && arsSous !== "warframes") {
     c.innerHTML = navArsenal() + rendreArmes(arsSous === "armes" ? null : arsSous);
     filtrerArmes();
   } else if (infoGroupe === "jeu" && s === "arsenal") {
     c.innerHTML = navArsenal() + rendreWarframes();
     filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "ressources") {
+    c.innerHTML = rendreRessources();
   } else if (infoGroupe === "jeu" && s === "prime") {
     c.innerHTML = rendrePrimes();
     filtrerPrimes();
@@ -3205,6 +3298,12 @@ $("#infoContenu").addEventListener("click", e => {
   if (am) {
     armSous = am.dataset.arm;
     try { localStorage.setItem("armSous", armSous); } catch (e) {}
+    return rendreInfo();
+  }
+  const rs = e.target.closest("button[data-res]");
+  if (rs) {
+    resSous = rs.dataset.res;
+    try { localStorage.setItem("resSous", resSous); } catch (e) {}
     return rendreInfo();
   }
   const pr = e.target.closest("button[data-pri]");
