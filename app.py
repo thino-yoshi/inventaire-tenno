@@ -9,6 +9,7 @@ La lecture du jeu scanne la memoire de Warframe en lecture seule (comme AlecaFra
 Sans le jeu, l'app relit la derniere copie (inventory_dump.json).
 """
 import argparse
+import gc
 import json
 import os
 import re
@@ -77,6 +78,7 @@ EXPORTS = {"resources": "ExportResources.json", "recipes": "ExportRecipes.json",
            "warframes": "ExportWarframes.json", "weapons": "ExportWeapons.json",
            "sentinels": "ExportSentinels.json", "upgrades": "ExportUpgrades.json",
            "arcanes": "ExportArcanes.json", "relics": "ExportRelics.json"}
+TR_PREFIXES = ("/Lotus/Language/Relics/", "/Lotus/Language/Items/BlueprintAndItem")  # textes generiques utilises
 RELIC_QUALITY = {"VPQ_BRONZE": ("Bronze", "intact"), "VPQ_SILVER": ("Silver", "exceptional"),
                  "VPQ_GOLD": ("Gold", "flawless"), "VPQ_PLATINUM": ("Platinum", "radiant")}
 CAT_ORDER = {"prime": 0, "arcane": 1, "relique": 2, "mod": 3, "objet": 4, "ressource": 5}
@@ -115,6 +117,18 @@ def fetch_data_file(fn, force=False, base=None, local=None):
     return path
 
 
+_regions = {}
+
+
+def regions_jeu():
+    """Noeuds de la carte (nom, planete, type de mission), lus une seule fois et allégés."""
+    if not _regions:
+        brut = load_json(fetch_data_file("ExportRegions.json")) or {}
+        _regions.update({k: {c: v.get(c) for c in ("name", "systemName", "missionType")}
+                         for k, v in brut.items() if isinstance(v, dict)})
+    return _regions
+
+
 class GameData:
     def __init__(self):
         self.ex = {k: load_json(fetch_data_file(fn)) for k, fn in EXPORTS.items()}
@@ -122,9 +136,44 @@ class GameData:
                                                "upgrades", "arcanes")]
         self.dicts = {}
 
+    def cles_utiles(self):
+        """Cles de traduction dont l'app se sert : noms et descriptions des objets, lieux, reliques.
+        Le dictionnaire complet du jeu (~70 000 textes par langue) prend ~15 Mo de RAM ; on ne garde
+        que ce qui sert, soit environ 4 fois moins."""
+        if not hasattr(self, "_cles"):
+            cles = set()
+            sources = list(self.ex.values())
+            try:
+                sources.append(regions_jeu())
+            except Exception:
+                pass
+            for sect in sources:
+                for e in sect.values():
+                    if isinstance(e, dict):
+                        for k in ("name", "description", "systemName"):
+                            v = e.get(k)
+                            if isinstance(v, str) and v.startswith("/Lotus/"):
+                                cles.add(v)
+            self._cles = cles
+        return self._cles
+
     def tr(self, lang):
         if lang not in self.dicts:
-            self.dicts[lang] = load_json(fetch_data_file(f"dict.{lang}.json"))
+            # version allegee gardee sur le disque : charger le gros fichier complet a chaque lancement
+            # laisserait la RAM fragmentee (elle ne redescend pas), meme apres l'avoir filtre
+            complet = fetch_data_file(f"dict.{lang}.json")
+            leger = DATA_DIR / f"dict.{lang}.leger.json"
+            d = None
+            if leger.exists() and leger.stat().st_mtime >= complet.stat().st_mtime:
+                d = load_json(leger)
+            if not d:
+                brut = load_json(complet) or {}
+                garder = self.cles_utiles()
+                d = {k: v for k, v in brut.items() if k in garder or k.startswith(TR_PREFIXES)}
+                del brut
+                save_json(leger, d)
+                gc.collect()
+            self.dicts[lang] = d
         return self.dicts[lang]
 
     def name(self, path, lang, depth=0):
@@ -932,7 +981,7 @@ def baro_officiel(lang):
     iso = lambda d: datetime.datetime.fromtimestamp(int(d["$date"]["$numberLong"]) / 1000,
                                                     datetime.timezone.utc).isoformat()
     g = game()
-    reg = (load_json(fetch_data_file("ExportRegions.json")) or {}).get(v.get("Node"), {})
+    reg = regions_jeu().get(v.get("Node"), {})
     tr = g.tr(lang)
     lieu = tr.get(reg.get("name"), v.get("Node"))
     if reg.get("systemName"):
@@ -1297,6 +1346,14 @@ def wfcd_noms(lang):
     if lang in _wfcd:
         return _wfcd[lang]
     out = {}
+    leger = DATA_DIR / f"wfcd_noms_{lang}.leger.json"  # seulement les ressources : le fichier complet est gros
+    try:
+        if leger.exists() and time.time() - leger.stat().st_mtime < DATA_TTL:
+            _wfcd[lang] = {k: tuple(v) for k, v in (load_json(leger) or {}).items()}
+            if _wfcd[lang]:
+                return _wfcd[lang]
+    except Exception:
+        pass
     try:
         items = []
         for f in ("Resources.json", "Fish.json"):
@@ -1312,6 +1369,8 @@ def wfcd_noms(lang):
             img = i.get("imageName")
             out[ch] = (t.get("name") or i.get("name") or "", (t.get("description") or i.get("description") or "").strip(),
                        ("https://cdn.warframestat.us/img/" + img) if img else "", i.get("name") or "")
+        save_json(leger, out)
+        gc.collect()
     except Exception as e:
         print("WFCD :", e)
     _wfcd[lang] = out
@@ -1356,7 +1415,7 @@ def progression_view(lang):
         if isinstance(e, dict) and e.get("ItemType"):
             quetes[e["ItemType"].replace("/Lotus/Types/Keys/", "")] = bool(e.get("Completed"))
     try:
-        regions = load_json(fetch_data_file("ExportRegions.json")) or {}
+        regions = regions_jeu()
     except Exception:
         regions = {}
     planetes, noeuds, jonctions = set(), 0, []
@@ -1568,15 +1627,25 @@ class State:
             return changed
 
     def loop(self):
+        """Lecture reguliere en secours. La vraie lecture se fait des que le journal du jeu annonce une
+        synchro (follow_game_log) : si l'inventaire n'est pas en memoire, inutile de refouiller toute
+        la memoire du jeu chaque minute (~15 s de calcul) : on espace a 5 min."""
         while True:
+            attente = self.interval
             if self.auto:
                 try:
                     self.scan()
                 except Exception as e:  # le jeu peut etre ferme : on reessaie plus tard
                     self.error = str(e)
+                    if str(e) == "inventaire_absent":
+                        attente = 300
+                    elif str(e) == "jeu_absent":
+                        attente = 20  # verification legere : juste chercher le processus
+                finally:
+                    gc.collect()  # rend tout de suite la memoire utilisee pendant le scan
             else:
                 self.game_running = bool(pi.find_pid())
-            time.sleep(self.interval)
+            time.sleep(attente)
 
     def follow_game_log(self, log=None):
         """Le jeu ne garde la copie de l'inventaire en memoire que peu de temps apres l'avoir

@@ -56,6 +56,7 @@ PAGE_GUARD = 0x100
 MAX_REGION = 1 << 30           # on ignore les regions > 1 Go
 MAX_BACK = 256 * 1024 * 1024   # distance max marqueur -> debut du JSON
 MAX_FWD = 256 * 1024 * 1024    # distance max marqueur -> fin du JSON
+CHUNK = 8 * 1024 * 1024        # recherche du marqueur par morceaux de 8 Mo : peu de RAM pendant un scan
 
 BRACKETS = re.compile(rb"[\[\]{}]")
 Region = namedtuple("Region", "base size state protect type")
@@ -252,8 +253,23 @@ def read_inventory(pid):
     try:
         read = make_reader(h)
         regions = enum_regions(h)
+        buf = ctypes.create_string_buffer(CHUNK)  # un seul tampon, reutilise pour toute la memoire du jeu
+        got = ctypes.c_size_t(0)
         for idx, r in enumerate(regions):
             if not region_ok(r):
+                continue
+            # On cherche d'abord le marqueur par morceaux (chevauchants pour ne pas le couper) ;
+            # la zone entiere n'est lue que si on l'a trouve, ce qui est rare.
+            trouve, pos = False, 0
+            while pos < r.size and not trouve:
+                n = min(CHUNK, r.size - pos)
+                got.value = 0
+                k32.ReadProcessMemory(h, ctypes.c_void_p(r.base + pos), buf, n, ctypes.byref(got))
+                trouve = bool(got.value) and ctypes.string_at(buf, got.value).find(MARKER) != -1
+                if pos + n >= r.size:
+                    break
+                pos += n - len(MARKER)
+            if not trouve:
                 continue
             data = read(r.base, r.size)
             i = data.find(MARKER)

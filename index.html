@@ -379,6 +379,8 @@
   #splash { position: fixed; inset: 0; z-index: 50; display: flex; flex-direction: column; align-items: center; justify-content: center;
             gap: 18px; background: radial-gradient(circle at 50% 45%, var(--glow), #07090e 70%); transition: opacity .5s; }
   #splash.fin { opacity: 0; pointer-events: none; }
+  #splash.fin img { animation: none; }  /* invisible : on arrête l'animation (elle tournait sans fin) */
+  #splash.cache { display: none; }
   #splash small { color: var(--muted); letter-spacing: 2px; font-size: 12px; min-height: 16px; }
   #splash #splashVersion { position: absolute; bottom: 18px; opacity: .6; }
   #splash img { width: 150px; height: 150px; object-fit: contain; animation: lotus 2.4s ease-in-out infinite; }
@@ -3757,6 +3759,7 @@ let majEnCours = false;
 function finSplash() {
   if (majEnCours) return;
   $("#splash").classList.add("fin");
+  setTimeout(() => $("#splash").classList.add("cache"), 1000);  // après le fondu : plus rien à dessiner
   bienvenue();
 }
 // ---------------------------------------------------------------- Collection (comme le Codex)
@@ -4307,7 +4310,7 @@ $("#btnCheck").addEventListener("click", async () => {
 $("#btnMaj").addEventListener("click", async () => {
   majEnCours = true;
   const s = $("#splash"), msg = $("#splashMsg");
-  s.classList.remove("fin");
+  s.classList.remove("fin", "cache");
   msg.textContent = t("majInstall", ($("#btnMaj").textContent.match(/v([\d.]+)/) || [])[1] || "");
   try {
     await api("/api/maj/installer", {});
@@ -4316,7 +4319,7 @@ $("#btnMaj").addEventListener("click", async () => {
   } catch (err) {
     majEnCours = false;
     msg.textContent = t("majErreur");
-    setTimeout(() => s.classList.add("fin"), 2500);
+    setTimeout(() => { s.classList.add("fin"); setTimeout(() => s.classList.add("cache"), 1000); }, 2500);
   }
 });
 
