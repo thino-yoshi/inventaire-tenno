@@ -535,6 +535,23 @@
   .con-avant li.ok { color: var(--green); }
   .con-avant li.ok::before { content: "☑ "; color: var(--green); }
   .guide-etape h3 .guide-badge { margin-left: 8px; }
+  .arm-outils { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; }
+  .arm-onglets { margin: 0 0 12px; }
+  .arm-onglets small { opacity: .6; margin-left: 4px; }
+  .arm-compte { font-size: 12px; color: var(--green); margin: 0 0 10px; letter-spacing: .5px; }
+  .arm-liste { max-width: 1000px; }
+  .arm-groupe { margin-bottom: 18px; }
+  .arm-groupe[hidden], .arm-l[hidden] { display: none; }
+  .arm-groupe .info-titre { margin-bottom: 6px; }
+  .arm-l { display: grid; grid-template-columns: minmax(170px, 240px) 130px 1fr; gap: 10px; align-items: baseline;
+           padding: 6px 10px; border-bottom: 1px solid var(--line); font-size: 13px; }
+  .arm-l:hover { background: var(--panel); }
+  .arm-l b { color: var(--text); font-weight: 600; }
+  .arm-l.eue b { color: var(--green); }
+  .arm-type { color: var(--muted); font-size: 12px; }
+  .arm-src { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+  .arm-s { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; }
+  .arm-src a { font-size: 12px; color: var(--gold); }
   .con-armes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .guide-arc { position: relative; overflow: hidden; }
   .guide-arc.masque ol { filter: blur(6px); user-select: none; pointer-events: none; opacity: .6; }
@@ -1328,7 +1345,7 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
-    debOnglets: [["parcours", "Parcours"], ["warframes", "Warframes"], ["conseils", "Conseils"]],
+    debOnglets: [["parcours", "Parcours"], ["warframes", "Warframes"], ["armes", "Armes"], ["conseils", "Conseils"]],
     wfTitre: "Quelles Warframes, et quand ?",
     wfIntro: "Les Warframes dans l'ordre où tu peux les obtenir en avançant sur la Carte céleste (Terre, Vénus, Mercure, Mars…). Commence par le haut de la liste.",
     wfRecherche: "Chercher une Warframe…", wfAucune: "Aucune Warframe trouvée.",
@@ -1438,6 +1455,12 @@ const T3 = {
     progFini: "Toute l'histoire est terminée !",
     spoilBtn: "Révéler (spoilers)", spoilMasquer: "Masquer", spoilTxt: "Chapitre masqué pour éviter les spoilers",
     wfDebloque: "Débloquée", wfVerrou: "Pas encore", wfPossede: "Tu l'as",
+    armTitre: "Toutes les armes, et où les obtenir",
+    armIntro: "Chaque arme du jeu avec le rang de maîtrise nécessaire et sa source. Rangées par rang de maîtrise : commence par le haut.",
+    armSous: [["primaire", "Principales"], ["secondaire", "Secondaires"], ["melee", "Mêlée"]],
+    armRecherche: "Chercher une arme ou une source…", armCacher: "Cacher celles que j'ai déjà eues", armRang: r => `Rang de maîtrise ${r}`,
+    armEues: (n, t) => `${n} / ${t} déjà eues`, armWiki: "Voir sur le wiki", armAucune: "Aucune arme trouvée.", armChargement: "Chargement des armes…",
+    armNote: "Sources tirées des fichiers du jeu et de la base WFCD. Quand la source n'est pas connue, le lien mène à la page du wiki.",
     debTitre: "Guide du débutant",
     debIntro: "Les étapes clés pour bien démarrer sur Warframe, dans l'ordre conseillé. Le jeu est gratuit et sans limite de temps : avance à ton rythme.",
     debNbEtapes: "7 étapes", debNbConseils: "8 conseils", debNbQuetes: "26 quêtes",
@@ -1587,7 +1610,7 @@ const T3 = {
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
-    debOnglets: [["parcours", "Path"], ["warframes", "Warframes"], ["conseils", "Tips"]],
+    debOnglets: [["parcours", "Path"], ["warframes", "Warframes"], ["armes", "Weapons"], ["conseils", "Tips"]],
     wfTitre: "Which Warframes, and when?",
     wfIntro: "Warframes in the order you can get them while moving across the Star Chart (Earth, Venus, Mercury, Mars…). Start from the top of the list.",
     wfRecherche: "Search a Warframe…", wfAucune: "No Warframe found.",
@@ -1697,6 +1720,12 @@ const T3 = {
     progFini: "The whole story is completed!",
     spoilBtn: "Reveal (spoilers)", spoilMasquer: "Hide", spoilTxt: "Chapter hidden to avoid spoilers",
     wfDebloque: "Unlocked", wfVerrou: "Not yet", wfPossede: "You have it",
+    armTitre: "Every weapon, and where to get it",
+    armIntro: "Every weapon in the game with the mastery rank it needs and its source. Sorted by mastery rank: start from the top.",
+    armSous: [["primaire", "Primary"], ["secondaire", "Secondary"], ["melee", "Melee"]],
+    armRecherche: "Search a weapon or a source…", armCacher: "Hide the ones I already had", armRang: r => `Mastery rank ${r}`,
+    armEues: (n, t) => `${n} / ${t} already had`, armWiki: "See on the wiki", armAucune: "No weapon found.", armChargement: "Loading weapons…",
+    armNote: "Sources taken from the game files and the WFCD database. When the source is unknown, the link goes to the wiki page.",
     debTitre: "Beginner's guide",
     debIntro: "The key steps to get started in Warframe, in the recommended order. The game is free with no time limit: go at your own pace.",
     debNbEtapes: "7 steps", debNbConseils: "8 tips", debNbQuetes: "26 quests",
@@ -2847,6 +2876,52 @@ const DEPART = ["Excalibur", "Mag", "Volt"];
 const possedee = (nom, i) => prog.ok && (i === 0 && /départ|starter/i.test(nom) ? DEPART.some(eue) : nom.split(" · ").every(eue));
 const nomsWarframes = nom => !prog.ok || nom.includes(" · ") === false ? esc(nom)
   : nom.split(" · ").map(n => eue(n) ? `<i class="eue">✓ ${esc(n)}</i>` : esc(n)).join(" · ");
+// Débuter → Armes : liste générée par tools/gen_armes.py (assets/armes.json)
+var armes = null, armSous = "primaire", armFiltre = "", armCacher = false;
+try { armSous = localStorage.getItem("armSous") || "primaire"; armCacher = localStorage.getItem("armCacher") === "1"; } catch (e) {}
+async function chargerArmes() {
+  if (armes) return;
+  armes = [];
+  try { armes = await (await fetch("/assets/armes.json")).json(); } catch (e) { armes = []; }
+  if (page === "info" && debSous === "armes") rendreInfo();
+}
+const armeEue = a => prog.ok && (prog.armes || []).includes(a.id);
+function rendreArmes() {
+  if (!armes || !armes.length) { chargerArmes(); return `<p class="muted">${esc(t("armChargement"))}</p>`; }
+  if (!t("armSous").some(([k]) => k === armSous)) armSous = "primaire";
+  const liste = armes.filter(a => a.c === armSous), nEues = liste.filter(armeEue).length;
+  const parRang = {};
+  liste.forEach(a => (parRang[a.mr] = parRang[a.mr] || []).push(a));
+  return `<div class="guide-tete"><div><h1>${esc(t("armTitre"))}</h1><p>${esc(t("armIntro"))}</p></div>
+      <div class="arm-outils"><input type="search" id="armRecherche" class="guide-recherche" placeholder="${esc(t("armRecherche"))}" value="${esc(armFiltre)}">
+      ${prog.ok ? `<label class="auto"><input type="checkbox" id="armCacher"${armCacher ? " checked" : ""}> ${esc(t("armCacher"))}</label>` : ""}</div></div>
+    <nav class="guide-onglets arm-onglets">` + t("armSous").map(([k, l]) =>
+      `<button type="button" data-arm="${k}" class="${k === armSous ? "on" : ""}">${esc(l)} <small>${armes.filter(a => a.c === k).length}</small></button>`).join("") + `</nav>
+    ${prog.ok ? `<p class="arm-compte">${esc(t("armEues", nEues, liste.length))}</p>` : ""}
+    <div class="arm-liste">` + Object.keys(parRang).sort((x, y) => x - y).map(r =>
+      `<div class="arm-groupe"><h2 class="info-titre">${esc(t("armRang", r))}</h2>` + parRang[r].map(a => {
+        const eue = armeEue(a), nom = lang === "fr" ? a.fr : a.en, src = a.s.map(x => lang === "fr" ? x[0] : x[1]);
+        return `<div class="arm-l${eue ? " eue" : ""}" data-n="${esc((a.fr + " " + a.en + " " + a.s.flat().join(" ")).toLowerCase())}">
+          <b>${eue ? "✓ " : ""}${esc(nom)}</b><span class="arm-type">${esc(lang === "fr" ? a.tfr : a.ten)}</span>
+          <span class="arm-src">${src.length ? src.map(x => `<span class="arm-s">${esc(x)}</span>`).join("")
+            : a.w ? `<a href="${esc(a.w)}" target="_blank" rel="noopener">${esc(t("armWiki"))} ↗</a>` : "?"}</span></div>`;
+      }).join("") + "</div>").join("") + `</div>
+    <p class="arm-vide muted" hidden>${esc(t("armAucune"))}</p>
+    <p class="guide-note">${esc(t("armNote"))}</p>`;
+}
+function filtrerArmes() {
+  const q = armFiltre.trim().toLowerCase();
+  let total = 0;
+  document.querySelectorAll("#infoContenu .arm-groupe").forEach(g => {
+    let n = 0;
+    g.querySelectorAll(".arm-l").forEach(l => {
+      const ok = (!q || l.dataset.n.includes(q)) && !(armCacher && l.classList.contains("eue"));
+      l.hidden = !ok; if (ok) n++;
+    });
+    g.hidden = !n; total += n;
+  });
+  const v = document.querySelector("#infoContenu .arm-vide"); if (v) v.hidden = total > 0;
+}
 // Débuter : sous-onglets Parcours | Warframes | Conseils
 var debSous = "parcours", wfFiltre = "";
 try { debSous = localStorage.getItem("debSous") || "parcours"; } catch (e) {}
@@ -2914,6 +2989,9 @@ function rendreInfo() {
   if (infoGroupe === "jeu" && s === "debuter" && debSous === "warframes") {
     c.innerHTML = navDebuter() + rendreWarframes();
     filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "debuter" && debSous === "armes") {
+    c.innerHTML = navDebuter() + rendreArmes();
+    filtrerArmes();
   } else if (infoGroupe === "jeu" && s === "debuter" && debSous === "conseils") {
     c.innerHTML = navDebuter() + rendreConseils();
   } else if (infoGroupe === "jeu" && s === "debuter") {
@@ -2983,6 +3061,12 @@ $("#infoContenu").addEventListener("click", e => {
     try { localStorage.setItem("spoilRevele", JSON.stringify(spoilRevele)); } catch (e) {}
     return rendreInfo();
   }
+  const am = e.target.closest("button[data-arm]");
+  if (am) {
+    armSous = am.dataset.arm;
+    try { localStorage.setItem("armSous", armSous); } catch (e) {}
+    return rendreInfo();
+  }
   const b = e.target.closest("button[data-d]");
   if (!b) return;
   debSous = b.dataset.d;
@@ -2990,6 +3074,12 @@ $("#infoContenu").addEventListener("click", e => {
   rendreInfo();
 });
 $("#infoContenu").addEventListener("input", e => {
+  if (e.target.id === "armRecherche") { armFiltre = e.target.value; return filtrerArmes(); }
+  if (e.target.id === "armCacher") {
+    armCacher = e.target.checked;
+    try { localStorage.setItem("armCacher", armCacher ? "1" : "0"); } catch (e) {}
+    return filtrerArmes();
+  }
   if (e.target.id !== "wfRecherche") return;
   wfFiltre = e.target.value; filtrerWarframes();
 });

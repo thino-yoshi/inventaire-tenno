@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.6"
+VERSION = "1.13.7"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1206,6 +1206,12 @@ def progression_view(lang):
     chemins = {e["ItemType"] for e in inv.get("Suits") or [] if isinstance(e, dict) and e.get("ItemType")}
     chemins |= {e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict) and e.get("ItemType")
                 and (e.get("XP") or 0) > 0 and (g.ex["warframes"].get(e["ItemType"]) or {}).get("productCategory") == "Suits"}
+    # armes possedees ou deja eues (XP gardee apres une vente) : principales, secondaires, melee
+    armes = {e["ItemType"] for k in ("LongGuns", "Pistols", "Melee") for e in inv.get(k) or []
+             if isinstance(e, dict) and e.get("ItemType")}
+    armes |= {e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict) and e.get("ItemType")
+              and (e.get("XP") or 0) > 0 and (g.ex["weapons"].get(e["ItemType"]) or {}).get("productCategory")
+              in ("LongGuns", "Pistols", "Melee")}
     frames = set()
     for path in chemins:
         n = g.name(path, lang)
@@ -1214,7 +1220,7 @@ def progression_view(lang):
     rang = inv.get("PlayerLevel")
     return {"ok": True, "rang": rang if isinstance(rang, int) else None, "quetes": quetes,
             "planetes": sorted(p for p in planetes if p), "noeuds": noeuds, "warframes": sorted(frames),
-            "jonctions": sorted(jonctions), "nb_jonctions": nb_jonctions,
+            "jonctions": sorted(jonctions), "nb_jonctions": nb_jonctions, "armes": sorted(armes),
             "clan": bool(inv.get("GuildId")), "syndicat": bool(inv.get("SupportedSyndicate")),
             "focus": bool(inv.get("FocusAbility")),
             # objet Prime deja eu (schema, piece, Warframe ou arme) : vient des reliques ou d'un echange
@@ -1950,7 +1956,8 @@ class Handler(BaseHTTPRequestHandler):
                 f = RES / "assets" / name
                 if "/" in name or "\\" in name or ".." in name or not f.is_file():
                     return self.send(404, {"erreur": "introuvable"})
-                ctype = "image/x-icon" if name.endswith(".ico") else "image/png"
+                ctype = ("image/x-icon" if name.endswith(".ico") else
+                         "application/json; charset=utf-8" if name.endswith(".json") else "image/png")
                 self.send(200, f.read_bytes(), ctype)
             elif u.path == "/api/etat":
                 self.send(200, {"version": STATE.version, "auto": STATE.auto,
