@@ -46,6 +46,74 @@ for kp, kv in keys.items():
             if t and t not in quete_de:
                 quete_de[t] = (fr.get(kv["name"], en.get(kv["name"], "")), en.get(kv["name"], ""))
 
+# --- tables de recompenses du jeu : missions, primes, boss (schema ou pieces de l'arme)
+import collections
+rewards = load(EXP / "ExportRewards.json")
+regions = load(EXP / "ExportRegions.json")
+_usage = collections.Counter(i["ItemType"] for v in recipes.values() for i in v.get("ingredients", []))
+recettes_de = {}
+for rk, rv in recipes.items():
+    recettes_de.setdefault(rv.get("resultType"), []).append(rk)
+
+
+def pieces(ch):  # schema + schemas des pieces propres a l'arme (pas les ressources communes)
+    out = {ch}
+    for rk in recettes_de.get(ch, []):
+        out.add(rk)
+        for ing in recipes[rk].get("ingredients", []):
+            it = ing["ItemType"]
+            if _usage[it] <= 3 and it in recettes_de:
+                out.add(it)
+                out.update(recettes_de[it])
+    return out
+
+
+noeud_de = {}
+for nk, nv in regions.items():
+    for m in nv.get("rewardManifests") or []:
+        noeud_de.setdefault(m, (f"{fr.get(nv['name'], en.get(nv['name'], nk))} ({fr.get(nv['systemName'], '')})",
+                                f"{en.get(nv['name'], nk)} ({en.get(nv['systemName'], '')})"))
+FAMILLES = [  # (morceau du chemin de la table, FR, EN) ; les plus precis d'abord
+    ("NarmerTable", "Primes Narmer (Cetus ou Fortuna)", "Narmer bounties (Cetus or Fortuna)"),
+    ("GhoulBounty", "Primes Ghoul (Cetus)", "Ghoul bounties (Cetus)"),
+    ("EidolonJob", "Primes de Cetus (Plaines d'Eidolon)", "Cetus bounties (Plains of Eidolon)"),
+    ("VenusJob", "Primes de Fortuna (Plaine d'Orb)", "Fortuna bounties (Orb Vallis)"),
+    ("HeistJob", "Braquages de Fortuna", "Fortuna heists"),
+    ("DeimosMission", "Primes de Deimos (Faille Cambion)", "Deimos bounties (Cambion Drift)"),
+    ("EntratiLabJob", "Primes du Sanctum Anatomica (Deimos)", "Sanctum Anatomica bounties (Deimos)"),
+    ("ZarimanJob", "Primes du Zariman", "Zariman bounties"),
+    ("DuviriEndlessCircuit", "Le Circuit (Duviri)", "The Circuit (Duviri)"),
+    ("DuviriEncounter", "Duviri", "Duviri"),
+    ("ArchonSortie", "Chasse aux Archontes", "Archon Hunt"), ("NarmerSortie", "Chasse aux Archontes", "Archon Hunt"),
+    ("SortieRewards", "Sorties", "Sorties"),
+    ("VoidStorm", "Tempêtes du Néant (Railjack)", "Void Storms (Railjack)"),
+    ("RailjackMission", "Missions Railjack", "Railjack missions"),
+    ("1999", "Höllvania (1999)", "Höllvania (1999)"),
+    ("Kuva", "Forteresse Kuva / missions Kuva", "Kuva Fortress / Kuva missions"),
+    ("Derelict", "Derelict Orokin", "Orokin Derelict"), ("VaultRewards", "Coffres Orokin (Derelict)", "Orokin Vaults (Derelict)"),
+    ("InvasionRewards", "Invasions", "Invasions"), ("Ropalolyst", "Le Ropalolyst (Jupiter)", "The Ropalolyst (Jupiter)"),
+    ("GolemMission", "Golem Jordas (Éris)", "Jordas Golem (Eris)"), ("Ascension", "Ascension", "Ascension"),
+    ("TauMission", "Système Tau", "Tau system"), ("NokkoColony", "Les Tréfonds (Fortuna)", "Deepmines (Fortuna)"),
+    ("FiveFates", "Koumei (Cetus)", "Koumei (Cetus)"), ("DisruptionMission", "Missions Perturbation", "Disruption missions"),
+    ("ShadowgrapherMission", "Vesper Relay (Follie)", "Vesper Relay (Follie)"), ("DagathMission", "Dagath", "Dagath"),
+    ("JadeShadowsConstellations", "Les Ombres de Jade : Constellations", "Jade Shadows: Constellations"),
+    ("EventMission", "Événement (temporaire)", "Event (limited time)"),
+]
+
+
+def source_recompense(ch):
+    trouve = []
+    p = pieces(ch)
+    for mk, mv in rewards.items():
+        if "/CacheRewards" in mk or not any(e["type"].replace("/StoreItems", "") in p for rot in mv for e in rot):
+            continue
+        lab = noeud_de.get(mk) or next(((f, e) for m, f, e in FAMILLES if m in mk), None)
+        if lab and lab not in trouve:
+            trouve.append(lab)
+    trouve.sort(key=lambda x: "temporaire" in x[0])  # evenements en dernier
+    return [list(x) for x in trouve[:2]]
+
+
 # --- marchands (hors evenements temporaires)
 MARCHANDS = [  # (morceau du chemin, FR, EN)
     ("Deimos/Otak", "Otak, Nécralisk (Deimos)", "Otak, Necralisk (Deimos)"),
@@ -66,13 +134,14 @@ MARCHANDS = [  # (morceau du chemin, FR, EN)
     ("Events/", "Boutique d'événement (temporaire)", "Event shop (limited time)"),
 ]
 vend_de, vend_src = {}, {}
+evenement = lambda chemin: "Events/" in chemin and "RadioLegion" not in chemin  # Nightwave = permanent
 for vk, vv in vendors.items():
     lab = next(((f, e) for m, f, e in MARCHANDS if m in vk), None)
     if not lab:
         continue
     for it in vv.get("items", []):
         t = cible(it["storeItem"].replace("/StoreItems", ""))
-        if t and (t not in vend_de or "Events/" in vend_src[t]) and not (t in vend_de and "Events/" in vk):
+        if t and (t not in vend_de or evenement(vend_src[t])) and not (t in vend_de and evenement(vk)):
             vend_de[t], vend_src[t] = lab, vk
 
 TYPES = {"Rifle": ("Fusil", "Rifle"), "Shotgun": ("Fusil à pompe", "Shotgun"), "Bow": ("Arc", "Bow"),
@@ -86,6 +155,9 @@ CATS = {"Primary": "primaire", "Secondary": "secondaire", "Melee": "melee"}
 STALKER = ["Le Stalker (il apparaît pendant les missions)", "The Stalker (shows up during missions)"]
 TRIBUT = ["Tribut quotidien (récompense de connexion)", "Daily Tribute (login milestone)"]
 ZARIMAN = ["Zariman (Holdfasts)", "Zariman (Holdfasts)"]
+TESHIN = ["Grotte de Teshin (Duviri), contre des Pathos Clamps", "Teshin's Cave (Duviri), for Pathos Clamps"]
+GHOUL = ["Ghouls Auger et Devourer (primes Ghoul, Plaines d'Eidolon)", "Ghoul Augers and Devourers (Ghoul bounties, Plains of Eidolon)"]
+PERTURB_UR = ["Démolisseurs en Perturbation sur Ur (Uranus)", "Demolishers in Disruption on Ur (Uranus)"]
 MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati": ["Quête Le Sacrifice", "Quest The Sacrifice"],
           "Dread": STALKER, "Despair": STALKER, "Hate": STALKER,
           "Brakk": ["Les Trois Grustrag (attaque pendant les missions)", "The Grustrag Three (attack during missions)"],
@@ -117,7 +189,18 @@ MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati":
           "Mara Detron": ["Baro Ki'Teer", "Baro Ki'Teer"],
           "Athodai": ["Railjack : missions de Vénus Proxima", "Railjack: Venus Proxima missions"],
           "Detron": ["Chasseur Zanuka (apparaît pendant les missions Corpus)", "Zanuka Hunter (shows up during Corpus missions)"],
-          "Grimoire": ["Quête Murmures dans les murs, puis Bird 3 (Sanctum Anatomica)", "Quest Whispers in the Walls, then Bird 3 (Sanctum Anatomica)"]}
+          "Grimoire": ["Quête Murmures dans les murs, puis Bird 3 (Sanctum Anatomica)", "Quest Whispers in the Walls, then Bird 3 (Sanctum Anatomica)"],
+          "Argo & Vel": TESHIN, "Syam": TESHIN, "Sampotes": TESHIN, "Azothane": TESHIN, "Edun": TESHIN,
+          "Tak & Lug": GHOUL, "Tonkkatt": GHOUL,
+          "Keratinos": ["Father, Nécralisk (réputation Entrati)", "Father, Necralisk (Entrati standing)"],
+          "Stropha": ["Le Chacal (Fossa, Vénus) · pièces dans le Néant Granum", "The Jackal (Fossa, Venus) · parts in the Granum Void"],
+          "Stahlta": ["Néant Granum (Corpus)", "Granum Void (Corpus)"],
+          "Pennant": ["Missions Railjack", "Railjack missions"],
+          "Acceltra": PERTURB_UR, "Akarius": PERTURB_UR,
+          "Cinta": ["Énigmes de Duviri (après Le Paradoxe Duviri)", "Duviri Enigmas (after The Duviri Paradox)"],
+          "Quellor": ["Railjack : capitaines Corpus et Grineer", "Railjack: Corpus and Grineer captains"],
+          "Kompressa": ["Ventkids, rang 5 (Fortuna)", "Ventkids, rank 5 (Fortuna)"],
+          "Zymos": ["Loid, Necraloid rang 1 (Deimos)", "Loid, Necraloid rank 1 (Deimos)"]}
 
 
 SYNDICATS = {"Steel Meridian", "Arbiters of Hexis", "Cephalon Suda", "The Perrin Sequence", "Red Veil", "New Loka"}
@@ -147,9 +230,8 @@ def sources(i, chemin):
     if i.get("bpCost") and chemin not in dojo_armes:  # pour le Dojo, bpCost = prix de reproduction
         c = f"{i['bpCost']:,}".replace(",", " ")
         s.append([f"Marché : schéma pour {c} crédits", f"Market: blueprint for {i['bpCost']:,} credits"])
-    elif i.get("marketCost") and not i.get("isPrime"):
-        s.append(["Marché (platine uniquement)", "Market (platinum only)"])
-    if chemin in vend_de and (not s or "Events/" not in vend_src.get(chemin, "")):
+    plat = bool(i.get("marketCost")) and not i.get("isPrime") and not i.get("bpCost")
+    if chemin in vend_de and (not s or not evenement(vend_src.get(chemin, ""))):
         s.append(list(vend_de[chemin]))
     drops = [d for c in (i.get("components") or []) for d in (c.get("drops") or [])] + (i.get("drops") or [])
     drops = [d for d in drops if "Skin" not in (d.get("type") or "") and "Conclave" not in d.get("location", "")]
@@ -161,6 +243,10 @@ def sources(i, chemin):
             s.append([f"Syndicat {synd} (rang {RANGS.get(rang, rang)})", f"{synd} syndicate ({rang} rank)"])
         else:
             s.append([loc, loc])
+    if not s or s == [list(vend_de.get(chemin, ("", "")))]:
+        s += [x for x in source_recompense(chemin) if x not in s]
+    if plat:
+        s.append(["Aussi en vente au Marché contre du platine", "Also sold in the Market for platinum"])
     if not s and (nom.endswith(" Vandal") or nom.endswith(" Wraith")):
         s.append(["Variante rare : invasions, événements ou Baro Ki'Teer", "Rare variant: invasions, events or Baro Ki'Teer"])
     if not s and nom.startswith("Dex "):
@@ -181,12 +267,13 @@ for fichier, cat in CATS.items():
         nfr = fr.get(e.get("name", ""), "") or i["name"]
         nen = en.get(e.get("name", ""), "") or i["name"]
         s = sources(i, chemin)
-        if not s:
+        if not s or all("platine" in x[0] for x in s):
             sans.append(i["name"])
         tfr, ten = TYPES[i["type"]]
         armes.append({"id": chemin, "fr": nfr.title() if nfr.isupper() else nfr, "en": nen.title() if nen.isupper() else nen,
                       "c": cat, "tfr": tfr, "ten": ten, "mr": i.get("masteryReq") or 0,
-                      "s": s, "w": i.get("wikiaUrl") or ""})
+                      "s": s, "w": i.get("wikiaUrl") or "",
+                      "lien": all("platine" in x[0] for x in s)})
 
 armes.sort(key=lambda a: (a["c"], a["mr"], a["en"].lower()))
 OUT.write_text(json.dumps(armes, ensure_ascii=False, separators=(",", ":")), encoding="utf-8")

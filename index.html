@@ -2903,8 +2903,8 @@ function rendreArmes() {
         const eue = armeEue(a), nom = lang === "fr" ? a.fr : a.en, src = a.s.map(x => lang === "fr" ? x[0] : x[1]);
         return `<div class="arm-l${eue ? " eue" : ""}" data-n="${esc((a.fr + " " + a.en + " " + a.s.flat().join(" ")).toLowerCase())}">
           <b>${eue ? "✓ " : ""}${esc(nom)}</b><span class="arm-type">${esc(lang === "fr" ? a.tfr : a.ten)}</span>
-          <span class="arm-src">${src.length ? src.map(x => `<span class="arm-s">${esc(x)}</span>`).join("")
-            : a.w ? `<a href="${esc(a.w)}" target="_blank" rel="noopener">${esc(t("armWiki"))} ↗</a>` : "?"}</span></div>`;
+          <span class="arm-src">${src.map(x => `<span class="arm-s">${esc(x)}</span>`).join("")}${(!src.length || a.lien) && a.w
+            ? `<a href="${esc(a.w)}" target="_blank" rel="noopener">${esc(t("armWiki"))} ↗</a>` : !src.length ? "?" : ""}</span></div>`;
       }).join("") + "</div>").join("") + `</div>
     <p class="arm-vide muted" hidden>${esc(t("armAucune"))}</p>
     <p class="guide-note">${esc(t("armNote"))}</p>`;
