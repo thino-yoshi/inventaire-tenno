@@ -533,6 +533,28 @@
   .con-avant ul { margin: 6px 0 0; padding: 0; list-style: none; display: flex; flex-wrap: wrap; gap: 6px 22px; color: var(--muted); }
   .con-avant li::before { content: "☐ "; color: var(--gold); }
   .con-armes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
+  .guide-arc { position: relative; overflow: hidden; }
+  .guide-arc.masque ol { filter: blur(6px); user-select: none; pointer-events: none; opacity: .6; }
+  .spoil-voile { position: absolute; inset: 40px 0 0 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; }
+  .spoil-voile small { color: var(--muted); font-size: 11px; letter-spacing: 1px; text-transform: uppercase; }
+  .spoil-voile button { border: 1px solid var(--gold); color: var(--gold); background: color-mix(in srgb, var(--panel) 85%, transparent); padding: 7px 16px; }
+  .spoil-masquer { float: right; font-size: 10px; padding: 1px 8px; letter-spacing: 1px; }
+  .guide-arc li.flou b, .guide-arc li.flou span { filter: blur(4px); user-select: none; }
+  .guide-arc li.fait b { color: var(--green); }
+  .guide-arc li.suite { background: var(--gold-soft); }
+  .guide-arc li.suite b { color: var(--gold); }
+  .guide-frise li.fait .guide-num { border-color: var(--green); color: var(--green); }
+  .wf-liste li.fait b { color: var(--green); }
+  .guide-badge.ok { color: var(--green); border-color: color-mix(in srgb, var(--green) 45%, transparent); }
+  .guide-badge.verrou { opacity: .8; }
+  .prog-box { display: flex; gap: 0; max-width: 1000px; margin: -8px 0 24px; border: 1px solid color-mix(in srgb, var(--gold) 40%, transparent); background: var(--panel); }
+  .prog-box > div { padding: 10px 18px; border-right: 1px solid var(--line); display: flex; flex-direction: column; justify-content: center; }
+  .prog-box > div:last-child { border-right: none; }
+  .prog-box .large { flex: 1; }
+  .prog-box small { color: var(--gold); font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; }
+  .prog-box b { font-size: 18px; color: var(--text); font-weight: 600; }
+  .prog-box span { font-size: 11px; color: var(--muted); letter-spacing: .5px; }
+  .prog-box.vide { padding: 10px 16px; font-size: 13px; color: var(--muted); display: block; }
   .guide-conseils { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
   .guide-conseil { display: grid; grid-template-columns: 36px 1fr; gap: 14px; background: var(--panel); border: 1px solid var(--line); padding: 14px 16px; }
   .guide-ic { width: 36px; height: 36px; display: flex; align-items: center; justify-content: center; color: var(--gold);
@@ -1309,14 +1331,14 @@ const T3 = {
     wfCircuit: "Astuce : après Le Paradoxe Duviri, le <b>Circuit</b> propose chaque semaine trois Warframes au choix. Pratique pour celles qui sont longues à obtenir.",
     wfEtapes: [
       ["Dès le début", "Aucune planète à débloquer", [
-        ["Warframe de départ", "Excalibur, Mag ou Volt, choisie dans L'Éveil.", ""],
+        ["Warframe de départ", "Excalibur, Mag ou Volt, choisie dans Éveil.", ""],
         ["Volt · Banshee · Zephyr · Wukong · Nezha", "Recherche au laboratoire Tenno du Dojo de clan. Banshee, Zephyr et Wukong ne s'obtiennent que là.", "Clan"],
         ["Vauban", "Composants dans la boutique Nightwave.", ""],
         ["Nyx", "Phorid, un boss qui n'apparaît que pendant une invasion Infestée : à surveiller.", ""]]],
       ["Terre", "Cetus et les Plaines d'Eidolon", [
         ["Gara", "Schéma principal avec La Veillée de Saya, composants avec les primes de Konzu à Cetus.", "Quête"],
         ["Koumei", "Défense du sanctuaire sur la Terre, après La Veillée de Saya et Autrefois Éveillés.", "Quête"],
-        ["Revenant", "Quête Mask of the Revenant, puis primes de Cetus.", "Quête"],
+        ["Revenant", "Quête Le Masque du Revenant, puis primes de Cetus.", "Quête"],
         ["Hydroid", "Conseiller Vay Hek sur Oro. La mission demande le rang de maîtrise 5.", "Rang 5"]]],
       ["Vénus", "Fortuna et la Plaine d'Orb", [
         ["Rhino", "Schéma principal au Marché pour des crédits, composants sur le Chacal à Fossa. La meilleure deuxième Warframe.", ""],
@@ -1334,40 +1356,40 @@ const T3 = {
       ["Jupiter, Europe, Saturne", "", [
         ["Valkyr", "Alad V sur Themisto (Jupiter).", ""],
         ["Nova", "Les Raptors sur Naamah (Europe).", ""],
-        ["Limbo", "Schéma principal au Marché, composants avec The Limbo Theorem (Jonction d'Europe et Archwing).", "Quête"],
+        ["Limbo", "Schéma principal au Marché, composants avec Le Théorème de Limbo (Jonction d'Europe et Archwing).", "Quête"],
         ["Ember", "Général Sargas Ruk sur Tethys (Saturne).", ""]]],
       ["Uranus, Neptune, Pluton, Éris, Sedna", "", [
         ["Equinox", "Tyl Regor sur Titania (Uranus). Deux aspects à construire, huit schémas en tout.", ""],
-        ["Chroma", "Quête The New Strange, composants avec les Jonctions d'Uranus, Neptune et Pluton.", "Quête"],
+        ["Chroma", "Quête La Nouvelle Étrange, composants avec les Jonctions d'Uranus, Neptune et Pluton.", "Quête"],
         ["Kullervo", "À Duviri, chez Acrithis, contre des Fléaux de Kullervo.", "Quête"],
         ["Loki", "La Meute d'Hyènes sur Psamathe (Neptune).", ""],
         ["Trinity", "Ambulas sur Hades (Pluton).", ""],
-        ["Atlas", "Quête The Jordas Precept, composants sur le Golem Jordas (Éris).", "Quête"],
+        ["Atlas", "Quête Le Précepte de Jordas, composants sur le Golem Jordas (Éris).", "Quête"],
         ["Mesa", "Alad V Mutant sur Éris, avec une clé d'assassinat à fabriquer.", ""],
-        ["Nidus", "Quête The Glast Gambit, composants en Récupération Infestée sur Oestrus (Éris).", "Quête"],
+        ["Nidus", "Quête Le Stratagème de Glast, composants en Récupération Infestée sur Oestrus (Éris).", "Quête"],
         ["Saryn", "Kela De Thaym sur Merrow (Sedna).", ""],
-        ["Mirage", "Schéma principal au Marché, composants avec Hidden Messages.", "Quête"],
+        ["Mirage", "Schéma principal au Marché, composants avec Messages Cachés.", "Quête"],
         ["Gauss", "Perturbation sur Kappa (Sedna), rotation C.", ""]]],
       ["En suivant l'histoire", "Les Warframes liées aux quêtes plus avancées", [
-        ["Protea", "Quête The Deadlock Protocol.", "Rang 4"],
-        ["Octavia", "Quête Octavia's Anthem, après Le Second Rêve.", "Quête"],
-        ["Titania", "Quête The Silver Grove, après Le Second Rêve.", "Rang 7"],
+        ["Protea", "Quête Le Protocole: Exclusion.", "Rang 4"],
+        ["Octavia", "Quête L'Hymne d'Octavia, après Le Second Rêve.", "Quête"],
+        ["Titania", "Quête Le Bosquet d'Argent, après Le Second Rêve.", "Rang 7"],
         ["Voruna", "Survie de Conjonction sur Lua, après La Guerre Intérieure.", "Quête"],
         ["Harrow", "Quête Le Fardeau de Harrow.", "Quête"],
         ["Excalibur Umbra", "Quête Le Sacrifice. Une seule par compte.", "Quête"],
-        ["Wisp", "Le Ropalolyst sur Jupiter, après Chimera Prologue.", "Quête"],
+        ["Wisp", "Le Ropalolyst sur Jupiter, après Prologue Chimère.", "Quête"],
         ["Follie", "Vesper Relay (Vénus), après Le Fardeau de Harrow.", "Quête"],
         ["Caliban · Nokko", "Primes de Narmer et des Tréfonds, après La Nouvelle Guerre.", "Quête"],
-        ["Gyre · Styanax · Jade", "Angels of the Zariman, Veilbreaker, Les Ombres de Jade.", "Quête"],
-        ["Qorvex · Dante", "Murmures dans les Murs (Sanctum Anatomica).", "Quête"],
-        ["Cyte-09 · Temple · Oraxia", "Après The Hex (Höllvania et Duviri).", "Quête"],
-        ["Uriel · Sirius & Orion", "L'Ancienne Paix, Jade Shadows: Constellations.", "Quête"]]],
+        ["Gyre · Styanax · Jade", "Les Anges du Zariman, Brise-Voile, Les Ombres de Jade.", "Quête"],
+        ["Qorvex · Dante", "Murmures dans les murs (Sanctum Anatomica).", "Quête"],
+        ["Cyte-09 · Temple · Oraxia", "Après L'Hexagone (Höllvania et Duviri).", "Quête"],
+        ["Uriel · Sirius & Orion", "L'Ancienne Paix, Les Ombres de Jade : Constellations.", "Quête"]]],
       ["Autres sources", "Railjack, relais, marchands, fin de jeu", [
         ["Ash · Oberon", "Missions Railjack (Empyrée).", ""],
-        ["Sevagoth", "Quête Call of the Tempestarii, composants dans les Tempêtes du Néant (Railjack).", "Quête"],
+        ["Sevagoth", "Quête L'Appel du Tempestarii, composants dans les Tempêtes du Néant (Railjack).", "Quête"],
         ["Khora", "Onslaught du Sanctuaire, chez Cephalon Simaris.", ""],
         ["Ivara", "Missions Espionnage, rotation C (trois coffres réussis).", ""],
-        ["Inaros", "Quête Sands of Inaros, schéma vendu par Baro Ki'Teer.", "Rang 5"],
+        ["Inaros", "Quête Les Sables d'Inaros, schéma vendu par Baro Ki'Teer.", "Rang 5"],
         ["Yareli", "Fortuna, avec les Ventkids (K-Drive).", ""],
         ["Dagath", "Salle dédiée dans le Dojo de clan.", "Clan"],
         ["Grendel", "Localisateurs vendus contre des Essences Vitus (Arbitrages, fin de jeu).", ""]]]],
@@ -1384,7 +1406,7 @@ const T3 = {
         ["Le Professeur terminé", "Un clan rejoint", "Rhino construit", "Jonction de Mercure réussie"]],
       ["Phase 2", "De Mars à Saturne · rangs de maîtrise 3 à 8", [
         ["Choisis un syndicat de faction", "Dès le <b>rang de maîtrise 3</b>, tu peux t'engager auprès d'un des six syndicats des relais. Ils ont des alliés et des ennemis : <b>Steel Meridian, Arbiters of Hexis et Cephalon Suda</b> s'entendent, tout comme <b>Red Veil, New Loka et The Perrin Sequence</b>. Ils vendent des mods d'augmentation et des armes."],
-        ["Rends visite à Cephalon Simaris", "Dans n'importe quel <b>relais</b>. Il vend les scanners de synthèse (5 000 crédits les 25). Les quêtes Stolen Dreams puis The New Strange ouvrent ses tâches quotidiennes et l'Onslaught du Sanctuaire."],
+        ["Rends visite à Cephalon Simaris", "Dans n'importe quel <b>relais</b>. Il vend les scanners de synthèse (5 000 crédits les 25). Les quêtes Rêves Volés puis La Nouvelle Étrange ouvrent ses tâches quotidiennes et l'Onslaught du Sanctuaire."],
         ["Tes premières reliques", "Ouvre tes reliques dans les <b>fissures du Néant</b> : c'est la première vraie source de platine. L'overlay de Lotus Desk affiche le prix de chaque récompense."],
         ["Deimos et l'Helminth", "Cœur de Deimos ouvre la réputation <b>Entrati</b>. Au rang Entrati 3 et au <b>rang de maîtrise 8</b>, Son vend le segment Helminth (15 000 de réputation), qui permet d'échanger des pouvoirs entre Warframes."],
         ["Le plafond de réputation", "La réputation des syndicats de faction est limitée chaque jour : <b>16 000 + 500 par rang de maîtrise</b>. Monter de rang permet d'en gagner plus."]],
@@ -1406,12 +1428,17 @@ const T3 = {
       ["Tonkor", "Lance-grenades", "Marché", "Rang 5"],
       ["Vaykor Hek", "Fusil à pompe", "Steel Meridian (syndicat)", ""],
       ["Ignis Wraith", "Lance-flammes", "Dojo de clan", "Rang 9"]],
+    progTitre: "Ta progression", progRang: "Rang de maîtrise", progQuetes: "Quêtes terminées", progProchaine: "Prochaine quête",
+    progAucune: "Lance Warframe : l'appli lira ta progression (rang, quêtes, planètes) et cochera ce que tu as déjà fait.",
+    progFini: "Toute l'histoire est terminée !",
+    spoilBtn: "Révéler (spoilers)", spoilMasquer: "Masquer", spoilTxt: "Chapitre masqué pour éviter les spoilers",
+    wfDebloque: "Débloquée", wfVerrou: "Pas encore", wfPossede: "Tu l'as",
     debTitre: "Guide du débutant",
     debIntro: "Les étapes clés pour bien démarrer sur Warframe, dans l'ordre conseillé. Le jeu est gratuit et sans limite de temps : avance à ton rythme.",
     debNbEtapes: "7 étapes", debNbConseils: "8 conseils", debNbQuetes: "26 quêtes",
     debEtapesTitre: "Parcours conseillé",
     debEtapes: [
-      ["Quête", "Le prologue : « L'Éveil »", "Le jeu commence par cette quête. Tu y choisis ta première Warframe parmi <b>Excalibur</b>, <b>Mag</b> et <b>Volt</b>, ainsi que tes premières armes. Les deux autres Warframes restent disponibles plus tard."],
+      ["Quête", "« Éveil »", "Le jeu commence par cette quête. Tu y choisis ta première Warframe parmi <b>Excalibur</b>, <b>Mag</b> et <b>Volt</b>, ainsi que tes premières armes. Les deux autres Warframes restent disponibles plus tard."],
       ["Quête", "« Le Trophée de Vor »", "Tu répares ton vaisseau, l'<b>Orbiteur</b>, et débloques ses sections : <b>Arsenal</b> (équipement), <b>Fonderie</b> (fabrication), <b>Station de Mods</b> et <b>Navigation</b> (choix des missions). La quête se termine par un combat contre le Capitaine Vor."],
       ["Quête", "« Le Professeur »", "Ajoutée en octobre 2025, juste après Le Trophée de Vor. <b>Teshin</b> t'y apprend les mods, le système le plus important du jeu. Récompenses : une série de mods, de l'<b>Endo</b>, des crédits et le fusil <b>Thornbak</b>."],
       ["Progression", "Avancer sur la Carte céleste", "Chaque planète s'ouvre en réussissant une <b>Jonction</b> : remplis les tâches affichées (survole-les pour des indices), puis bats le Spectre qui la garde. Chaque Jonction rapporte <b>1 000 points de maîtrise</b>."],
@@ -1419,18 +1446,18 @@ const T3 = {
       ["Progression", "Monter son rang de maîtrise", "Chaque Warframe ou arme amenée au <b>niveau 30</b> rapporte de la maîtrise. Barre pleine : ouvre le menu avec <kbd>Échap</kbd> et lance le <b>test de maîtrise</b>. Il n'y a plus d'attente de 24 h entre deux rangs."],
       ["Communauté", "Rejoindre un clan", "Le <b>Dojo</b> du clan donne accès à des recherches d'armes et de Warframes introuvables ailleurs. De nombreux clans recrutent des débutants dans le chat <b>Recrutement</b>."]],
     debArcsTitre: "Toutes les quêtes de l'histoire, dans l'ordre",
-    debArcsNote: "L'ordre du Codex en novembre 2026. Les noms sont en anglais quand la traduction officielle n'a pas pu être vérifiée.",
+    debArcsNote: "L'ordre du Codex en novembre 2026, avec les noms officiels du jeu. ✓ = terminée dans ton jeu.",
     debArcs: [
-      ["Chapitre 1 · L'Éveil", [["L'Éveil", "Choix de la première Warframe"], ["Le Trophée de Vor", "L'Orbiteur et ses sections"], ["Le Professeur", "Les mods, avec Teshin · fusil Thornbak"], ["Vox Solaris", "Fortuna, la Plaine d'Orb, les K-Drives · parler à Eudico à Fortuna"], ["Autrefois Éveillés", "Après la Jonction de Mercure"], ["Cœur de Deimos", "La Faille Cambion, les Nécramécas, l'Helminth · Xaku"], ["L'Archwing", "L'Archwing · nécessaire pour Natah"]]],
-      ["Chapitre 2 · La Guerre Intérieure", [["Natah", "Sur Uranus"], ["Le Second Rêve", "L'Opérateur et le Focus"], ["Marée Montante", "Ton propre Railjack"], ["La Guerre Intérieure", "La Forteresse Kuva et les Liches Kuva"], ["Le Fardeau de Harrow", "Warframe Harrow"], ["Prologue Apostasie", "Mène au Sacrifice"], ["Le Sacrifice", "Excalibur Umbra"]]],
-      ["Chapitre 3 · La Nouvelle Guerre", [["Prélude à la Guerre", "Chimera Prologue, Erra, The Maker"], ["La Nouvelle Guerre", "Le camp du Drifter · nécessite un Railjack"], ["Les Ombres de Jade", "Warframe Jade"], ["Le Paradoxe Duviri", "Duviri et le Drifter · jouable dès la Jonction d'Uranus"], ["Angels of the Zariman", "Le Zariman"], ["Veilbreaker", "Le segment des Éclats d'Archonte (Helminth)"]]],
-      ["Chapitre 4 · La Guerre du Néant", [["Murmures dans les Murs", "Le Sanctum Anatomica · Qorvex"], ["Les Dévoreurs de Lotus", "Suite directe"], ["The Hex", "Höllvania (1999) · Cyte-09 · demande Le Paradoxe Duviri"], ["L'Ancienne Paix", "Le système Tau · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · après Les Ombres de Jade"], ["Prologue to Tau", "Octobre 2026 · demande The Hex et L'Ancienne Paix"]]]],
+      ["Chapitre 1 · L'Éveil", [["Éveil", "Choix de la première Warframe", "NewPlayerQuest/NewPlayerQuestKeyChain"], ["Le Trophée de Vor", "L'Orbiteur et ses sections", "VorsPrize/VorsPrizeQuestKeyChain"], ["Le Professeur", "Les mods, avec Teshin · fusil Thornbak", "ModQuest/ModQuestKeyChain"], ["Vox Solaris", "Fortuna, la Plaine d'Orb, les K-Drives · parler à Eudico à Fortuna", "SolarisQuest/SolarisQuestKeyChain"], ["Autrefois Éveillés", "Après la Jonction de Mercure", "InfestedIntroQuest/InfestedIntroQuestKeyChain"], ["Cœur de Deimos", "La Faille Cambion, les Nécramécas, l'Helminth · Xaku", "InfestedMicroplanetQuest/InfestedMicroplanetQuestKeyChain"], ["L'Archwing", "L'Archwing · nécessaire pour Natah", "ArchwingQuest/ArchwingQuestKeyChain"]]],
+      ["Chapitre 2 · La Guerre Intérieure", [["Natah", "Sur Uranus", "SentientQuest/SentientQuestKeyChain"], ["Le Second Rêve", "L'Opérateur et le Focus", "OrokinMoonQuest/OrokinMoonQuestKeyChain"], ["Marée Montante", "Ton propre Railjack", "RailJackBuildQuest/RailjackBuildQuestKeyChain"], ["La Guerre Intérieure", "La Forteresse Kuva et les Liches Kuva", "WarWithinQuest/WarWithinQuestKeyChain"], ["Le Fardeau de Harrow", "Warframe Harrow", "PriestFrameQuest/PriestQuestKeyChain"], ["Prologue Apostasie", "Mène au Sacrifice", "ApostasyQuest/ApostasyKeyChain"], ["Le Sacrifice", "Excalibur Umbra", "SacrificeQuest/SacrificeQuestKeyChain"]]],
+      ["Chapitre 3 · La Nouvelle Guerre", [["Prélude à la Guerre", "Prologue Chimère, Erra, The Maker", "NewWarIntroQuest/NewWarIntroKeyChain"], ["La Nouvelle Guerre", "Le camp du Drifter · nécessite un Railjack", "NewWarQuest/NewWarQuestKeyChain"], ["Les Ombres de Jade", "Warframe Jade", "JadeShadows/JadeShadowQuestKeyChain"], ["Le Paradoxe Duviri", "Duviri et le Drifter · jouable dès la Jonction d'Uranus", "DuviriQuest/DuviriQuestKeyChain"], ["Les Anges du Zariman", "Le Zariman", "ZarimanQuest/ZarimanQuestKeyChain"], ["Brise-Voile", "Le segment des Éclats d'Archonte (Helminth)", "KahlQuest/KahlQuestKeyChain"]]],
+      ["Chapitre 4 · La Guerre du Néant", [["Murmures dans les murs", "Le Sanctum Anatomica · Qorvex", "EntratiLab/EntratiQuestKeyChain"], ["Les Dévoreurs de Lotus", "Suite directe", "1999PrologueQuest/1999PrologueQuestKeyChain"], ["L'Hexagone", "Höllvania (1999) · Cyte-09 · demande Le Paradoxe Duviri", "1999Quest/1999QuestKeyChain"], ["L'Ancienne Paix", "Le système Tau · Uriel", "TauPrequel/TauPrequelQuestKeyChain"], ["Les Ombres de Jade : Constellations", "Sirius & Orion · après Les Ombres de Jade", "JadeShadowsPart2Constellations/JadeShadowsPart2QuestKeyChain"], ["Prologue to Tau", "Octobre 2026 · demande L'Hexagone et L'Ancienne Paix", ""]]]],
     debConseilsTitre: "Conseils essentiels",
     debConseils: [
       ["◇", "Bien utiliser son platine", "Seule monnaie échangeable entre joueurs. Les 50 platines de départ sont à réserver aux <b>emplacements</b> de Warframes et d'armes."],
       ["◆", "Gagner du platine en jouant", "Les pièces Prime obtenues dans les reliques se revendent aux autres joueurs. Lotus Desk affiche leur valeur réelle."],
       ["⚠", "Vérifier avant de vendre", "Une pièce Prime vendue au jeu ne rapporte que des crédits. Elle peut valoir du platine, ou des <b>ducats</b> pour Baro Ki'Teer."],
-      ["⚙", "Réacteurs et catalyseurs", "Ils doublent la capacité de mods d'une Warframe (réacteur Orokin) ou d'une arme (catalyseur). La quête <b>Stolen Dreams</b> donne un schéma de catalyseur."],
+      ["⚙", "Réacteurs et catalyseurs", "Ils doublent la capacité de mods d'une Warframe (réacteur Orokin) ou d'une arme (catalyseur). La quête <b>Rêves Volés</b> donne un schéma de catalyseur."],
       ["⌂", "Garder les objets de quête", "Ne vends pas ce que les quêtes te donnent : beaucoup de ces objets ne s'obtiennent nulle part ailleurs. Ils comptent aussi pour la maîtrise."],
       ["↻", "Routine quotidienne", "Récompense de connexion chaque jour, et missions <b>Nightwave</b> pour obtenir réacteurs, catalyseurs et emplacements."],
       ["»", "Le raccourci de L'Ancienne Paix", "Depuis décembre 2025, un joueur <b>rang de maîtrise 10</b> peut sauter directement aux modes de jeu de L'Ancienne Paix. C'est pratique, mais tu perds l'histoire : mieux vaut suivre les quêtes."],
@@ -1659,6 +1686,11 @@ const T3 = {
       ["Tonkor", "Grenade launcher", "Market", "Rank 5"],
       ["Vaykor Hek", "Shotgun", "Steel Meridian (syndicate)", ""],
       ["Ignis Wraith", "Flamethrower", "Clan Dojo", "Rank 9"]],
+    progTitre: "Your progress", progRang: "Mastery rank", progQuetes: "Quests completed", progProchaine: "Next quest",
+    progAucune: "Start Warframe: the app will read your progress (rank, quests, planets) and tick what you've already done.",
+    progFini: "The whole story is completed!",
+    spoilBtn: "Reveal (spoilers)", spoilMasquer: "Hide", spoilTxt: "Chapter hidden to avoid spoilers",
+    wfDebloque: "Unlocked", wfVerrou: "Not yet", wfPossede: "You have it",
     debTitre: "Beginner's guide",
     debIntro: "The key steps to get started in Warframe, in the recommended order. The game is free with no time limit: go at your own pace.",
     debNbEtapes: "7 steps", debNbConseils: "8 tips", debNbQuetes: "26 quests",
@@ -1672,12 +1704,12 @@ const T3 = {
       ["Progression", "Raise your mastery rank", "Every Warframe or weapon taken to <b>rank 30</b> gives mastery. Full bar: press <kbd>Esc</kbd> and pick <b>Mastery Rank Up</b> to take the test. There is no longer a 24 h wait between ranks."],
       ["Community", "Join a clan", "The clan <b>Dojo</b> gives access to weapon and Warframe research found nowhere else. Many clans recruit beginners in the <b>Recruiting</b> chat."]],
     debArcsTitre: "Every story quest, in order",
-    debArcsNote: "Codex order as of November 2026.",
+    debArcsNote: "Codex order as of November 2026, with the official in-game names. ✓ = completed in your game.",
     debArcs: [
-      ["Chapter 1 · Awakening", [["Awakening", "Pick your first Warframe"], ["Vor's Prize", "The Orbiter and its sections"], ["The Teacher", "Mods, with Teshin · Thornbak rifle"], ["Vox Solaris", "Fortuna, Orb Vallis, K-Drives · talk to Eudico in Fortuna"], ["Once Awake", "After the Mercury Junction"], ["Heart of Deimos", "Cambion Drift, Necramechs, Helminth · Xaku"], ["The Archwing", "The Archwing · needed for Natah"]]],
-      ["Chapter 2 · The War Within", [["Natah", "On Uranus"], ["The Second Dream", "The Operator and Focus"], ["Rising Tide", "Your own Railjack"], ["The War Within", "The Kuva Fortress and Kuva Liches"], ["Chains of Harrow", "Harrow Warframe"], ["Apostasy Prologue", "Leads into The Sacrifice"], ["The Sacrifice", "Excalibur Umbra"]]],
-      ["Chapter 3 · The New War", [["Prelude to War", "Chimera Prologue, Erra, The Maker"], ["The New War", "The Drifter's camp · needs a Railjack"], ["Jade Shadows", "Jade Warframe"], ["The Duviri Paradox", "Duviri and the Drifter · playable from the Uranus Junction"], ["Angels of the Zariman", "The Zariman"], ["Veilbreaker", "Helminth Archon Shard segment"]]],
-      ["Chapter 4 · The Void War", [["Whispers in the Walls", "Sanctum Anatomica · Qorvex"], ["The Lotus Eaters", "Direct follow-up"], ["The Hex", "Höllvania (1999) · Cyte-09 · needs The Duviri Paradox"], ["The Old Peace", "The Tau system · Uriel"], ["Jade Shadows: Constellations", "Sirius & Orion · after Jade Shadows"], ["Prologue to Tau", "October 2026 · needs The Hex and The Old Peace"]]]],
+      ["Chapter 1 · Awakening", [["Awakening", "Pick your first Warframe", "NewPlayerQuest/NewPlayerQuestKeyChain"], ["Vor's Prize", "The Orbiter and its sections", "VorsPrize/VorsPrizeQuestKeyChain"], ["The Teacher", "Mods, with Teshin · Thornbak rifle", "ModQuest/ModQuestKeyChain"], ["Vox Solaris", "Fortuna, Orb Vallis, K-Drives · talk to Eudico in Fortuna", "SolarisQuest/SolarisQuestKeyChain"], ["Once Awake", "After the Mercury Junction", "InfestedIntroQuest/InfestedIntroQuestKeyChain"], ["Heart of Deimos", "Cambion Drift, Necramechs, Helminth · Xaku", "InfestedMicroplanetQuest/InfestedMicroplanetQuestKeyChain"], ["The Archwing", "The Archwing · needed for Natah", "ArchwingQuest/ArchwingQuestKeyChain"]]],
+      ["Chapter 2 · The War Within", [["Natah", "On Uranus", "SentientQuest/SentientQuestKeyChain"], ["The Second Dream", "The Operator and Focus", "OrokinMoonQuest/OrokinMoonQuestKeyChain"], ["Rising Tide", "Your own Railjack", "RailJackBuildQuest/RailjackBuildQuestKeyChain"], ["The War Within", "The Kuva Fortress and Kuva Liches", "WarWithinQuest/WarWithinQuestKeyChain"], ["Chains of Harrow", "Harrow Warframe", "PriestFrameQuest/PriestQuestKeyChain"], ["Apostasy Prologue", "Leads into The Sacrifice", "ApostasyQuest/ApostasyKeyChain"], ["The Sacrifice", "Excalibur Umbra", "SacrificeQuest/SacrificeQuestKeyChain"]]],
+      ["Chapter 3 · The New War", [["Prelude to War", "Chimera Prologue, Erra, The Maker", "NewWarIntroQuest/NewWarIntroKeyChain"], ["The New War", "The Drifter's camp · needs a Railjack", "NewWarQuest/NewWarQuestKeyChain"], ["Jade Shadows", "Jade Warframe", "JadeShadows/JadeShadowQuestKeyChain"], ["The Duviri Paradox", "Duviri and the Drifter · playable from the Uranus Junction", "DuviriQuest/DuviriQuestKeyChain"], ["Angels of the Zariman", "The Zariman", "ZarimanQuest/ZarimanQuestKeyChain"], ["Veilbreaker", "Helminth Archon Shard segment", "KahlQuest/KahlQuestKeyChain"]]],
+      ["Chapter 4 · The Void War", [["Whispers in the Walls", "Sanctum Anatomica · Qorvex", "EntratiLab/EntratiQuestKeyChain"], ["The Lotus Eaters", "Direct follow-up", "1999PrologueQuest/1999PrologueQuestKeyChain"], ["The Hex", "Höllvania (1999) · Cyte-09 · needs The Duviri Paradox", "1999Quest/1999QuestKeyChain"], ["The Old Peace", "The Tau system · Uriel", "TauPrequel/TauPrequelQuestKeyChain"], ["Jade Shadows: Constellations", "Sirius & Orion · after Jade Shadows", "JadeShadowsPart2Constellations/JadeShadowsPart2QuestKeyChain"], ["Prologue to Tau", "October 2026 · needs The Hex and The Old Peace", ""]]]],
     debConseilsTitre: "Key tips",
     debConseils: [
       ["◇", "Spend platinum wisely", "The only currency players can trade. Keep your starting 50 platinum for Warframe and weapon <b>slots</b>."],
@@ -2708,6 +2740,56 @@ function montrerPage(p) {
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
 const INFO_SOUS = { jeu: ["debuter", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+// Progression du joueur (lue dans le jeu) : quêtes faites, planètes, rang de maîtrise
+var prog = { ok: false, cle: "", charge: false }, spoilRevele = [];
+try { spoilRevele = JSON.parse(localStorage.getItem("spoilRevele")) || []; } catch (e) {}
+async function chargerProgression() {
+  const cle = `${lang}|${version}`;
+  if (prog.cle === cle || prog.charge) return;
+  prog.charge = true;
+  try { const r = await api(`/api/progression?lang=${lang}`); prog = Object.assign(r, { cle }); }
+  catch (e) { prog = { ok: false, cle }; }
+  finally { prog.charge = false; }
+  if (page === "info" && infoGroupe === "jeu") rendreInfo();
+}
+const queteFaite = cle => !!(cle && prog.ok && prog.quetes && prog.quetes[cle]);
+const etapeFaite = i => queteFaite([["NewPlayerQuest/NewPlayerQuestKeyChain"], ["VorsPrize/VorsPrizeQuestKeyChain"], ["ModQuest/ModQuestKeyChain"]][i]?.[0]);
+function prochaineQuete() {  // [chapitre, quête] de la première quête de l'histoire pas encore faite
+  if (!prog.ok) return null;
+  const arcs = t("debArcs");
+  for (let a = 0; a < arcs.length; a++)
+    for (let q = 0; q < arcs[a][1].length; q++)
+      if (arcs[a][1][q][2] && !queteFaite(arcs[a][1][q][2])) return [a, q];
+  return null;
+}
+function arcVisible(ai) {  // chapitre 1 toujours visible ; les autres : révélés à la main ou atteints dans le jeu
+  if (ai === 0 || spoilRevele.includes(ai)) return true;
+  if (!prog.ok) return false;
+  const p = prochaineQuete();
+  return !p || p[0] >= ai;
+}
+function quetesFloues(ai, qi) {  // dans le chapitre en cours : ce qui vient après la prochaine quête reste flou
+  const p = prochaineQuete();
+  return !!(p && p[0] === ai && qi > p[1]);
+}
+function encartProgression() {
+  if (!prog.ok) return `<div class="prog-box vide">${esc(t("progAucune"))}</div>`;
+  const arcs = t("debArcs"), toutes = arcs.flatMap(a => a[1]).filter(q => q[2]);
+  const faites = toutes.filter(q => queteFaite(q[2])).length, p = prochaineQuete();
+  return `<div class="prog-box">
+    <div><small>${esc(t("progTitre"))}</small></div>
+    <div><b>${prog.rang ?? "?"}</b><span>${esc(t("progRang"))}</span></div>
+    <div><b>${faites} / ${toutes.length}</b><span>${esc(t("progQuetes"))}</span></div>
+    <div class="large"><b>${p ? esc(arcs[p[0]][1][p[1]][0]) : "✓"}</b><span>${esc(p ? t("progProchaine") : t("progFini"))}</span></div></div>`;
+}
+const PLANETES_ETAPE = [null, ["Earth"], ["Venus"], ["Mars", "Phobos", "Ceres"], ["Jupiter", "Europa", "Saturn"], ["Uranus", "Neptune", "Pluto", "Eris", "Sedna"]];
+function etatPlanete(i) {
+  const pl = PLANETES_ETAPE[i];
+  if (!pl || !prog.ok) return "";
+  const ok = pl.some(x => (prog.planetes || []).includes(x));
+  return `<span class="guide-badge ${ok ? "ok" : "verrou"}">${ok ? "✓ " + esc(t("wfDebloque")) : "🔒 " + esc(t("wfVerrou"))}</span>`;
+}
+const possedee = nom => prog.ok && nom.split(" · ").every(n => (prog.warframes || []).includes(n.toLowerCase()));
 // Débuter : sous-onglets Parcours | Warframes | Conseils
 var debSous = "parcours", wfFiltre = "";
 try { debSous = localStorage.getItem("debSous") || "parcours"; } catch (e) {}
@@ -2722,9 +2804,9 @@ function rendreWarframes() {
       <input type="search" id="wfRecherche" class="guide-recherche" placeholder="${esc(t("wfRecherche"))}" value="${esc(wfFiltre)}"></div>
     <ol class="guide-frise wf-frise">` + t("wfEtapes").map(([etape, sous, frames], i) =>
       `<li class="wf-etape"><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
-        <div class="guide-etape"><span class="guide-cat">${esc(sous)}</span><h3>${esc(etape)}</h3>
+        <div class="guide-etape"><span class="guide-cat">${esc(sous)}</span><h3>${esc(etape)} ${etatPlanete(i)}</h3>
         <ul class="wf-liste">` + frames.map(([nom, txt, badge]) =>
-          `<li data-n="${esc((nom + " " + txt).toLowerCase())}"><b>${esc(nom)}</b>${badgeGuide(badge)}<span>${esc(txt)}</span></li>`).join("") +
+          `<li data-n="${esc((nom + " " + txt).toLowerCase())}" class="${possedee(nom) ? "fait" : ""}"><b>${possedee(nom) ? "✓ " : ""}${esc(nom)}</b>${badgeGuide(badge)}<span>${esc(txt)}</span></li>`).join("") +
         `</ul></div></li>`).join("") + `</ol>
     <p class="wf-vide muted" hidden>${esc(t("wfAucune"))}</p>
     <p class="guide-astuce">${t("wfCircuit")}</p>`;
@@ -2768,6 +2850,7 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
+  if (infoGroupe === "jeu" && s === "debuter" && prog.cle !== `${lang}|${version}`) chargerProgression();
   if (infoGroupe === "jeu" && s === "debuter" && debSous === "warframes") {
     c.innerHTML = navDebuter() + rendreWarframes();
     filtrerWarframes();
@@ -2777,14 +2860,22 @@ function rendreInfo() {
     c.innerHTML = navDebuter() + `<div class="guide-tete">
         <div><h1>${esc(t("debTitre"))}</h1><p>${esc(t("debIntro"))}</p></div>
         <div class="guide-meta"><span>${esc(t("debNbEtapes"))}</span><span>${esc(t("debNbQuetes"))}</span><span>${esc(t("debNbConseils"))}</span></div></div>
+      ${encartProgression()}
       <div class="guide-section"><h2 class="info-titre">${esc(t("debEtapesTitre"))}</h2>
       <ol class="guide-frise">` + t("debEtapes").map(([cat, titre, txt], i) =>
-        `<li><span class="guide-num">${String(i + 1).padStart(2, "0")}</span>
+        `<li class="${etapeFaite(i) ? "fait" : ""}"><span class="guide-num">${etapeFaite(i) ? "✓" : String(i + 1).padStart(2, "0")}</span>
           <div class="guide-etape"><span class="guide-cat">${esc(cat)}</span><h3>${esc(titre)}</h3><p>${txt}</p></div></li>`).join("") + `</ol></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debArcsTitre"))}</h2>
-      <div class="guide-arcs">` + t("debArcs").map(([arc, quetes]) =>
-        `<div class="guide-arc"><h3>${esc(arc)}</h3><ol>` + quetes.map(([nom, info]) =>
-          `<li><b>${esc(nom)}</b><span>${esc(info)}</span></li>`).join("") + "</ol></div>").join("") + `</div>
+      <div class="guide-arcs">` + t("debArcs").map(([arc, quetes], ai) => {
+        const vu = arcVisible(ai), prochaine = prochaineQuete();
+        return `<div class="guide-arc${vu ? "" : " masque"}"><h3>${esc(arc)}${vu && spoilRevele.includes(ai) ? ` <button type="button" class="petit spoil-masquer" data-masquer="${ai}">${esc(t("spoilMasquer"))}</button>` : ""}</h3><ol>` +
+          quetes.map(([nom, info, cle], qi) => {
+            const fait = queteFaite(cle), suite = prochaine && prochaine[0] === ai && prochaine[1] === qi;
+            const flou = vu && !spoilRevele.includes(ai) && quetesFloues(ai, qi);
+            return `<li class="${fait ? "fait" : ""}${suite ? " suite" : ""}${flou ? " flou" : ""}"><b>${fait ? "✓ " : ""}${esc(nom)}</b><span>${esc(info)}</span></li>`;
+          }).join("") + "</ol>" +
+          (vu ? "" : `<div class="spoil-voile"><small>${esc(t("spoilTxt"))}</small><button type="button" data-reveler="${ai}">🔒 ${esc(t("spoilBtn"))}</button></div>`) + "</div>";
+      }).join("") + `</div>
       <p class="guide-note">${esc(t("debArcsNote"))}</p></div>
       <div class="guide-section"><h2 class="info-titre">${esc(t("debConseilsTitre"))}</h2><div class="guide-conseils">` +
       t("debConseils").map(([ic, titre, txt]) =>
@@ -2825,6 +2916,13 @@ async function chargerInfo() {
   if (page === "info") rendreInfo();
 }
 $("#infoContenu").addEventListener("click", e => {
+  const r = e.target.closest("button[data-reveler], button[data-masquer]");
+  if (r) {
+    const ai = +(r.dataset.reveler ?? r.dataset.masquer);
+    spoilRevele = r.dataset.reveler != null ? [...new Set([...spoilRevele, ai])] : spoilRevele.filter(x => x !== ai);
+    try { localStorage.setItem("spoilRevele", JSON.stringify(spoilRevele)); } catch (e) {}
+    return rendreInfo();
+  }
   const b = e.target.closest("button[data-d]");
   if (!b) return;
   debSous = b.dataset.d;

@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.2"
+VERSION = "1.13.3"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1176,6 +1176,37 @@ def owned_types(inv):
     return out
 
 
+def progression_view(lang):
+    """Progression du joueur lue dans l'inventaire du jeu : rang de maitrise, quetes terminees,
+    planetes ou au moins une mission est reussie, Warframes possedees (pour l'onglet Info / aide)."""
+    inv = STATE.inv or {}
+    if not inv:
+        return {"ok": False}
+    quetes = {}
+    for e in inv.get("QuestKeys") or []:
+        if isinstance(e, dict) and e.get("ItemType"):
+            quetes[e["ItemType"].replace("/Lotus/Types/Keys/", "")] = bool(e.get("Completed"))
+    try:
+        regions = load_json(fetch_data_file("ExportRegions.json")) or {}
+    except Exception:
+        regions = {}
+    planetes, noeuds = set(), 0
+    for m in inv.get("Missions") or []:
+        if isinstance(m, dict) and m.get("Tag") in regions and int(m.get("Completes") or 0) > 0:
+            noeuds += 1
+            planetes.add((regions[m["Tag"]].get("systemName") or "").rsplit("/", 1)[-1])
+    g = game()
+    frames = set()
+    for e in inv.get("Suits") or []:
+        if isinstance(e, dict) and e.get("ItemType"):
+            n = g.name(e["ItemType"], lang)
+            if n:
+                frames.add(n.lower())
+    rang = inv.get("PlayerLevel")
+    return {"ok": True, "rang": rang if isinstance(rang, int) else None, "quetes": quetes,
+            "planetes": sorted(p for p in planetes if p), "noeuds": noeuds, "warframes": sorted(frames)}
+
+
 COLLECTION_TYPES = {  # categorie du jeu -> onglet de la collection
     "Suits": "warframe", "LongGuns": "primaire", "Pistols": "secondaire", "Melee": "melee",
     "SpaceSuits": "archwing", "SpaceGuns": "archwing", "SpaceMelee": "archwing", "MechSuits": "archwing",
@@ -1950,6 +1981,8 @@ class Handler(BaseHTTPRequestHandler):
                 self.send(200, price_history(q["slug"], rank))
             elif u.path == "/api/mes-ventes":  # ventes marquees « Vendu » (onglet Market > Stats)
                 self.send(200, load_json(SALES_LOG, []) or [])
+            elif u.path == "/api/progression":  # Info / aide : quetes faites, planetes, rang de maitrise
+                self.send(200, progression_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
             elif u.path == "/api/collection":  # Warframes et armes du jeu : construit / maitrise
                 self.send(200, collection_view(q.get("lang", "fr") if q.get("lang") in LANGS else "fr"))
             elif u.path == "/api/volume":
