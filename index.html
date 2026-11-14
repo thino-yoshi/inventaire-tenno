@@ -2752,25 +2752,45 @@ async function chargerProgression() {
   finally { prog.charge = false; }
   if (page === "info" && infoGroupe === "jeu") rendreInfo();
 }
-const queteFaite = cle => !!(cle && prog.ok && prog.quetes && prog.quetes[cle]);
-const etapeFaite = i => queteFaite([["NewPlayerQuest/NewPlayerQuestKeyChain"], ["VorsPrize/VorsPrizeQuestKeyChain"], ["ModQuest/ModQuestKeyChain"]][i]?.[0]);
-function prochaineQuete() {  // [chapitre, quête] de la première quête de l'histoire pas encore faite
+// Une quête compte comme faite si le jeu le dit, ou si une quête plus loin dans l'histoire est faite
+// et que le jeu n'a aucune trace de celle-ci. Éveil, Trophée de Vor et Professeur : toujours (Éveil, ajoutée en 2020, n'est pas terminée chez les anciens joueurs).
+const ordreQuetes = () => t("debArcs").flatMap(a => a[1].map(q => q[2])).filter(Boolean);
+function derniereFaite() {
+  if (!prog.ok || !prog.quetes) return -1;
+  const o = ordreQuetes();
+  for (let i = o.length - 1; i >= 0; i--) if (prog.quetes[o[i]]) return i;
+  return -1;
+}
+function queteFaite(cle) {
+  if (!cle || !prog.ok || !prog.quetes) return false;
+  if (prog.quetes[cle]) return true;
+  const debut = ["NewPlayerQuest/NewPlayerQuestKeyChain", "VorsPrize/VorsPrizeQuestKeyChain", "ModQuest/ModQuestKeyChain"];
+  return (debut.includes(cle) || !(cle in prog.quetes)) && ordreQuetes().indexOf(cle) < derniereFaite();
+}
+const etapeFaite = i => queteFaite(["NewPlayerQuest/NewPlayerQuestKeyChain", "VorsPrize/VorsPrizeQuestKeyChain", "ModQuest/ModQuestKeyChain"][i]);
+function prochaineQuete() {  // [chapitre, quête] : première quête pas faite après la dernière quête terminée
   if (!prog.ok) return null;
-  const arcs = t("debArcs");
+  const arcs = t("debArcs"), o = ordreQuetes(), d = derniereFaite();
   for (let a = 0; a < arcs.length; a++)
+    for (let q = 0; q < arcs[a][1].length; q++) {
+      const cle = arcs[a][1][q][2];
+      if (cle && o.indexOf(cle) > d && !queteFaite(cle)) return [a, q];
+    }
+  for (let a = 0; a < arcs.length; a++)  // tout ce qui suit est fait : reste un éventuel trou avant
     for (let q = 0; q < arcs[a][1].length; q++)
       if (arcs[a][1][q][2] && !queteFaite(arcs[a][1][q][2])) return [a, q];
   return null;
 }
-function arcVisible(ai) {  // chapitre 1 toujours visible ; les autres : révélés à la main ou atteints dans le jeu
+function arcVisible(ai) {  // chapitre 1, chapitres révélés à la main, déjà commencés ou atteints dans le jeu
   if (ai === 0 || spoilRevele.includes(ai)) return true;
   if (!prog.ok) return false;
+  if (t("debArcs")[ai][1].some(q => queteFaite(q[2]))) return true;
   const p = prochaineQuete();
   return !p || p[0] >= ai;
 }
-function quetesFloues(ai, qi) {  // dans le chapitre en cours : ce qui vient après la prochaine quête reste flou
-  const p = prochaineQuete();
-  return !!(p && p[0] === ai && qi > p[1]);
+function quetesFloues(ai, qi) {  // dans le chapitre en cours : les quêtes pas faites après la prochaine restent floues
+  const p = prochaineQuete(), cle = t("debArcs")[ai][1][qi][2];
+  return !!(p && p[0] === ai && qi > p[1] && !queteFaite(cle));
 }
 function encartProgression() {
   if (!prog.ok) return `<div class="prog-box vide">${esc(t("progAucune"))}</div>`;
