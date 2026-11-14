@@ -62,12 +62,22 @@ jobs:
           if (-not (Test-Path dist\LotusDesk.exe)) { throw "construction de l'exe impossible" }
           # TRANSITION : les versions <= 1.9.0 cherchent encore l'ancien nom pour se mettre a jour.
           Copy-Item dist\LotusDesk.exe dist\InventaireWarframe.exe
+      - name: Construire l'installateur
+        shell: pwsh
+        run: |
+          # petit exe (bibliotheque standard seulement) qui telecharge l'app et cree son dossier
+          py -m PyInstaller --onefile --noconsole --name Installer-LotusDesk --icon assets\lotus.ico `
+            --distpath dist --workpath build-inst --noconfirm --log-level WARN installateur.py
+          if (-not (Test-Path dist\Installer-LotusDesk.exe)) { throw "construction de l'installateur impossible" }
+          "Taille de l'installateur : {0:N1} Mo" -f ((Get-Item dist\Installer-LotusDesk.exe).Length / 1MB)
       - name: Garder l'exe de test (sans publier)
         if: env.VERSION == ''
         uses: actions/upload-artifact@v4
         with:
           name: LotusDesk-test
-          path: dist/LotusDesk.exe
+          path: |
+            dist/LotusDesk.exe
+            dist/Installer-LotusDesk.exe
           retention-days: 7
       - name: Publier
         if: env.VERSION != ''
@@ -83,5 +93,5 @@ jobs:
           } else { $notes = "$env:IN_NOTES" }
           if (-not $notes.Trim()) { $notes = "Version $env:VERSION" }
           [IO.File]::WriteAllText("$PWD\notes.md", $notes, (New-Object Text.UTF8Encoding $false))
-          gh release create $tag dist\LotusDesk.exe dist\InventaireWarframe.exe `
+          gh release create $tag dist\LotusDesk.exe dist\InventaireWarframe.exe dist\Installer-LotusDesk.exe `
             --target "${{ github.sha }}" --title "Version $env:VERSION" --notes-file notes.md
