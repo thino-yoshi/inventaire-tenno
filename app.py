@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.12"
+VERSION = "1.14.0"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1224,6 +1224,11 @@ def progression_view(lang):
             "clan": bool(inv.get("GuildId")), "syndicat": bool(inv.get("SupportedSyndicate")),
             "focus": bool(inv.get("FocusAbility")),
             # objet Prime deja eu (schema, piece, Warframe ou arme) : vient des reliques ou d'un echange
+            # Prime deja eus (objets complets) et pieces / schemas Prime en stock, pour l'onglet Prime
+            "primes": sorted({e["ItemType"] for e in inv.get("XPInfo") or [] if isinstance(e, dict)
+                              and "Prime" in (e.get("ItemType") or "") and (e.get("XP") or 0) > 0}
+                             | {p for p in owned_types(inv) if "Prime" in p}),
+            "pieces": {p: n for p, n in owned_types(inv).items() if "Prime" in p and n > 0},
             "prime": any("Prime" in p for p in owned_types(inv)) or any(
                 "Prime" in (e.get("ItemType") or "") for e in inv.get("XPInfo") or [] if isinstance(e, dict))}
 

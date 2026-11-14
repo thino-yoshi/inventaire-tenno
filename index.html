@@ -559,6 +559,32 @@
   .arm-src { display: flex; flex-wrap: wrap; gap: 4px 6px; }
   .arm-s { font-size: 12px; color: var(--muted); border: 1px solid var(--line); padding: 1px 7px; }
   .arm-src a { font-size: 12px; color: var(--gold); }
+  .pri-outils { display: flex; flex-wrap: wrap; gap: 8px 18px; align-items: center; margin: 0 0 14px; }
+  .pri-outils .guide-recherche { width: 340px; }
+  .pri-liste { display: grid; grid-template-columns: repeat(auto-fill, minmax(330px, 1fr)); gap: 10px; max-width: 1200px; }
+  .pri-c { border: 1px solid var(--line); background: var(--panel); padding: 10px 12px; font-size: 13px; }
+  .pri-c[hidden] { display: none; }
+  .pri-c.eue { border-color: color-mix(in srgb, var(--green) 45%, var(--line)); }
+  .pri-c.retire { opacity: .85; }
+  .pri-tete { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; margin-bottom: 6px; }
+  .pri-tete b { font-size: 14px; color: var(--text); margin-right: auto; }
+  .pri-c.eue .pri-tete b { color: var(--green); }
+  .pri-badge { font-size: 10px; letter-spacing: 1px; text-transform: uppercase; padding: 1px 7px; border: 1px solid var(--line); color: var(--muted); }
+  .pri-badge.dispo { color: var(--green); border-color: color-mix(in srgb, var(--green) 50%, transparent); }
+  .pri-badge.partiel { color: var(--gold); }
+  .pri-badge.special { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 50%, transparent); }
+  .pri-src { margin: 0; color: var(--muted); font-size: 12px; line-height: 1.5; }
+  .pri-pieces { list-style: none; margin: 0; padding: 0; }
+  .pri-pieces li { display: grid; grid-template-columns: 110px 1fr; gap: 8px; padding: 4px 0; border-top: 1px solid var(--line); align-items: baseline; }
+  .pri-p { color: var(--text); }
+  .pri-pieces li.stock .pri-p { color: var(--green); }
+  .pri-p small { display: block; color: var(--green); font-size: 10px; }
+  .pri-rels { display: flex; flex-wrap: wrap; gap: 3px 4px; align-items: baseline; font-size: 11px; }
+  .pri-rel { padding: 0 6px; border: 1px solid var(--line); color: var(--muted); white-space: nowrap; }
+  .pri-rel.actif { color: var(--green); border-color: color-mix(in srgb, var(--green) 55%, transparent); }
+  .pri-rel.actif.r2 { color: var(--gold); border-color: color-mix(in srgb, var(--gold) 60%, transparent); }
+  .pri-rel.r2::after { content: " ★"; font-size: 9px; }
+  .pri-ret { display: inline-flex; flex-wrap: wrap; gap: 3px 4px; align-items: baseline; color: var(--muted); font-size: 11px; opacity: .8; }
   .con-armes { display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px; }
   .guide-arc { position: relative; overflow: hidden; }
   .guide-arc.masque ol { filter: blur(6px); user-select: none; pointer-events: none; opacity: .6; }
@@ -966,6 +992,8 @@
   </div>
   <nav class="sous-pages" id="sousJeu">
     <button type="button" data-i="debuter" data-t="iDebuter"></button>
+    <button type="button" data-i="arsenal" data-t="iArsenal"></button>
+    <button type="button" data-i="prime" data-t="iPrime"></button>
     <button type="button" data-i="reliques" data-t="iReliques"></button>
     <button type="button" data-i="ressources" data-t="iRessources"></button>
     <button type="button" data-i="direct" data-t="iDirect"></button>
@@ -1357,12 +1385,22 @@ const T3 = {
     pres_erreur: "WFM : statut refusé", pres_invisible: "WFM : invisible", presAuto: "Statut « en jeu » auto", presCo: "● Connecté", presNonCo: "Non connecté",
     presBtnTip: "Connecté : tu apparais « en jeu » sur Warframe Market tant que Warframe tourne (les acheteurs te contactent).\nNon connecté : tu es invisible, tu joues tranquille. Ton choix est gardé même après un redémarrage.",
     infoJeuSub: "Le jeu : bases, reliques, ressources, en direct", infoAppSub: "L'application : guide, astuces, problèmes, signaler",
-    iDebuter: "Débuter", iReliques: "Reliques et fissures", iRessources: "Ressources", iDirect: "En direct",
+    iDebuter: "Débuter", iArsenal: "Arsenal", iPrime: "Prime", iReliques: "Reliques et fissures", iRessources: "Ressources", iDirect: "En direct",
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
     nvTitre: "Quoi de neuf ?", nvSur: v => `Mise à jour installée : version ${v}`, nvSous: (a, n) => `Depuis ta version ${a} : ${n} nouveauté(s).`,
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
-    debOnglets: [["parcours", "Parcours"], ["warframes", "Warframes"], ["armes", "Armes"], ["conseils", "Conseils"]],
+    debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
+    arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"]],
+    priOnglets: [["warframe", "Warframes Prime"], ["primaire", "Principales"], ["secondaire", "Secondaires"], ["melee", "Mêlée"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
+    priTitre: "Tous les Prime, et les reliques où trouver chaque pièce",
+    priIntro: "Une version Prime est plus forte que la normale et donne aussi de la maîtrise. Ses pièces tombent des reliques du Néant, qu'on ouvre dans les fissures. Une relique « retirée » ne tombe plus en mission : il reste les échanges entre joueurs ou Varzia (Prime Resurgence, au Relais Maroo's Bazaar) quand l'objet revient dans sa boutique.",
+    priRecherche: "Chercher un Prime, une pièce ou une relique (ex. Axi C12)…", priCacher: "Cacher ceux que j'ai déjà eus", priDispo: "Seulement ceux qu'on peut farmer maintenant",
+    priEus: (n, t) => `${n} / ${t} déjà eus`, priAucun: "Aucun Prime trouvé.", priChargement: "Chargement des Prime…",
+    priDispoB: "Reliques en jeu", priRetireB: "Retiré", priPartielB: "En partie retiré", priSpecialB: "Hors reliques", priMr: r => `Rang ${r}`,
+    priRetires: n => `Reliques retirées (${n}) :`, priStock: n => `En stock : ${n}`, priArme: n => `${n} × à fabriquer avant`,
+    priRar: ["Commun", "Peu commun", "Rare"], priPlus: n => `+${n}`, priPlusRet: n => `+ ${n} retirée${n > 1 ? "s" : ""}`,
+    priNote: "Reliques tirées des fichiers du jeu et de la base WFCD (tables de drop PC du 22 octobre 2026). Les reliques en vert tombent en ce moment dans les missions. Raffiner une relique en Radieuse (100 Traces du Néant) fait passer une pièce rare de 2 % à 10 %.",
     wfTitre: "Quelles Warframes, et quand ?",
     wfIntro: "Les Warframes dans l'ordre où tu peux les obtenir en avançant sur la Carte céleste (Terre, Vénus, Mercure, Mars…). Commence par le haut de la liste.",
     wfRecherche: "Chercher une Warframe…", wfAucune: "Aucune Warframe trouvée.",
@@ -1623,12 +1661,22 @@ const T3 = {
     pres_erreur: "WFM: status refused", pres_invisible: "WFM: invisible", presAuto: "Auto “in game” status", presCo: "● Online", presNonCo: "Offline",
     presBtnTip: "Online: you show as “in game” on Warframe Market while Warframe is running (buyers can contact you).\nOffline: you are invisible and play in peace. Your choice is kept after a restart.",
     infoJeuSub: "The game: basics, relics, resources, live", infoAppSub: "The app: guide, tips, problems, report",
-    iDebuter: "Getting started", iReliques: "Relics & fissures", iRessources: "Resources", iDirect: "Live",
+    iDebuter: "Getting started", iArsenal: "Arsenal", iPrime: "Prime", iReliques: "Relics & fissures", iRessources: "Resources", iDirect: "Live",
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
     nvTitre: "What's new?", nvSur: v => `Update installed: version ${v}`, nvSous: (a, n) => `Since your version ${a}: ${n} update(s).`,
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
-    debOnglets: [["parcours", "Path"], ["warframes", "Warframes"], ["armes", "Weapons"], ["conseils", "Tips"]],
+    debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
+    arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"]],
+    priOnglets: [["warframe", "Prime Warframes"], ["primaire", "Primary"], ["secondaire", "Secondary"], ["melee", "Melee"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
+    priTitre: "Every Prime, and the relics each part comes from",
+    priIntro: "A Prime version is stronger than the normal one and also gives mastery. Its parts drop from Void Relics, opened in fissures. A \"vaulted\" relic no longer drops in missions: what's left is trading with players, or Varzia (Prime Resurgence, at the Maroo's Bazaar relay) when the item is back in her shop.",
+    priRecherche: "Search a Prime, a part or a relic (e.g. Axi C12)…", priCacher: "Hide the ones I already had", priDispo: "Only the ones farmable right now",
+    priEus: (n, t) => `${n} / ${t} already had`, priAucun: "No Prime found.", priChargement: "Loading Primes…",
+    priDispoB: "Relics in game", priRetireB: "Vaulted", priPartielB: "Partly vaulted", priSpecialB: "Not from relics", priMr: r => `Rank ${r}`,
+    priRetires: n => `Vaulted relics (${n}):`, priStock: n => `In stock: ${n}`, priArme: n => `${n} × to build first`,
+    priRar: ["Common", "Uncommon", "Rare"], priPlus: n => `+${n}`, priPlusRet: n => `+ ${n} vaulted`,
+    priNote: "Relics taken from the game files and the WFCD database (PC drop tables of 22 October 2026). Green relics drop in missions right now. Refining a relic to Radiant (100 Void Traces) raises a rare part from 2% to 10%.",
     wfTitre: "Which Warframes, and when?",
     wfIntro: "Warframes in the order you can get them while moving across the Star Chart (Earth, Venus, Mercury, Mars…). Start from the top of the list.",
     wfRecherche: "Search a Warframe…", wfAucune: "No Warframe found.",
@@ -2792,7 +2840,7 @@ function montrerPage(p) {
 // ---------------------------------------------------------------- onglet Info / aide
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
-const INFO_SOUS = { jeu: ["debuter", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "reliques", "ressources", "direct"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
 // Progression du joueur (lue dans le jeu) : quêtes faites, planètes, rang de maîtrise
 var prog = { ok: false, cle: "", charge: false }, spoilRevele = [];
 try { spoilRevele = JSON.parse(localStorage.getItem("spoilRevele")) || []; } catch (e) {}
@@ -2902,7 +2950,7 @@ async function chargerArmes() {
   armes = [];
   // les armes Prime auront leur propre catégorie : ici, seulement les armes normales
   try { armes = (await (await fetch("/assets/armes.json")).json()).filter(a => !a.prime); } catch (e) { armes = []; }
-  if (page === "info" && debSous === "armes") rendreInfo();
+  if (page === "info" && infoSous.jeu === "arsenal" && arsSous === "armes") rendreInfo();
 }
 const armeEue = a => prog.ok && (prog.armes || []).includes(a.id);
 function rendreArmes() {
@@ -2941,13 +2989,77 @@ function filtrerArmes() {
   });
   const v = document.querySelector("#infoContenu .arm-vide"); if (v) v.hidden = total > 0;
 }
-// Débuter : sous-onglets Parcours | Warframes | Conseils
-var debSous = "parcours", wfFiltre = "";
-try { debSous = localStorage.getItem("debSous") || "parcours"; } catch (e) {}
+// Débuter : Parcours | Conseils — Arsenal : Warframes | Armes (avant la 1.14, Warframes et Armes étaient dans Débuter)
+var debSous = "parcours", arsSous = "warframes", wfFiltre = "";
+try {
+  debSous = localStorage.getItem("debSous") || "parcours";
+  arsSous = localStorage.getItem("arsSous") || (["warframes", "armes"].includes(debSous) ? debSous : "warframes");
+} catch (e) {}
+function navOnglets(cle, sel, attr) {
+  return `<nav class="guide-onglets">` + t(cle).map(([k, l]) =>
+    `<button type="button" data-${attr}="${k}" class="${k === sel ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
+}
 function navDebuter() {
   if (!t("debOnglets").some(([k]) => k === debSous)) debSous = "parcours";
-  return `<nav class="guide-onglets">` + t("debOnglets").map(([k, l]) =>
-    `<button type="button" data-d="${k}" class="${k === debSous ? "on" : ""}">${esc(l)}</button>`).join("") + "</nav>";
+  return navOnglets("debOnglets", debSous, "d");
+}
+function navArsenal() {
+  if (!t("arsOnglets").some(([k]) => k === arsSous)) arsSous = "warframes";
+  return navOnglets("arsOnglets", arsSous, "ars");
+}
+// Prime : liste générée par tools/gen_primes.py (assets/primes.json)
+var primes = null, priSous = "warframe", priFiltre = "", priCacher = false, priDispo = false;
+try {
+  priSous = localStorage.getItem("priSous") || "warframe";
+  priCacher = localStorage.getItem("priCacher") === "1"; priDispo = localStorage.getItem("priDispo") === "1";
+} catch (e) {}
+async function chargerPrimes() {
+  if (primes) return;
+  primes = [];
+  try { primes = await (await fetch("/assets/primes.json")).json(); } catch (e) { primes = []; }
+  if (page === "info" && infoSous.jeu === "prime") rendreInfo();
+}
+const primeEu = a => prog.ok && (prog.primes || []).includes(a.id);
+const enStock = x => prog.ok ? (x.id || []).reduce((n, id) => n + ((prog.pieces || {})[id] || 0), 0) : 0;
+function rendrePrimes() {
+  if (!primes || !primes.length) { chargerPrimes(); return `<p class="muted">${esc(t("priChargement"))}</p>`; }
+  if (!t("priOnglets").some(([k]) => k === priSous)) priSous = "warframe";
+  const rangS = a => a.s ? 2 : a.retire ? 3 : a.p.some(x => !x.arme && !x.r.some(r => r[2])) ? 1 : 0;  // farmables d'abord, puis hors reliques, puis retirés
+  const liste = primes.filter(a => a.c === priSous).sort((x, y) => rangS(x) - rangS(y)), nEus = liste.filter(primeEu).length, L = o => lang === "fr" ? o.fr : o.en;
+  const relique = ([n, r, actif]) => `<span class="pri-rel r${r}${actif ? " actif" : ""}" title="${esc(t("priRar")[r])}">${esc(n)}</span>`;
+  return `<div class="guide-tete"><div><h1>${esc(t("priTitre"))}</h1><p>${esc(t("priIntro"))}</p></div></div>
+      <div class="pri-outils"><input type="search" id="priRecherche" class="guide-recherche" placeholder="${esc(t("priRecherche"))}" value="${esc(priFiltre)}">
+      <label class="auto"><input type="checkbox" id="priDispo"${priDispo ? " checked" : ""}> ${esc(t("priDispo"))}</label>
+      ${prog.ok ? `<label class="auto"><input type="checkbox" id="priCacher"${priCacher ? " checked" : ""}> ${esc(t("priCacher"))}</label>` : ""}</div></div>
+    <nav class="guide-onglets arm-onglets">` + t("priOnglets").map(([k, l]) =>
+      `<button type="button" data-pri="${k}" class="${k === priSous ? "on" : ""}">${esc(l)} <small>${primes.filter(a => a.c === k).length}</small></button>`).join("") + `</nav>
+    ${prog.ok ? `<p class="arm-compte">${esc(t("priEus", nEus, liste.length))}</p>` : ""}
+    <div class="pri-liste">` + liste.map(a => {
+      const manque = a.p.some(x => !x.arme && !x.r.some(r => r[2]));  // une pièce ne tombe plus
+      const eu = primeEu(a), statut = a.s ? "special" : a.retire ? "retire" : manque ? "partiel" : "dispo";
+      const cherche = [a.fr, a.en, ...a.p.flatMap(x => [x.fr, x.en, ...x.r.map(r => r[0])])].join(" ").toLowerCase();
+      return `<div class="pri-c ${statut}${eu ? " eue" : ""}" data-n="${esc(cherche)}" data-dispo="${statut === "dispo" || statut === "partiel" ? 1 : 0}">
+        <div class="pri-tete"><b>${eu ? "✓ " : ""}${esc(L(a))}</b>
+          <span class="pri-badge ${statut}">${esc(t({ special: "priSpecialB", retire: "priRetireB", partiel: "priPartielB", dispo: "priDispoB" }[statut]))}</span>
+          ${a.mr ? `<span class="guide-badge rang">${esc(t("priMr", a.mr))}</span>` : ""}</div>` +
+        (a.s ? `<p class="pri-src">${esc(lang === "fr" ? a.s[0] : a.s[1])}</p>` : `<ul class="pri-pieces">` + a.p.map(x => {
+          if (x.arme) return `<li><span class="pri-p">${esc(L(x))}</span><span class="pri-rels muted">${esc(t("priArme", x.n))}</span></li>`;
+          const actives = x.r.filter(r => r[2]), retirees = x.r.filter(r => !r[2]), stock = enStock(x);
+          return `<li${stock ? ` class="stock"` : ""}><span class="pri-p">${stock ? "✓ " : ""}${esc(L(x))}${x.n > 1 ? ` ×${x.n}` : ""}${stock ? ` <small>${esc(t("priStock", stock))}</small>` : ""}</span>
+            <span class="pri-rels">${actives.map(relique).join("")}${retirees.length ? `<span class="pri-ret">${actives.length ? "" : esc(t("priRetires", retirees.length)) + " "}${retirees.slice(0, actives.length ? 0 : 4).map(relique).join("")}${retirees.length > (actives.length ? 0 : 4) ? `<small>${esc(t(actives.length ? "priPlusRet" : "priPlus", retirees.length - (actives.length ? 0 : 4)))}</small>` : ""}</span>` : ""}</span></li>`;
+        }).join("") + "</ul>") + "</div>";
+    }).join("") + `</div>
+    <p class="arm-vide muted" hidden>${esc(t("priAucun"))}</p>
+    <p class="guide-note">${esc(t("priNote"))}</p>`;
+}
+function filtrerPrimes() {
+  const q = priFiltre.trim().toLowerCase();
+  let total = 0;
+  document.querySelectorAll("#infoContenu .pri-c").forEach(c => {
+    const ok = (!q || c.dataset.n.includes(q)) && !(priCacher && c.classList.contains("eue")) && !(priDispo && c.dataset.dispo !== "1");
+    c.hidden = !ok; if (ok) total++;
+  });
+  const v = document.querySelector("#infoContenu .arm-vide"); if (v) v.hidden = total > 0;
 }
 const badgeGuide = b => b ? `<span class="guide-badge${/^(Clan)$/.test(b) ? " clan" : /\d/.test(b) ? " rang" : ""}">${esc(b)}</span>` : "";
 function rendreWarframes() {
@@ -3004,13 +3116,16 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
-  if (infoGroupe === "jeu" && s === "debuter" && prog.cle !== `${lang}|${version}`) chargerProgression();
-  if (infoGroupe === "jeu" && s === "debuter" && debSous === "warframes") {
-    c.innerHTML = navDebuter() + rendreWarframes();
-    filtrerWarframes();
-  } else if (infoGroupe === "jeu" && s === "debuter" && debSous === "armes") {
-    c.innerHTML = navDebuter() + rendreArmes();
+  if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
+  if (infoGroupe === "jeu" && s === "arsenal" && navArsenal() && arsSous === "armes") {
+    c.innerHTML = navArsenal() + rendreArmes();
     filtrerArmes();
+  } else if (infoGroupe === "jeu" && s === "arsenal") {
+    c.innerHTML = navArsenal() + rendreWarframes();
+    filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "prime") {
+    c.innerHTML = rendrePrimes();
+    filtrerPrimes();
   } else if (infoGroupe === "jeu" && s === "debuter" && debSous === "conseils") {
     c.innerHTML = navDebuter() + rendreConseils();
   } else if (infoGroupe === "jeu" && s === "debuter") {
@@ -3086,6 +3201,18 @@ $("#infoContenu").addEventListener("click", e => {
     try { localStorage.setItem("armSous", armSous); } catch (e) {}
     return rendreInfo();
   }
+  const pr = e.target.closest("button[data-pri]");
+  if (pr) {
+    priSous = pr.dataset.pri;
+    try { localStorage.setItem("priSous", priSous); } catch (e) {}
+    return rendreInfo();
+  }
+  const ar = e.target.closest("button[data-ars]");
+  if (ar) {
+    arsSous = ar.dataset.ars;
+    try { localStorage.setItem("arsSous", arsSous); } catch (e) {}
+    return rendreInfo();
+  }
   const b = e.target.closest("button[data-d]");
   if (!b) return;
   debSous = b.dataset.d;
@@ -3094,6 +3221,12 @@ $("#infoContenu").addEventListener("click", e => {
 });
 $("#infoContenu").addEventListener("input", e => {
   if (e.target.id === "armRecherche") { armFiltre = e.target.value; return filtrerArmes(); }
+  if (e.target.id === "priRecherche") { priFiltre = e.target.value; return filtrerPrimes(); }
+  if (e.target.id === "priCacher" || e.target.id === "priDispo") {
+    if (e.target.id === "priCacher") priCacher = e.target.checked; else priDispo = e.target.checked;
+    try { localStorage.setItem(e.target.id, e.target.checked ? "1" : "0"); } catch (e) {}
+    return filtrerPrimes();
+  }
   if (e.target.id === "armCacher") {
     armCacher = e.target.checked;
     try { localStorage.setItem("armCacher", armCacher ? "1" : "0"); } catch (e) {}
