@@ -111,7 +111,7 @@ def source_recompense(ch):
         if lab and lab not in trouve:
             trouve.append(lab)
     trouve.sort(key=lambda x: "temporaire" in x[0])  # evenements en dernier
-    return [list(x) for x in trouve[:2]]
+    return [list(x) for x in trouve[:3]]
 
 
 # --- marchands (hors evenements temporaires)
@@ -157,6 +157,7 @@ TRIBUT = ["Tribut quotidien (récompense de connexion)", "Daily Tribute (login m
 ZARIMAN = ["Zariman (Holdfasts)", "Zariman (Holdfasts)"]
 TESHIN = ["Grotte de Teshin (Duviri), contre des Pathos Clamps", "Teshin's Cave (Duviri), for Pathos Clamps"]
 GHOUL = ["Ghouls Auger et Devourer (primes Ghoul, Plaines d'Eidolon)", "Ghoul Augers and Devourers (Ghoul bounties, Plains of Eidolon)"]
+MELICA = ["Cephalon Melica (Chrysalith, Zariman), contre du Kuva Entropique", "Cephalon Melica (Chrysalith, Zariman), for Entropic Kuva"]
 PERTURB_UR = ["Démolisseurs en Perturbation sur Ur (Uranus)", "Demolishers in Disruption on Ur (Uranus)"]
 MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati": ["Quête Le Sacrifice", "Quest The Sacrifice"],
           "Dread": STALKER, "Despair": STALKER, "Hate": STALKER,
@@ -200,7 +201,12 @@ MANUEL = {"Thornbak": ["Quête Le Professeur", "Quest The Teacher"], "Skiajati":
           "Cinta": ["Énigmes de Duviri (après Le Paradoxe Duviri)", "Duviri Enigmas (after The Duviri Paradox)"],
           "Quellor": ["Railjack : capitaines Corpus et Grineer", "Railjack: Corpus and Grineer captains"],
           "Kompressa": ["Ventkids, rang 5 (Fortuna)", "Ventkids, rank 5 (Fortuna)"],
-          "Zymos": ["Loid, Necraloid rang 1 (Deimos)", "Loid, Necraloid rank 1 (Deimos)"]}
+          "Zymos": ["Loid, Necraloid rang 1 (Deimos)", "Loid, Necraloid rank 1 (Deimos)"],
+          "Simulor": ["Cephalon Simaris (75 000 de réputation)", "Cephalon Simaris (75,000 standing)"],
+          "Korrudo": ["Tusk Thumper Bull et Doma (Plaines d'Eidolon)", "Tusk Thumper Bull and Doma (Plains of Eidolon)"],
+          "Twin Kohmak": ["Kela De Thaym (Merrow, Sedna)", "Kela De Thaym (Merrow, Sedna)"],
+          "Nunchasa": MELICA, "Aksondol": MELICA,
+          "Vericres": ["Baro Ki'Teer", "Baro Ki'Teer"]}
 
 
 SYNDICATS = {"Steel Meridian", "Arbiters of Hexis", "Cephalon Suda", "The Perrin Sequence", "Red Veil", "New Loka"}
