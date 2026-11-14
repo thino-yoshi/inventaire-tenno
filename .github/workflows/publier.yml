@@ -65,8 +65,10 @@ jobs:
       - name: Construire l'installateur
         shell: pwsh
         run: |
-          # petit exe (bibliotheque standard seulement) qui telecharge l'app et cree son dossier
+          # petit exe qui telecharge l'app (via curl.exe de Windows) et cree son dossier ; < 10 Mo pour Discord
           py -m PyInstaller --onefile --noconsole --name Installer-LotusDesk --icon assets\lotus.ico `
+            --exclude-module ssl --exclude-module _ssl --exclude-module _hashlib --exclude-module tkinter `
+            --exclude-module unittest --exclude-module pydoc --exclude-module urllib.request --exclude-module email `
             --distpath dist --workpath build-inst --noconfirm --log-level WARN installateur.py
           if (-not (Test-Path dist\Installer-LotusDesk.exe)) { throw "construction de l'installateur impossible" }
           "Taille de l'installateur : {0:N1} Mo" -f ((Get-Item dist\Installer-LotusDesk.exe).Length / 1MB)

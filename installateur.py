@@ -6,14 +6,14 @@ Ensuite, l'app se met a jour toute seule, comme d'habitude.
 
 Dossier : %LOCALAPPDATA%\\Programs\\Lotus Desk (pas besoin des droits administrateur, et hors de
 OneDrive, qui synchronise mal le cache de la fenetre).
-Rien d'autre que la bibliotheque standard de Python : l'exe reste petit.
+Telechargement par curl.exe, fourni avec Windows 10/11 : Python n'embarque alors pas sa propre
+bibliotheque de chiffrement (la plus lourde), et l'installateur reste sous la limite de Discord.
 """
 import ctypes
 import json
 import os
 import subprocess
 import sys
-import urllib.request
 from pathlib import Path
 
 REPO = "thino-yoshi/inventaire-tenno"
@@ -29,11 +29,20 @@ def boite(texte, style=MB_OK | MB_ICONINFO):
     return ctypes.windll.user32.MessageBoxW(None, texte, TITRE, style)
 
 
+def curl(*args, timeout=120):
+    """curl.exe de Windows (connexion securisee geree par Windows)."""
+    exe = Path(os.environ.get("SystemRoot", r"C:\Windows")) / "System32" / "curl.exe"
+    r = subprocess.run([str(exe) if exe.exists() else "curl", "-fsSL", "--retry", "2",
+                        "-A", "LotusDesk-installateur", *args],
+                       capture_output=True, creationflags=NO_WINDOW, timeout=timeout)
+    if r.returncode:
+        raise RuntimeError(f"curl {r.returncode} : {r.stderr.decode(errors='replace').strip()[:200]}")
+    return r.stdout
+
+
 def lien_derniere_version():
-    req = urllib.request.Request(f"https://api.github.com/repos/{REPO}/releases/latest",
-                                 headers={"Accept": "application/vnd.github+json", "User-Agent": "LotusDesk-installateur"})
-    with urllib.request.urlopen(req, timeout=20) as r:
-        rel = json.load(r)
+    rel = json.loads(curl("-H", "Accept: application/vnd.github+json",
+                          f"https://api.github.com/repos/{REPO}/releases/latest", timeout=30))
     for a in rel.get("assets", []):
         if a.get("name") == EXE:
             url = a["browser_download_url"]
@@ -45,14 +54,13 @@ def lien_derniere_version():
 
 def telecharger(url, dest):
     tmp = dest.with_name(dest.name + ".part")
-    req = urllib.request.Request(url, headers={"User-Agent": "LotusDesk-installateur"})
-    with urllib.request.urlopen(req, timeout=120) as r, open(tmp, "wb") as f:
-        while bloc := r.read(1 << 16):
-            f.write(bloc)
-    if tmp.stat().st_size < 1_000_000:  # page d'erreur au lieu de l'exe
+    try:
+        curl("-o", str(tmp), url, timeout=300)
+        if tmp.stat().st_size < 1_000_000:  # page d'erreur au lieu de l'exe
+            raise RuntimeError("fichier telecharge incomplet")
+        os.replace(tmp, dest)
+    finally:
         tmp.unlink(missing_ok=True)
-        raise RuntimeError("fichier telecharge incomplet")
-    os.replace(tmp, dest)
 
 
 def raccourcis(exe):
