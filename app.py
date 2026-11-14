@@ -48,7 +48,7 @@ import requests
 import prime_inventory as pi
 
 APP_NAME = "Lotus Desk"
-VERSION = "1.13.11"
+VERSION = "1.13.12"
 UPDATE_REPO = "thino-yoshi/inventaire-tenno"   # depot GitHub ou sont publiees les versions
 SRC_ASSET = "inventaire-tenno-src.zip"           # zip du code dans chaque release
 EXE_ASSET = "LotusDesk.exe"          # l'exe de chaque release
@@ -1491,12 +1491,13 @@ def nouveautes():
     """Notes des dernieres versions publiees (GitHub), gardees 1 h."""
     if time.time() - _news["t"] > 3600 or not _news["liste"]:
         try:
-            r = requests.get(f"https://api.github.com/repos/{UPDATE_REPO}/releases?per_page=12", timeout=8,
+            r = requests.get(f"https://api.github.com/repos/{UPDATE_REPO}/releases?per_page=40", timeout=8,
                              headers={"Accept": "application/vnd.github+json"})
             r.raise_for_status()
             _news["liste"] = [{"version": x.get("tag_name", "").lstrip("v"), "notes": x.get("body") or "",
                                "date": (x.get("published_at") or "")[:10]}
-                              for x in r.json() if not x.get("prerelease") and not x.get("draft")][:8]
+                              for x in r.json() if not x.get("prerelease") and not x.get("draft")][:40]
+            # (l'onglet A propos en montre 8 ; la fenetre des nouveautes peut remonter plus loin)
             _news["t"] = time.time()
         except Exception as e:
             print("nouveautes :", e)

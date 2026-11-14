@@ -150,6 +150,13 @@
            padding: 20px; width: min(380px, calc(100vw - 32px)); }
   dialog::backdrop { background: #000a; }
   dialog.bienvenue { width: min(760px, calc(100vw - 32px)); padding: 0; border-top: 2px solid var(--gold); }
+  .nv-liste { padding: 8px 28px 16px; max-height: min(60vh, 520px); overflow-y: auto; display: flex; flex-direction: column; gap: 10px; }
+  .nv-version { background: var(--bg); border: 1px solid var(--line); border-left: 2px solid var(--gold); padding: 12px 16px; }
+  .nv-version h3 { margin: 0 0 6px; font-size: 14px; letter-spacing: 1.5px; display: flex; justify-content: space-between; gap: 12px; }
+  .nv-version h3 b { color: var(--gold); }
+  .nv-version h3 small { color: var(--muted); font-weight: 400; letter-spacing: .5px; }
+  .nv-version p { margin: 4px 0; font-size: 13px; line-height: 1.5; color: var(--text); }
+  .nv-version ul { margin: 4px 0 0; padding-left: 18px; font-size: 13px; line-height: 1.5; color: var(--muted); }
   .bv-tete { padding: 24px 28px 4px; display: flex; flex-direction: column; gap: 6px; }
   .bv-tete h2 { margin: 0; font-size: 26px; letter-spacing: 2px; text-transform: uppercase; }
   .bv-sur { font-size: 11px; letter-spacing: 2px; color: var(--gold); text-transform: uppercase; font-weight: 600; }
@@ -759,6 +766,15 @@
     <button type="button" id="bvOk" class="bv-ok" data-t="bvOk"></button>
   </div>
 </dialog>
+<dialog id="dlgNouv" class="bienvenue" aria-labelledby="nvTitre">
+  <div class="bv-tete">
+    <div class="bv-sur" id="nvSur"></div>
+    <h2 id="nvTitre" data-t="nvTitre"></h2>
+    <div class="muted" id="nvSous"></div>
+  </div>
+  <div class="nv-liste" id="nvListe"></div>
+  <div class="bv-pied"><span></span><button type="button" id="nvOk" class="bv-ok" data-t="bvOk"></button></div>
+</dialog>
 <dialog id="dlgCo">
   <form id="formCo" method="dialog">
     <h2 data-t="coTitre"></h2>
@@ -1344,6 +1360,7 @@ const T3 = {
     iDebuter: "Débuter", iReliques: "Reliques et fissures", iRessources: "Ressources", iDirect: "En direct",
     iGuide: "Guide", iAstuces: "Raccourcis et astuces", iProblemes: "Problèmes fréquents", iApropos: "À propos",
     iSignaler: "Signaler un problème",
+    nvTitre: "Quoi de neuf ?", nvSur: v => `Mise à jour installée : version ${v}`, nvSous: (a, n) => `Depuis ta version ${a} : ${n} nouveauté(s).`,
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["warframes", "Warframes"], ["armes", "Armes"], ["conseils", "Conseils"]],
     wfTitre: "Quelles Warframes, et quand ?",
@@ -1609,6 +1626,7 @@ const T3 = {
     iDebuter: "Getting started", iReliques: "Relics & fissures", iRessources: "Resources", iDirect: "Live",
     iGuide: "Guide", iAstuces: "Shortcuts & tips", iProblemes: "Common problems", iApropos: "About",
     iSignaler: "Report a problem",
+    nvTitre: "What's new?", nvSur: v => `Update installed: version ${v}`, nvSous: (a, n) => `Since your version ${a}: ${n} update(s).`,
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["warframes", "Warframes"], ["armes", "Weapons"], ["conseils", "Tips"]],
     wfTitre: "Which Warframes, and when?",
@@ -3034,7 +3052,7 @@ function rendreInfo() {
   } else if (s === "apropos") {
     const liste = infoNouv === null ? `<p class="muted">${esc(t("nouvChargement"))}</p>`
       : !infoNouv.length ? `<p class="muted">${esc(t("nouvErreur"))}</p>`
-      : `<ul class="info-nouv">${infoNouv.map(n => `<li><b>${esc(n.version)}</b> ${esc(n.notes)}</li>`).join("")}</ul>`;
+      : `<ul class="info-nouv">${infoNouv.slice(0, 8).map(n => `<li><b>${esc(n.version)}</b> ${esc(n.notes)}</li>`).join("")}</ul>`;
     c.innerHTML = `<div class="info-grille deux">
       <div class="carte"><h2>Lotus Desk</h2>
         <div class="info-version">Version <b>${esc(window.versionApp || "?")}</b></div>
@@ -3330,12 +3348,52 @@ $("#trItem").addEventListener("change", async e => {
 
 // ---------------------------------------------------------------- premier lancement
 let bienvenueFaite = false;
+// Fenêtre « Quoi de neuf ? » : seulement les versions sorties entre celle qu'on avait et celle qu'on a maintenant
+const cmpV = (a, b) => { const x = String(a).split(".").map(Number), y = String(b).split(".").map(Number);
+  for (let i = 0; i < Math.max(x.length, y.length); i++) { const d = (x[i] || 0) - (y[i] || 0); if (d) return d; } return 0; };
+let nouvFaites = false;
+async function nouveautesDepuis() {
+  if (nouvFaites || $("#dlgBienvenue").open) return;
+  nouvFaites = true;
+  let r;
+  try { r = await api("/api/nouveautes"); } catch (e) { return; }
+  const actuelle = r.version, liste = r.liste || [];
+  let vue = null;
+  try { vue = localStorage.getItem("versionVue"); } catch (e) {}
+  const garder = () => { try { localStorage.setItem("versionVue", actuelle); } catch (e) {} };
+  if (!vue) {
+    let ancien = false;
+    try { ancien = localStorage.getItem("bienvenueVu") === "1"; } catch (e) {}
+    if (!ancien) return garder();                  // première installation : la présentation suffit
+    // joueur d'avant cette fenêtre : on lui montre la dernière nouveauté
+    const avant = liste.map(n => n.version).filter(v => cmpV(v, actuelle) < 0).sort(cmpV).pop();
+    if (!avant) return garder();
+    vue = avant;
+  }
+  if (cmpV(actuelle, vue) <= 0) return;
+  const nouv = liste.filter(n => cmpV(n.version, vue) > 0 && cmpV(n.version, actuelle) <= 0)
+                    .sort((x, y) => cmpV(y.version, x.version));
+  if (!nouv.length) return garder();
+  $("#nvSur").textContent = t("nvSur", actuelle);
+  $("#nvSous").textContent = t("nvSous", vue, nouv.length);
+  $("#nvListe").innerHTML = nouv.map(n => {
+    const lignes = (n.notes || "").split(/\r?\n/).map(l => l.trim()).filter(Boolean);
+    let html = "", liste = [];
+    const vider = () => { if (liste.length) { html += `<ul>${liste.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`; liste = []; } };
+    lignes.forEach(l => { if (/^[-•*]\s+/.test(l)) liste.push(l.replace(/^[-•*]\s+/, "")); else { vider(); html += `<p>${esc(l)}</p>`; } });
+    vider();
+    return `<div class="nv-version"><h3><b>Version ${esc(n.version)}</b><small>${esc(n.date || "")}</small></h3>${html}</div>`;
+  }).join("");
+  $("#dlgNouv").showModal();
+  $("#dlgNouv").addEventListener("close", garder, { once: true });
+}
+$("#nvOk").addEventListener("click", () => $("#dlgNouv").close());
 function bienvenue() {
   if (bienvenueFaite) return;
   bienvenueFaite = true;
   let vu = false;
   try { vu = localStorage.getItem("bienvenueVu") === "1"; } catch (e) {}
-  if (vu) return majSync();
+  if (vu) { majSync(); return nouveautesDepuis(); }
   $("#bvBlocs").innerHTML = t("bvBlocs").map(([titre, texte], i) =>
     `<div><i>${i + 1}</i><div><b>${esc(titre)}</b><span>${esc(texte)}</span></div></div>`).join("");
   $("#dlgBienvenue").showModal();
@@ -3344,7 +3402,7 @@ $("#bvOk").addEventListener("click", () => {
   if ($("#bvNePlus").checked) try { localStorage.setItem("bienvenueVu", "1"); } catch (e) {}
   $("#dlgBienvenue").close();
 });
-$("#dlgBienvenue").addEventListener("close", majSync);  // OK ou touche Echap
+$("#dlgBienvenue").addEventListener("close", () => { majSync(); nouveautesDepuis(); });  // OK ou touche Echap
 // message rouge tant que l'inventaire n'a jamais ete lu (et pas pendant la presentation)
 function majSync() {
   $("#syncAlerte").hidden = items.length > 0 || $("#dlgBienvenue").open;
