@@ -588,6 +588,10 @@
   .res-desc { font-style: italic; }
   .res-recherche { width: 380px; margin: 0 0 10px; }
   .res-grille.large { grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); }
+  .duv-prog { list-style: none; margin: 6px 0 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13px; color: var(--muted); }
+  .duv-prog li::before { content: "○ "; }
+  .duv-prog li.ok { color: var(--green); }
+  .duv-prog li.ok::before { content: "✓ "; }
   .mj-liste { display: flex; flex-direction: column; gap: 10px; max-width: 1000px; }
   .mj-c { border: 1px solid var(--line); background: var(--panel); padding: 12px 14px; font-size: 13px; }
   .mj-c.maj { border-color: color-mix(in srgb, var(--gold) 45%, var(--line)); }
@@ -1063,6 +1067,7 @@
     <button type="button" data-i="debuter" data-t="iDebuter"></button>
     <button type="button" data-i="arsenal" data-t="iArsenal"></button>
     <button type="button" data-i="prime" data-t="iPrime"></button>
+    <button type="button" data-i="duviri" data-t="iDuviri"></button>
     <button type="button" data-i="ressources" data-t="iRessources"></button>
     <button type="button" data-i="direct" data-t="iDirect"></button>
     <button type="button" data-i="majjeu" data-t="iMajJeu"></button>
@@ -1499,6 +1504,34 @@ const T3 = {
     mjTitre: "Mises à jour du jeu", mjIntro: "Les dernières notes de mise à jour PC publiées par Digital Extremes, en anglais comme sur le forum officiel. Les grosses mises à jour s'affichent aussi dans une fenêtre au lancement.",
     mjMaj: "Mise à jour", mjCorrectif: "Correctif", mjChargement: "Lecture des notes officielles…", mjErreur: "Impossible de lire les notes de mise à jour pour le moment.",
     mjAnglais: "Notes officielles en anglais.",
+    iDuviri: "Duviri",
+    duvOnglets: [["debloquer", "Débloquer"], ["modes", "Les modes"], ["recompenses", "Récompenses"], ["incarnon", "Adaptateurs Incarnon"], ["ressources", "Ressources"], ["conseils", "Conseils"]],
+    duvTitre: "Duviri", duvIntro: "Le royaume de Dominus Thrax, où l'on joue le Drifter. Tout est facultatif pour l'histoire principale, mais c'est là qu'on gagne les adaptateurs Incarnon, Kullervo et les Pinces de Pathos.",
+    duvProg: "Ta progression", duvQuete: "Quête Le Paradoxe Duviri terminée", duvKullervo: "Kullervo obtenu", duvAdapt: n => `${n} adaptateur${n > 1 ? "s" : ""} Incarnon en stock (pas encore installé${n > 1 ? "s" : ""})`,
+    duvDebloquer: [
+      ["Quand la commencer", "La quête <b>Le Paradoxe Duviri</b> se lance depuis le Codex ou la carte des étoiles, à n'importe quel moment après avoir débloqué la Jonction d'Uranus sur Saturne. Elle n'est pas obligatoire pour l'histoire principale avant La Hex."],
+      ["Le Drifter", "Tu y joues le Drifter. Pendant la quête, tu reçois les doubles nikanas Sun & Moon et tu débloques ses <b>Intrinsèques</b> : des améliorations permanentes. Les <b>Décrets</b>, eux, sont des bonus qui repartent à zéro à chaque sortie de Duviri."],
+      ["Après la quête", "Trois façons de revenir à Duviri depuis la carte des étoiles : <b>l'Expérience Duviri</b>, <b>l'Histoire solitaire</b> et <b>le Circuit</b>."],
+      ["La Voie de l'Acier à Duviri", "Pour débloquer les versions Voie de l'Acier (dont le Circuit qui donne les adaptateurs Incarnon), il faut avoir la Voie de l'Acier, puis finir une fois en normal l'Histoire solitaire, l'Expérience Duviri et au moins une manche du Circuit."]],
+    duvModes: [
+      ["L'Expérience Duviri", "Exploration libre de la Spirale du moment, dont l'humeur (Joie, Colère, Envie, Tristesse, Peur) change l'ambiance et les objectifs. On y gagne des Intrinsèques, des ressources de Duviri et des Décrets, et on finit contre l'<b>Orowyrm</b>, qui donne les Pinces de Pathos."],
+      ["L'Histoire solitaire", "Le parcours scénarisé de la Spirale avec le Drifter, qui se termine aussi contre l'Orowyrm. Idéal pour découvrir Duviri."],
+      ["Le Circuit", "Mode sans fin avec ta Warframe dans le Sous-Crypte. Chaque semaine, tu choisis une Warframe parmi trois proposées, et tu gagnes ses pièces en montant les paliers (Systèmes au palier 8, schéma principal au palier 10), plus des arcanes, mods augment, Endo et ressources. Remise à zéro le lundi à 0 h UTC."],
+      ["Le Circuit (Voie de l'Acier)", "Même principe en Voie de l'Acier : chaque semaine, 5 adaptateurs Incarnon sont proposés, tu en choisis 2, gagnés aux paliers 5 et 10. La liste tourne sur un cycle de plusieurs semaines. Une semaine ratée ? Certains adaptateurs peuvent aussi s'acheter en platine chez Cavalero (Marché Incarnon)."]],
+    duvRecomp: [
+      ["Pinces de Pathos", "10 par Orowyrm vaincu (15 en Voie de l'Acier). Elles servent à débloquer les armes de mêlée du Drifter dans la Grotte de Teshin (50 chacune, 60 pour Sampotes), à installer les adaptateurs Incarnon et à acheter chez Acrithis."],
+      ["Kullervo et la Rauta", "Bats Kullervo (à la Prise de Kullervo, ou en objectif secondaire dans les Spirales) pour gagner du <b>Fléau de Kullervo</b>. Chez Acrithis (« Archives de Kullervo ») : 42 pour toutes les pièces de Kullervo, 30 pour la Rauta. Ils sont aussi au Marché contre du platine."],
+      ["Installer un adaptateur Incarnon", "Chez Cavalero, au Chrysalith (Zariman), option « Faire évoluer une arme Incarnon ». Il faut l'arme de base (toutes ses variantes marchent : Prime, Wraith, MK1…) et des ressources, en général 20 Pinces de Pathos et des ressources de Duviri (ex. Burston : 20 Pinces de Pathos, 60 Runes de Moelle, 20 Crocs de Gueule)."],
+      ["Acrithis", "L'archiviste de Duviri, au Dormizone et en balade dans Duviri. Sa boutique change régulièrement et prend les ressources de Duviri, les Pinces de Pathos, l'Énigme Gyrum (décorations) et le Fléau de Kullervo."]],
+    duvConseils: [
+      ["Dans l'ordre", "Quête → Histoire solitaire → Expérience Duviri (en battant Kullervo si possible) → Circuit normal chaque semaine pour les Warframes qui te manquent → Circuit Voie de l'Acier pour les Incarnon."],
+      ["Choisis bien tes Incarnon", "Prends les adaptateurs des armes que tu utilises déjà : il faut posséder l'arme de base pour l'installer."],
+      ["Garde des Pinces de Pathos", "Chaque installation Incarnon en coûte en général 20 : n'achète pas tout chez Acrithis."],
+      ["Pense à la remise à zéro", "Les récompenses du Circuit se remettent à zéro le lundi à 0 h UTC : choisis ta Warframe et tes adaptateurs en début de semaine."]],
+    duvIncTitre: "Tous les adaptateurs Incarnon (Genesis)", duvIncIntro: "Les armes qui peuvent recevoir un adaptateur Incarnon du Circuit (Voie de l'Acier). ✓ = adaptateur en stock dans ton inventaire, pas encore installé.",
+    duvResTitre: "Les ressources de Duviri", duvResIntro: "Elles se ramassent dans Duviri et le Sous-Crypte. Description tirée du jeu.",
+    duvCat: { primaire: "Principales", secondaire: "Secondaires", melee: "Mêlée" }, duvStock: "En stock", duvChargement: "Chargement…",
+    duvSource: "Sources : guide officiel de Warframe (quête Le Paradoxe Duviri), notes de mise à jour officielles et wiki officiel ; listes d'adaptateurs et de ressources : base WFCD.",
     bientotTitre: "Bientôt", bientot: "Cette partie arrive au fur et à mesure, dans une prochaine version.",
     debOnglets: [["parcours", "Parcours"], ["conseils", "Conseils"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Armes"], ["compagnon", "Compagnons"], ["archwing", "Archwings"]],
@@ -1820,6 +1853,34 @@ const T3 = {
     mjTitre: "Game updates", mjIntro: "The latest PC update notes published by Digital Extremes, as on the official forum. Big updates also show in a window at launch.",
     mjMaj: "Update", mjCorrectif: "Hotfix", mjChargement: "Reading the official notes…", mjErreur: "Can't read the update notes right now.",
     mjAnglais: "Official notes.",
+    iDuviri: "Duviri",
+    duvOnglets: [["debloquer", "Unlock"], ["modes", "Modes"], ["recompenses", "Rewards"], ["incarnon", "Incarnon adapters"], ["ressources", "Resources"], ["conseils", "Tips"]],
+    duvTitre: "Duviri", duvIntro: "Dominus Thrax's kingdom, where you play the Drifter. It's optional for the main story, but it's where you earn Incarnon adapters, Kullervo and Pathos Clamps.",
+    duvProg: "Your progress", duvQuete: "The Duviri Paradox quest done", duvKullervo: "Kullervo owned", duvAdapt: n => `${n} Incarnon adapter${n > 1 ? "s" : ""} in stock (not installed yet)`,
+    duvDebloquer: [
+      ["When to start", "<b>The Duviri Paradox</b> quest starts from the Codex or the star chart, any time after unlocking the Uranus Junction on Saturn. It isn't required for the main story before The Hex."],
+      ["The Drifter", "You play the Drifter. During the quest you get the Sun & Moon dual nikanas and unlock his <b>Intrinsics</b>: permanent upgrades. <b>Decrees</b> are bonuses that reset every time you leave Duviri."],
+      ["After the quest", "Three ways back into Duviri from the star chart: <b>The Duviri Experience</b>, <b>The Lone Story</b> and <b>The Circuit</b>."],
+      ["Steel Path in Duviri", "To unlock the Steel Path versions (including the Circuit that gives Incarnon adapters), you need the Steel Path, then finish once on normal the Lone Story, the Duviri Experience and at least one Circuit round."]],
+    duvModes: [
+      ["The Duviri Experience", "Free roam in the current Spiral, whose mood (Joy, Anger, Envy, Sorrow, Fear) changes the atmosphere and objectives. You earn Intrinsics, Duviri resources and Decrees, and end against the <b>Orowyrm</b>, which gives Pathos Clamps."],
+      ["The Lone Story", "The scripted run through the Spiral with the Drifter, also ending against the Orowyrm. Great to discover Duviri."],
+      ["The Circuit", "Endless mode with your Warframe in the Undercroft. Each week you pick one of three Warframes and earn its parts by climbing tiers (Systems at tier 8, main blueprint at tier 10), plus arcanes, augment mods, Endo and resources. Resets Monday at 0:00 UTC."],
+      ["The Circuit (Steel Path)", "Same idea on the Steel Path: each week 5 Incarnon adapters are offered, you pick 2, earned at tiers 5 and 10. The list cycles over several weeks. Missed a week? Some adapters can also be bought for platinum from Cavalero (Incarnon Market)."]],
+    duvRecomp: [
+      ["Pathos Clamps", "10 per Orowyrm defeated (15 on the Steel Path). They unlock the Drifter's melee weapons in Teshin's Cave (50 each, 60 for Sampotes), install Incarnon adapters and buy from Acrithis."],
+      ["Kullervo and the Rauta", "Beat Kullervo (in Kullervo's Hold, or as a side objective in the Spirals) to earn <b>Kullervo's Bane</b>. At Acrithis (\"Kullervo's Archive\"): 42 for all of Kullervo's parts, 30 for the Rauta. Both are also in the Market for platinum."],
+      ["Installing an Incarnon adapter", "At Cavalero, in the Chrysalith (Zariman), \"Evolve Incarnon Weapons\". You need the base weapon (any variant works: Prime, Wraith, MK1…) and resources, usually 20 Pathos Clamps plus Duviri resources (e.g. Burston: 20 Pathos Clamps, 60 Rune Marrow, 20 Maw Fang)."],
+      ["Acrithis", "Duviri's archivist, in the Dormizone and around Duviri. Her shop rotates and takes Duviri resources, Pathos Clamps, Enigma Gyrum (decorations) and Kullervo's Bane."]],
+    duvConseils: [
+      ["In order", "Quest → Lone Story → Duviri Experience (beat Kullervo if you can) → normal Circuit every week for the Warframes you're missing → Steel Path Circuit for Incarnons."],
+      ["Pick your Incarnons well", "Take adapters for weapons you already use: you need the base weapon to install one."],
+      ["Keep some Pathos Clamps", "Each Incarnon install usually costs 20: don't spend them all at Acrithis."],
+      ["Mind the reset", "Circuit rewards reset Monday at 0:00 UTC: pick your Warframe and adapters at the start of the week."]],
+    duvIncTitre: "Every Incarnon adapter (Genesis)", duvIncIntro: "Weapons that can get an Incarnon adapter from the (Steel Path) Circuit. ✓ = adapter in stock in your inventory, not installed yet.",
+    duvResTitre: "Duviri resources", duvResIntro: "Gathered in Duviri and the Undercroft. Description from the game.",
+    duvCat: { primaire: "Primary", secondaire: "Secondary", melee: "Melee" }, duvStock: "In stock", duvChargement: "Loading…",
+    duvSource: "Sources: official Warframe guide (The Duviri Paradox quest), official update notes and official wiki; adapter and resource lists: WFCD database.",
     bientotTitre: "Coming soon", bientot: "This part is coming step by step, in a future version.",
     debOnglets: [["parcours", "Path"], ["conseils", "Tips"]],
     arsOnglets: [["warframes", "Warframes"], ["armes", "Weapons"], ["compagnon", "Companions"], ["archwing", "Archwings"]],
@@ -2999,7 +3060,7 @@ function montrerPage(p) {
 // ---------------------------------------------------------------- onglet Info / aide
 var infoGroupe = "jeu", infoSous = { jeu: "debuter", app: "guide" }, infoNouv = null, infoSupport = false;
 try { infoGroupe = localStorage.getItem("infoGroupe") || "jeu"; infoSous = JSON.parse(localStorage.getItem("infoSous")) || infoSous; } catch (e) {}
-const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "ressources", "direct", "majjeu"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
+const INFO_SOUS = { jeu: ["debuter", "arsenal", "prime", "duviri", "ressources", "direct", "majjeu"], app: ["guide", "astuces", "problemes", "apropos", "signaler"] };
 // Progression du joueur (lue dans le jeu) : quêtes faites, planètes, rang de maîtrise
 var prog = { ok: false, cle: "", charge: false }, spoilRevele = [];
 try { spoilRevele = JSON.parse(localStorage.getItem("spoilRevele")) || []; } catch (e) {}
@@ -3363,6 +3424,48 @@ async function majJeuDepuis() {
   $("#dlgMajJeu").addEventListener("close", garder, { once: true });
 }
 $("#mjOk").addEventListener("click", () => $("#dlgMajJeu").close());
+// Duviri (assets/duviri.json, tools/gen_duviri.py)
+var duviri = null, duvSous = "debloquer";
+try { duvSous = localStorage.getItem("duvSous") || "debloquer"; } catch (e) {}
+async function chargerDuviri() {
+  if (duviri) return;
+  duviri = { adapt: [], res: [] };
+  try { duviri = await (await fetch("/assets/duviri.json")).json(); } catch (e) {}
+  if (page === "info" && infoGroupe === "jeu" && infoSous.jeu === "duviri") rendreInfo();
+}
+function rendreDuviri() {
+  if (!t("duvOnglets").some(([k]) => k === duvSous)) duvSous = "debloquer";
+  const nav = navOnglets("duvOnglets", duvSous, "duv"), L = o => lang === "fr" ? o.fr : o.en;
+  const stock = id => prog.ok ? (prog.stock || {})[id] || 0 : 0;
+  const cartes = l => `<div class="guide-conseils">` + l.map(([ti, txt]) => `<div class="guide-conseil sans-ic"><div><h3>${esc(ti)}</h3><p>${txt}</p></div></div>`).join("") + "</div>";
+  let corps = "";
+  if (["incarnon", "ressources"].includes(duvSous) && !duviri) { chargerDuviri(); corps = `<p class="muted">${esc(t("duvChargement"))}</p>`; }
+  else if (duvSous === "debloquer") {
+    const nAd = duviri ? duviri.adapt.filter(a => stock(a.id)).length : 0;
+    if (!duviri) chargerDuviri();
+    corps = (prog.ok ? `<div class="prog-box"><b>${esc(t("duvProg"))}</b><ul class="duv-prog">
+        <li class="${queteFaite("DuviriQuest/DuviriQuestKeyChain") ? "ok" : ""}">${esc(t("duvQuete"))}</li>
+        <li class="${(prog.warframes || []).includes("kullervo") ? "ok" : ""}">${esc(t("duvKullervo"))}</li>
+        ${nAd ? `<li class="ok">${esc(t("duvAdapt", nAd))}</li>` : ""}</ul></div>` : "") + cartes(t("duvDebloquer"));
+  } else if (duvSous === "modes") corps = cartes(t("duvModes"));
+  else if (duvSous === "recompenses") corps = cartes(t("duvRecomp"));
+  else if (duvSous === "conseils") corps = cartes(t("duvConseils"));
+  else if (duvSous === "incarnon") {
+    corps = `<h2 class="info-titre">${esc(t("duvIncTitre"))}</h2><p class="muted">${esc(t("duvIncIntro"))}</p>` +
+      Object.entries(t("duvCat")).map(([c, titre]) => `<h3 class="res-gr">${esc(titre)} <small>${duviri.adapt.filter(a => a.c === c).length}</small></h3>
+        <div class="res-grille">` + duviri.adapt.filter(a => a.c === c).map(a => `<div class="res-c${stock(a.id) ? " a" : ""}">
+          ${a.i ? `<div class="res-ic"><img src="${esc(a.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true"></div>` : ""}
+          <b>${stock(a.id) ? "✓ " : ""}${esc(L(a))}</b>${stock(a.id) ? `<span class="res-stock ok">${esc(t("duvStock"))}</span>` : ""}</div>`).join("") + "</div>").join("");
+  } else if (duvSous === "ressources") {
+    corps = `<h2 class="info-titre">${esc(t("duvResTitre"))}</h2><p class="muted">${esc(t("duvResIntro"))}</p><div class="res-grille large">` +
+      duviri.res.map(r => { const n = stock(r.id); return `<div class="res-c${n ? " a" : ""}">
+        ${r.i ? `<div class="res-ic"><img src="${esc(r.i)}" alt="" loading="lazy" onerror="this.parentNode.hidden=true"></div>` : ""}
+        <b>${esc(L(r))}</b>${prog.ok ? `<span class="res-stock${n ? " ok" : ""}">${esc(t("resStock", n))}</span>` : ""}
+        <span class="res-src res-desc">${esc(lang === "fr" ? r.dfr || r.den : r.den)}</span></div>`; }).join("") + "</div>";
+  }
+  return `<div class="guide-tete"><div><h1>${esc(t("duvTitre"))}</h1><p>${esc(t("duvIntro"))}</p></div></div>` + nav + corps +
+    `<p class="guide-note">${esc(t("duvSource"))}</p>`;
+}
 // Ressources : planète par planète (assets/ressources.json, tools/gen_ressources.py)
 var ressources = null, resSous = "earth", resFiltre = "";
 try { resSous = localStorage.getItem("resSous") || "earth"; } catch (e) {}
@@ -3473,13 +3576,15 @@ function rendreInfo() {
   $("#sigMsg").placeholder = t("sigPlaceholder");
   try { localStorage.setItem("infoGroupe", infoGroupe); localStorage.setItem("infoSous", JSON.stringify(infoSous)); } catch (e) {}
   const c = $("#infoContenu");
-  if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime", "ressources"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
+  if (infoGroupe === "jeu" && ["debuter", "arsenal", "prime", "duviri", "ressources"].includes(s) && prog.cle !== `${lang}|${version}`) chargerProgression();
   if (infoGroupe === "jeu" && s === "arsenal" && navArsenal() && arsSous !== "warframes") {
     c.innerHTML = navArsenal() + rendreArmes(arsSous === "armes" ? null : arsSous);
     filtrerArmes();
   } else if (infoGroupe === "jeu" && s === "arsenal") {
     c.innerHTML = navArsenal() + rendreWarframes();
     filtrerWarframes();
+  } else if (infoGroupe === "jeu" && s === "duviri") {
+    c.innerHTML = rendreDuviri();
   } else if (infoGroupe === "jeu" && s === "majjeu") {
     c.innerHTML = rendreMajJeu();
   } else if (infoGroupe === "jeu" && s === "direct") {
@@ -3562,6 +3667,12 @@ $("#infoContenu").addEventListener("click", e => {
   if (am) {
     armSous = am.dataset.arm;
     try { localStorage.setItem("armSous", armSous); } catch (e) {}
+    return rendreInfo();
+  }
+  const dv = e.target.closest("button[data-duv]");
+  if (dv) {
+    duvSous = dv.dataset.duv;
+    try { localStorage.setItem("duvSous", duvSous); } catch (e) {}
     return rendreInfo();
   }
   const fi = e.target.closest("button[data-fis]");
